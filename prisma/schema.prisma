@@ -1,0 +1,1978 @@
+// ============================================
+// WORKSHOP CONTROL PLATFORM (WCP) DATABASE SCHEMA
+// Version: 2.0 - SQLite Compatible
+// ============================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// 1. IDENTITY & AUTH DOMAIN
+// ============================================
+
+model User {
+  id              String    @id @default(cuid())
+  employeeId      String?   @unique
+  email           String    @unique
+  passwordHash    String
+  name            String
+  phone           String?
+  department      String?
+  costCentre      String?
+  contractType    String?
+  riskLevel       String    @default("LOW")
+  isActive        Boolean   @default(true)
+  lastLoginAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  createdBy       String?
+  updatedBy       String?
+  deletedAt       DateTime?
+
+  roles           UserRole[]
+  sessions        UserSession[]
+  devices         DeviceRegistry[]
+  jobCardsCreated     JobCard[]           @relation("JobCardCreator")
+  jobCardsAssigned    JcTechnicianAssignment[]
+  jobCardsSupervised  JobCard[]           @relation("JobCardSupervisor")
+  jobCardsApproved    JobCardApproval[]
+  materialRequests    MaterialRequest[]   @relation("MaterialRequestCreator")
+  mrApprovals         MrApprovalHistory[]
+  materialIssues      MaterialIssue[]     @relation("MaterialIssueIssuer")
+  miVerifiedBy        MaterialIssue[]     @relation("MaterialIssueVerifier")
+  grnCreatedBy        GrnHeader[]         @relation("GrnCreator")
+  grnVerifiedBy       GrnHeader[]         @relation("GrnVerifier")
+  stockTransactions   StockTransaction[]
+  auditLogs           AuditLog[]
+  approvalRequests    ApprovalRequest[]
+  approvalSteps       ApprovalStep[]
+
+  @@index([email])
+  @@index([employeeId])
+  @@index([isActive])
+}
+
+model Role {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  name        String
+  description String?
+  level       Int       @default(1)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  users       UserRole[]
+  privileges  RolePrivilegeSet[]
+
+  @@index([code])
+}
+
+model UserRole {
+  id        String   @id @default(cuid())
+  userId    String
+  roleId    String
+  workshopId String?
+  validFrom DateTime @default(now())
+  validTo   DateTime?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+}
+
+model PrivilegeDefinition {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  category    String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  rolePrivileges RolePrivilegeSet[]
+
+  @@index([code])
+  @@index([category])
+}
+
+model RolePrivilegeSet {
+  id              String   @id @default(cuid())
+  roleId          String
+  privilegeId     String
+  isGranted       Boolean  @default(true)
+  maxAmount       Decimal?
+  workshopScope   Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  role            Role                @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  privilege       PrivilegeDefinition @relation(fields: [privilegeId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, privilegeId])
+  @@index([roleId])
+}
+
+model UserPrivilegeOverride {
+  id              String   @id @default(cuid())
+  userId          String
+  privilegeId     String
+  isGranted       Boolean
+  reason          String?
+  validFrom       DateTime @default(now())
+  validTo         DateTime?
+  grantedBy       String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model UserSession {
+  id            String   @id @default(cuid())
+  userId        String
+  tokenHash     String   @unique
+  refreshToken  String?
+  deviceFingerprint String?
+  ipAddress     String?
+  userAgent     String?
+  expiresAt     DateTime
+  isValid       Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+}
+
+model DeviceRegistry {
+  id                String   @id @default(cuid())
+  userId            String
+  deviceFingerprint String   @unique
+  deviceName        String?
+  deviceType        String?
+  platform          String?
+  lastUsedAt        DateTime?
+  isBlocked         Boolean  @default(false)
+  blockedReason     String?
+  blockedAt         DateTime?
+  registeredAt      DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([deviceFingerprint])
+}
+
+// ============================================
+// 2. ASSET MANAGEMENT DOMAIN
+// ============================================
+
+model AssetCategory {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  parentCatId String?
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  assets      Asset[]
+
+  @@index([code])
+}
+
+model Asset {
+  id              String   @id @default(cuid())
+  assetNumber     String   @unique
+  categoryId      String
+  name            String
+  description     String?
+  make            String?
+  model           String?
+  serialNumber    String?
+  yearOfManufacture Int?
+  acquisitionDate DateTime?
+  acquisitionCost Decimal?
+  currentLocation String?
+  status          String   @default("OPERATIONAL")
+  criticality     String   @default("MEDIUM")
+  warrantyExpiry  DateTime?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdBy       String?
+  updatedBy       String?
+  deletedAt       DateTime?
+
+  category         AssetCategory   @relation(fields: [categoryId], references: [id])
+  qrCodes          AssetQrCode[]
+  meters           AssetMeter[]
+  jobCards         JobCard[]
+  pmSchedules      PmSchedule[]
+  assetSpecificity AssetSpecificity[]
+  fuelIssues       FuelIssue[]
+  downtimeLogs     DowntimeLog[]
+
+  @@index([assetNumber])
+  @@index([categoryId])
+  @@index([status])
+}
+
+model AssetQrCode {
+  id          String   @id @default(cuid())
+  assetId     String
+  qrCode      String   @unique
+  qrHash      String   @unique
+  isActive    Boolean  @default(true)
+  printedAt   DateTime?
+  assignedAt  DateTime @default(now())
+  expiresAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  asset       Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId])
+  @@index([qrCode])
+}
+
+model AssetMeter {
+  id            String   @id @default(cuid())
+  assetId       String
+  meterType     String
+  unit          String
+  currentValue  Decimal
+  lastReadingAt DateTime?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  asset         Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  readings      MeterReading[]
+
+  @@index([assetId])
+}
+
+model MeterReading {
+  id            String   @id @default(cuid())
+  meterId       String
+  readingValue  Decimal
+  readingSource String?
+  overrideReason String?
+  overrideBy    String?
+  readingAt     DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  meter         AssetMeter @relation(fields: [meterId], references: [id], onDelete: Cascade)
+
+  @@index([meterId])
+  @@index([readingAt])
+}
+
+model AssetSpecificity {
+  id            String   @id @default(cuid())
+  assetId       String
+  itemId        String
+  specificity   String   @default("GENERAL")
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  asset         Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  item          Item     @relation(fields: [itemId], references: [id])
+
+  @@unique([assetId, itemId])
+}
+
+// ============================================
+// 3. JOB CARDS DOMAIN
+// ============================================
+
+model JobCard {
+  id                String   @id @default(cuid())
+  jobCardNumber     String   @unique
+  assetId           String
+  jobType           String
+  priority          String   @default("NORMAL")
+  status            String   @default("DRAFT")
+  faultDescription  String
+  diagnosisNotes    String?
+  workPerformed     String?
+  estimatedCost     Decimal?
+  estimatedDuration Int?
+  actualCost        Decimal? @default(0)
+  actualDuration    Int?
+  scheduledStart    DateTime?
+  scheduledEnd      DateTime?
+  actualStart       DateTime?
+  actualEnd         DateTime?
+  meterReadingStart Decimal?
+  meterReadingEnd   Decimal?
+  ecoNumber         String?
+  accidentReportRef String?
+  warrantyClaimRef  String?
+  closedAt          DateTime?
+  closedBy          String?
+  cancellationReason String?
+  cancelledAt       DateTime?
+  cancelledBy       String?
+  reopenReason      String?
+  reopenedAt        DateTime?
+  reopenedBy        String?
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  createdBy         String?
+  updatedBy         String?
+  deletedAt         DateTime?
+
+  asset             Asset                   @relation(fields: [assetId], references: [id])
+  creator           User?                   @relation("JobCardCreator", fields: [createdBy], references: [id])
+  supervisor        User?                   @relation("JobCardSupervisor", fields: [closedBy], references: [id])
+  tasks             JcTask[]
+  stateTransitions  JcStateTransition[]
+  costLines         JcCostLine[]
+  documents         JcDocument[]
+  technicianAssignments JcTechnicianAssignment[]
+  approvals         JobCardApproval[]
+  materialRequests  MaterialRequest[]
+  materialIssues    MaterialIssue[]
+  toolLoans         ToolLoanTracking[]
+  externalJobs      ExternalJob[]
+  timeLogs          TimeLog[]
+
+  @@index([assetId])
+  @@index([jobCardNumber])
+  @@index([status])
+  @@index([priority])
+  @@index([createdAt])
+}
+
+model JcTask {
+  id              String   @id @default(cuid())
+  jobCardId       String
+  taskNumber      Int
+  description     String
+  isMandatory     Boolean  @default(true)
+  isComplete      Boolean  @default(false)
+  completedAt     DateTime?
+  completedBy     String?
+  requiresPhoto   Boolean  @default(false)
+  photoCount      Int      @default(0)
+  notes           String?
+  sequence        Int      @default(1)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  jobCard         JobCard  @relation(fields: [jobCardId], references: [id], onDelete: Cascade)
+  photos          JcTaskPhoto[]
+
+  @@unique([jobCardId, taskNumber])
+  @@index([jobCardId])
+}
+
+model JcTaskPhoto {
+  id            String   @id @default(cuid())
+  taskId        String
+  filePath      String
+  fileName      String
+  fileSize      Int?
+  mimeType      String?
+  exifData      String?
+  capturedAt    DateTime?
+  uploadedAt    DateTime @default(now())
+  uploadedBy    String?
+  createdAt     DateTime @default(now())
+
+  task          JcTask   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+}
+
+model JcStateTransition {
+  id              String   @id @default(cuid())
+  jobCardId       String
+  fromState       String
+  toState         String
+  transitionType  String
+  actorId         String
+  reason          String?
+  comments        String?
+  createdAt       DateTime @default(now())
+
+  jobCard         JobCard  @relation(fields: [jobCardId], references: [id], onDelete: Cascade)
+
+  @@index([jobCardId])
+  @@index([createdAt])
+}
+
+model JcCostLine {
+  id              String   @id @default(cuid())
+  jobCardId       String
+  costType        String
+  description     String
+  quantity        Decimal
+  unitCost        Decimal
+  totalCost       Decimal
+  sourceRef       String?
+  sourceType      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  jobCard         JobCard  @relation(fields: [jobCardId], references: [id], onDelete: Cascade)
+
+  @@index([jobCardId])
+  @@index([costType])
+}
+
+model JcDocument {
+  id            String   @id @default(cuid())
+  jobCardId     String
+  documentType  String
+  filePath      String
+  fileName      String
+  fileSize      Int?
+  mimeType      String?
+  description   String?
+  uploadedAt    DateTime @default(now())
+  uploadedBy    String?
+  createdAt     DateTime @default(now())
+
+  jobCard       JobCard  @relation(fields: [jobCardId], references: [id], onDelete: Cascade)
+
+  @@index([jobCardId])
+  @@index([documentType])
+}
+
+model JcTechnicianAssignment {
+  id            String   @id @default(cuid())
+  jobCardId     String
+  technicianId  String
+  role          String   @default("TECHNICIAN")
+  assignedAt    DateTime @default(now())
+  assignedBy    String?
+  startTime     DateTime?
+  endTime       DateTime?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  jobCard       JobCard  @relation(fields: [jobCardId], references: [id], onDelete: Cascade)
+  technician    User     @relation(fields: [technicianId], references: [id])
+
+  @@unique([jobCardId, technicianId])
+  @@index([jobCardId])
+  @@index([technicianId])
+}
+
+model JobCardApproval {
+  id            String   @id @default(cuid())
+  jobCardId     String
+  approverId    String
+  approvalLevel Int      @default(1)
+  status        String   @default("PENDING")
+  comments      String?
+  approvedAt    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  jobCard       JobCard  @relation(fields: [jobCardId], references: [id], onDelete: Cascade)
+  approver      User     @relation(fields: [approverId], references: [id])
+
+  @@index([jobCardId])
+  @@index([approverId])
+}
+
+// ============================================
+// 4. MATERIAL REQUEST DOMAIN
+// ============================================
+
+model MaterialRequest {
+  id              String   @id @default(cuid())
+  mrNumber        String   @unique
+  jobCardId       String?
+  requestorId     String
+  requestType     String   @default("JC_LINKED")
+  priority        String   @default("NORMAL")
+  status          String   @default("DRAFT")
+  requiredBy      DateTime?
+  approvedAt      DateTime?
+  approvedBy      String?
+  rejectionReason String?
+  fulfilledAt     DateTime?
+  closedAt        DateTime?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdBy       String?
+  updatedBy       String?
+  deletedAt       DateTime?
+
+  jobCard         JobCard?             @relation(fields: [jobCardId], references: [id])
+  requestor       User                 @relation("MaterialRequestCreator", fields: [requestorId], references: [id])
+  lines           MrLine[]
+  stateTransitions MrStateTransition[]
+  approvals       MrApprovalHistory[]
+  materialIssues  MaterialIssue[]
+
+  @@index([mrNumber])
+  @@index([jobCardId])
+  @@index([requestorId])
+  @@index([status])
+}
+
+model MrLine {
+  id              String   @id @default(cuid())
+  mrId            String
+  lineNumber      Int
+  itemId          String
+  requestedQty    Decimal
+  approvedQty     Decimal?
+  issuedQty       Decimal? @default(0)
+  unitCost        Decimal? @default(0)
+  wacAtApproval   Decimal?
+  notes           String?
+  status          String   @default("PENDING")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  materialRequest MaterialRequest      @relation(fields: [mrId], references: [id], onDelete: Cascade)
+  item            Item                 @relation(fields: [itemId], references: [id])
+  reservations    StockReservation[]
+  issueLines      MiLine[]
+
+  @@unique([mrId, lineNumber])
+  @@index([mrId])
+  @@index([itemId])
+}
+
+model MrStateTransition {
+  id              String   @id @default(cuid())
+  mrId            String
+  fromState       String
+  toState         String
+  transitionType  String
+  actorId         String
+  reason          String?
+  createdAt       DateTime @default(now())
+
+  materialRequest MaterialRequest @relation(fields: [mrId], references: [id], onDelete: Cascade)
+
+  @@index([mrId])
+}
+
+model MrApprovalHistory {
+  id            String   @id @default(cuid())
+  mrId          String
+  approverId    String
+  approvalLevel Int      @default(1)
+  status        String   @default("PENDING")
+  comments      String?
+  approvedAt    DateTime?
+  createdAt     DateTime @default(now())
+
+  materialRequest MaterialRequest @relation(fields: [mrId], references: [id], onDelete: Cascade)
+  approver       User            @relation(fields: [approverId], references: [id])
+
+  @@index([mrId])
+  @@index([approverId])
+}
+
+// ============================================
+// 5. MATERIAL ISSUE DOMAIN
+// ============================================
+
+model MaterialIssue {
+  id              String   @id @default(cuid())
+  miNumber        String   @unique
+  mrId            String?
+  storeId         String
+  issueType       String   @default("STANDARD")
+  status          String   @default("DRAFT")
+  issuedToId      String
+  jobCardId       String?
+  counterNumber   Int?
+  counterLockedAt DateTime?
+  issuedBy        String
+  issuedAt        DateTime?
+  verifiedById    String?
+  verifiedAt      DateTime?
+  verificationStatus String?
+  disputeReason   String?
+  totalValue      Decimal? @default(0)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdBy       String?
+  updatedBy       String?
+
+  materialRequest MaterialRequest?  @relation(fields: [mrId], references: [id])
+  store           Store             @relation(fields: [storeId], references: [id])
+  issuedTo        User              @relation("MaterialIssueIssuer", fields: [issuedToId], references: [id])
+  verifier        User?             @relation("MaterialIssueVerifier", fields: [verifiedById], references: [id])
+  jobCard         JobCard?          @relation(fields: [jobCardId], references: [id])
+  lines           MiLine[]
+  returns         MiReturn[]
+  stockTransactions StockTransaction[]
+
+  @@index([miNumber])
+  @@index([mrId])
+  @@index([storeId])
+  @@index([issuedToId])
+  @@index([status])
+}
+
+model MiLine {
+  id              String   @id @default(cuid())
+  miId            String
+  mrLineId        String?
+  itemId          String
+  issuedQty       Decimal
+  unitCost        Decimal
+  totalCost       Decimal
+  serialNumber    String?
+  batchNumber     String?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  materialIssue   MaterialIssue @relation(fields: [miId], references: [id], onDelete: Cascade)
+  mrLine          MrLine?       @relation(fields: [mrLineId], references: [id])
+  item            Item          @relation(fields: [itemId], references: [id])
+  returnLines     MiReturnLine[]
+
+  @@index([miId])
+  @@index([itemId])
+}
+
+model MiReturn {
+  id              String   @id @default(cuid())
+  returnNumber    String   @unique
+  miId            String
+  returnType      String   @default("GOOD")
+  status          String   @default("DRAFT")
+  returnedById    String
+  approvedById    String?
+  processedById   String?
+  processedAt     DateTime?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  materialIssue   MaterialIssue @relation(fields: [miId], references: [id])
+  lines           MiReturnLine[]
+  stockTransactions StockTransaction[]
+
+  @@index([miId])
+  @@index([returnNumber])
+}
+
+model MiReturnLine {
+  id              String   @id @default(cuid())
+  returnId        String
+  miLineId        String
+  returnedQty     Decimal
+  condition       String   @default("GOOD")
+  notes           String?
+  createdAt       DateTime @default(now())
+
+  miReturn        MiReturn  @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  miLine          MiLine    @relation(fields: [miLineId], references: [id])
+
+  @@index([returnId])
+  @@index([miLineId])
+}
+
+model StoreCounterLock {
+  id              String   @id @default(cuid())
+  storeId         String
+  counterNumber   Int
+  lockedBy        String
+  lockedAt        DateTime @default(now())
+  expiresAt       DateTime
+  isActive        Boolean  @default(true)
+  releasedAt      DateTime?
+  releasedBy      String?
+  releaseReason   String?
+  createdAt       DateTime @default(now())
+
+  store           Store    @relation(fields: [storeId], references: [id])
+
+  @@unique([storeId, counterNumber, isActive])
+  @@index([storeId])
+  @@index([lockedBy])
+  @@index([expiresAt])
+}
+
+model ToolLoanTracking {
+  id              String   @id @default(cuid())
+  toolId          String
+  jobCardId       String?
+  issuedToId      String
+  loanStatus      String   @default("ACTIVE")
+  issuedAt        DateTime @default(now())
+  dueDate         DateTime
+  returnedAt      DateTime?
+  returnedCondition String?
+  overdueAlerts   Int      @default(0)
+  lastAlertAt     DateTime?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  item            Item     @relation(fields: [toolId], references: [id])
+  jobCard         JobCard? @relation(fields: [jobCardId], references: [id])
+
+  @@index([toolId])
+  @@index([issuedToId])
+  @@index([loanStatus])
+  @@index([dueDate])
+}
+
+// ============================================
+// 6. INVENTORY & STORES DOMAIN
+// ============================================
+
+model Store {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  name            String
+  storeType       String   @default("MAIN")
+  location        String?
+  managerId       String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  stock           StoreStock[]
+  stockTransactions StockTransaction[]
+  counterLocks    StoreCounterLock[]
+  materialIssues  MaterialIssue[]
+  grnHeaders      GrnHeader[]
+  reservations    StockReservation[]
+
+  @@index([code])
+}
+
+model Item {
+  id              String   @id @default(cuid())
+  itemCode        String   @unique
+  name            String
+  description     String?
+  categoryId      String?
+  unitOfMeasure   String
+  itemClass       String   @default("CONSUMABLE")
+  minimumStock    Decimal? @default(0)
+  maximumStock    Decimal?
+  reorderLevel    Decimal?
+  reorderQuantity Decimal?
+  maxIssueLimit   Decimal?
+  isTool          Boolean  @default(false)
+  isCritical      Boolean  @default(false)
+  forceHoChannel  Boolean  @default(false)
+  highValueThreshold Decimal?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdBy       String?
+  updatedBy       String?
+
+  stock           StoreStock[]
+  mrLines         MrLine[]
+  miLines         MiLine[]
+  stockTransactions StockTransaction[]
+  reservations    StockReservation[]
+  assetSpecificity AssetSpecificity[]
+  toolLoans       ToolLoanTracking[]
+
+  @@index([itemCode])
+  @@index([itemClass])
+}
+
+model ItemCategory {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  name            String
+  parentCatId     String?
+  description     String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([code])
+}
+
+model StoreStock {
+  id              String   @id @default(cuid())
+  storeId         String
+  itemId          String
+  availableQty    Decimal  @default(0)
+  reservedQty     Decimal  @default(0)
+  quarantineQty   Decimal  @default(0)
+  wac             Decimal  @default(0)
+  lastMovementAt  DateTime?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  store           Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  item            Item     @relation(fields: [itemId], references: [id])
+
+  @@unique([storeId, itemId])
+  @@index([storeId])
+  @@index([itemId])
+}
+
+model StockReservation {
+  id              String   @id @default(cuid())
+  mrLineId        String
+  storeId         String
+  itemId          String
+  reservedQty     Decimal
+  wacAtReservation Decimal
+  status          String   @default("ACTIVE")
+  expiresAt       DateTime?
+  releasedAt      DateTime?
+  releaseReason   String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  mrLine          MrLine   @relation(fields: [mrLineId], references: [id], onDelete: Cascade)
+  store           Store    @relation(fields: [storeId], references: [id])
+  item            Item     @relation(fields: [itemId], references: [id])
+
+  @@index([mrLineId])
+  @@index([storeId, itemId])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+model StockTransaction {
+  id              String   @id @default(cuid())
+  storeId         String
+  itemId          String
+  transactionType String
+  quantity        Decimal
+  unitCost        Decimal
+  totalValue      Decimal
+  referenceType   String?
+  referenceId     String?
+  miId            String?
+  returnId        String?
+  performedBy     String
+  notes           String?
+  createdAt       DateTime @default(now())
+
+  store           Store             @relation(fields: [storeId], references: [id])
+  item            Item              @relation(fields: [itemId], references: [id])
+  materialIssue   MaterialIssue?    @relation(fields: [miId], references: [id])
+  miReturn        MiReturn?         @relation(fields: [returnId], references: [id])
+  user            User              @relation(fields: [performedBy], references: [id])
+
+  @@index([storeId, itemId])
+  @@index([transactionType])
+  @@index([createdAt])
+}
+
+// ============================================
+// 7. GRN & PROCUREMENT DOMAIN
+// ============================================
+
+model GrnHeader {
+  id              String   @id @default(cuid())
+  grnNumber       String   @unique
+  poId            String?
+  supplierId      String
+  storeId         String
+  deliveryNoteNo  String?
+  deliveryDate    DateTime?
+  status          String   @default("DRAFT")
+  createdBy       String
+  verifiedBy      String?
+  verifiedAt      DateTime?
+  postedAt        DateTime?
+  postedBy        String?
+  totalValue      Decimal  @default(0)
+  notes           String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  store           Store        @relation(fields: [storeId], references: [id])
+  supplier        Supplier     @relation(fields: [supplierId], references: [id])
+  purchaseOrder   PurchaseOrder? @relation(fields: [poId], references: [id])
+  creator         User         @relation("GrnCreator", fields: [createdBy], references: [id])
+  verifier        User?        @relation("GrnVerifier", fields: [verifiedBy], references: [id])
+  lines           GrnLine[]
+
+  @@index([grnNumber])
+  @@index([poId])
+  @@index([supplierId])
+  @@index([storeId])
+}
+
+model GrnLine {
+  id              String   @id @default(cuid())
+  grnId           String
+  itemId          String
+  receivedQty     Decimal
+  acceptedQty     Decimal
+  rejectedQty     Decimal @default(0)
+  rejectionReason String?
+  unitCost        Decimal
+  totalCost       Decimal
+  batchNumber     String?
+  expiryDate      DateTime?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  grnHeader       GrnHeader @relation(fields: [grnId], references: [id], onDelete: Cascade)
+
+  @@index([grnId])
+  @@index([itemId])
+}
+
+// ============================================
+// 8. PURCHASE ORDERS DOMAIN
+// ============================================
+
+model PurchaseRequest {
+  id              String   @id @default(cuid())
+  prNumber        String   @unique
+  requestorId     String
+  department      String?
+  requestType     String   @default("STANDARD")
+  priority        String   @default("NORMAL")
+  status          String   @default("DRAFT")
+  procurementChannel String?
+  estimatedValue  Decimal?
+  approvedValue   Decimal?
+  requiredBy      DateTime?
+  justification   String?
+  approvedAt      DateTime?
+  approvedBy      String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdBy       String?
+  updatedBy       String?
+
+  lines           PrLine[]
+  approvals       PrApproval[]
+  channelDecision PrChannelDecision?
+  rfqs            RfqHeader[]
+
+  @@index([prNumber])
+  @@index([requestorId])
+  @@index([status])
+  @@index([procurementChannel])
+}
+
+model PrLine {
+  id              String   @id @default(cuid())
+  prId            String
+  lineNumber      Int
+  itemId          String?
+  description     String
+  quantity        Decimal
+  unitOfMeasure   String?
+  estimatedCost   Decimal?
+  totalEstCost    Decimal?
+  assetId         String?
+  specificity     String?  @default("GENERAL")
+  status          String   @default("PENDING")
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  purchaseRequest PurchaseRequest @relation(fields: [prId], references: [id], onDelete: Cascade)
+  rfqLines        RfqLine[]
+
+  @@unique([prId, lineNumber])
+  @@index([prId])
+}
+
+model PrApproval {
+  id              String   @id @default(cuid())
+  prId            String
+  approverId      String
+  approvalLevel   Int      @default(1)
+  status          String   @default("PENDING")
+  comments        String?
+  approvedAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  purchaseRequest PurchaseRequest @relation(fields: [prId], references: [id], onDelete: Cascade)
+
+  @@index([prId])
+  @@index([approverId])
+}
+
+model RfqHeader {
+  id              String   @id @default(cuid())
+  rfqNumber       String   @unique
+  prId            String?
+  procurementOfficer String?
+  status          String   @default("DRAFT")
+  issueDate       DateTime?
+  closingDate     DateTime?
+  notes           String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  purchaseRequest PurchaseRequest? @relation(fields: [prId], references: [id])
+  lines           RfqLine[]
+  suppliers       RfqSupplier[]
+  quotations      Quotation[]
+
+  @@index([rfqNumber])
+  @@index([prId])
+}
+
+model RfqLine {
+  id              String   @id @default(cuid())
+  rfqId           String
+  prLineId        String?
+  itemId          String?
+  description     String
+  quantity        Decimal
+  unitOfMeasure   String?
+  createdAt       DateTime @default(now())
+
+  rfqHeader       RfqHeader @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  prLine          PrLine?   @relation(fields: [prLineId], references: [id])
+
+  @@index([rfqId])
+}
+
+model RfqSupplier {
+  id              String   @id @default(cuid())
+  rfqId           String
+  supplierId      String
+  sentAt          DateTime?
+  respondedAt     DateTime?
+  status          String   @default("INVITED")
+  notes           String?
+  createdAt       DateTime @default(now())
+
+  rfqHeader       RfqHeader @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  supplier        Supplier  @relation(fields: [supplierId], references: [id])
+
+  @@unique([rfqId, supplierId])
+  @@index([rfqId])
+}
+
+model Quotation {
+  id              String   @id @default(cuid())
+  quotationNumber String   @unique
+  rfqId           String
+  supplierId      String
+  quotationDate   DateTime
+  validUntil      DateTime?
+  currency        String   @default("USD")
+  totalValue      Decimal
+  status          String   @default("SUBMITTED")
+  terms           String?
+  notes           String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  rfqHeader       RfqHeader     @relation(fields: [rfqId], references: [id])
+  supplier        Supplier      @relation(fields: [supplierId], references: [id])
+  lines           QuotationLine[]
+  evaluations     QuotationEvaluation[]
+
+  @@index([rfqId])
+  @@index([supplierId])
+}
+
+model QuotationLine {
+  id              String   @id @default(cuid())
+  quotationId     String
+  itemId          String?
+  description     String
+  quantity        Decimal
+  unitPrice       Decimal
+  totalPrice      Decimal
+  leadTime        Int?
+  notes           String?
+  createdAt       DateTime @default(now())
+
+  quotation       Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+
+  @@index([quotationId])
+}
+
+model QuotationEvaluation {
+  id              String   @id @default(cuid())
+  quotationId     String
+  evaluatorId     String
+  priceScore      Decimal?
+  qualityScore    Decimal?
+  deliveryScore   Decimal?
+  totalScore      Decimal?
+  comments        String?
+  recommendation  String?
+  evaluatedAt     DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  quotation       Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+
+  @@index([quotationId])
+}
+
+model PurchaseOrder {
+  id              String   @id @default(cuid())
+  poNumber        String   @unique
+  prId            String?
+  quotationId     String?
+  supplierId      String
+  procurementChannel String?
+  status          String   @default("DRAFT")
+  orderDate       DateTime?
+  expectedDeliveryDate DateTime?
+  currency        String   @default("USD")
+  totalValue      Decimal  @default(0)
+  terms           String?
+  notes           String?
+  approvedBy      String?
+  approvedAt      DateTime?
+  issuedAt        DateTime?
+  acknowledgedAt  DateTime?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdBy       String?
+  updatedBy       String?
+
+  supplier        Supplier       @relation(fields: [supplierId], references: [id])
+  lines           PoLine[]
+  amendments      PoAmendment[]
+  grnHeaders      GrnHeader[]
+  invoices        SupplierInvoice[]
+
+  @@index([poNumber])
+  @@index([supplierId])
+  @@index([status])
+}
+
+model PoLine {
+  id              String   @id @default(cuid())
+  poId            String
+  lineNumber      Int
+  itemId          String?
+  description     String
+  orderedQty      Decimal
+  receivedQty     Decimal @default(0)
+  unitPrice       Decimal
+  totalPrice      Decimal
+  leadTime        Int?
+  notes           String?
+  status          String   @default("PENDING")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  purchaseOrder   PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Cascade)
+
+  @@unique([poId, lineNumber])
+  @@index([poId])
+}
+
+model PoAmendment {
+  id              String   @id @default(cuid())
+  poId            String
+  amendmentNumber Int
+  amendmentType   String
+  reason          String
+  previousValue   String?
+  newValue        String?
+  approvedBy      String?
+  approvedAt      DateTime?
+  createdAt       DateTime @default(now())
+
+  purchaseOrder   PurchaseOrder @relation(fields: [poId], references: [id])
+
+  @@unique([poId, amendmentNumber])
+  @@index([poId])
+}
+
+model SupplierInvoice {
+  id              String   @id @default(cuid())
+  invoiceNumber   String   @unique
+  poId            String
+  supplierId      String
+  invoiceDate     DateTime
+  dueDate         DateTime?
+  currency        String   @default("USD")
+  totalValue      Decimal
+  taxAmount       Decimal?
+  status          String   @default("PENDING")
+  matchStatus     String?
+  varianceNotes   String?
+  approvedBy      String?
+  approvedAt      DateTime?
+  paidAt          DateTime?
+  paymentRef      String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  purchaseOrder   PurchaseOrder @relation(fields: [poId], references: [id])
+  supplier        Supplier      @relation(fields: [supplierId], references: [id])
+  lines           InvoiceLine[]
+
+  @@index([invoiceNumber])
+  @@index([poId])
+  @@index([supplierId])
+  @@index([status])
+}
+
+model InvoiceLine {
+  id              String   @id @default(cuid())
+  invoiceId       String
+  description     String
+  invoicedQty     Decimal
+  invoicedPrice   Decimal
+  invoicedTotal   Decimal
+  matchQtyVariance Decimal?
+  matchPriceVariance Decimal?
+  notes           String?
+  createdAt       DateTime @default(now())
+
+  supplierInvoice SupplierInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+}
+
+model ReturnToSupplier {
+  id              String   @id @default(cuid())
+  rtsNumber       String   @unique
+  poId            String?
+  grnId           String?
+  supplierId      String
+  returnType      String   @default("REJECTION")
+  status          String   @default("DRAFT")
+  totalValue      Decimal?
+  creditNoteNumber String?
+  creditNoteValue Decimal?
+  creditNoteReceivedAt DateTime?
+  notes           String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  supplier        Supplier @relation(fields: [supplierId], references: [id])
+
+  @@index([rtsNumber])
+  @@index([supplierId])
+}
+
+// ============================================
+// 9. PURCHASE AUTHORITY DOMAIN
+// ============================================
+
+model WorkshopPurchaseAuthority {
+  id              String   @id @default(cuid())
+  workshopId      String   @unique
+  workshopName    String
+  lpaLimit        Decimal  @default(0)
+  emergencyLpaLimit Decimal @default(0)
+  monthlyCap      Decimal  @default(0)
+  currentMonthSpend Decimal @default(0)
+  currentMonth    String
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([workshopId])
+}
+
+model LpaChangeHistory {
+  id              String   @id @default(cuid())
+  workshopId      String
+  previousLimit   Decimal
+  newLimit        Decimal
+  changeReason    String
+  changedBy       String
+  effectiveFrom   DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  @@index([workshopId])
+}
+
+model PrChannelDecision {
+  id              String   @id @default(cuid())
+  prId            String   @unique
+  channel         String
+  decisionReason  String?
+  ruleMatched     String?
+  overrideBy      String?
+  overrideReason  String?
+  decidedAt       DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  purchaseRequest PurchaseRequest @relation(fields: [prId], references: [id])
+
+  @@index([prId])
+  @@index([channel])
+}
+
+model PrSplitRecord {
+  id              String   @id @default(cuid())
+  originalPrId    String
+  localPrId       String?
+  hoPrId          String?
+  splitReason     String?
+  localValue      Decimal?
+  hoValue         Decimal?
+  splitBy         String
+  splitAt         DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  @@index([originalPrId])
+}
+
+model ChannelOverrideLog {
+  id              String   @id @default(cuid())
+  prId            String?
+  poId            String?
+  overrideType    String
+  previousChannel String?
+  newChannel      String?
+  previousLimit   Decimal?
+  newLimit        Decimal?
+  reason          String
+  overriddenBy    String
+  overrideAt      DateTime @default(now())
+  hoNotified      Boolean  @default(false)
+  hoNotifiedAt    DateTime?
+  createdAt       DateTime @default(now())
+
+  @@index([prId])
+  @@index([poId])
+  @@index([overriddenBy])
+}
+
+model LocalApprovedVendorList {
+  id              String   @id @default(cuid())
+  workshopId      String
+  supplierId      String
+  approvedCategories String?
+  validFrom       DateTime @default(now())
+  validTo         DateTime?
+  isActive        Boolean  @default(true)
+  approvedBy      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  supplier        Supplier @relation(fields: [supplierId], references: [id])
+
+  @@unique([workshopId, supplierId])
+  @@index([workshopId])
+  @@index([supplierId])
+}
+
+// ============================================
+// 10. SUPPLIERS DOMAIN
+// ============================================
+
+model Supplier {
+  id              String   @id @default(cuid())
+  supplierCode    String   @unique
+  name            String
+  contactPerson   String?
+  phone           String?
+  email           String?
+  address         String?
+  city            String?
+  country         String?
+  taxId           String?
+  paymentTerms    String?
+  currency        String   @default("USD")
+  status          String   @default("ACTIVE")
+  performanceRating Decimal?
+  isHoApproved    Boolean  @default(false)
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  grnHeaders      GrnHeader[]
+  rfqSuppliers    RfqSupplier[]
+  quotations      Quotation[]
+  purchaseOrders  PurchaseOrder[]
+  invoices        SupplierInvoice[]
+  returnToSuppliers ReturnToSupplier[]
+  localApprovedVendors LocalApprovedVendorList[]
+  contacts        SupplierContact[]
+
+  @@index([supplierCode])
+  @@index([status])
+}
+
+model SupplierContact {
+  id              String   @id @default(cuid())
+  supplierId      String
+  name            String
+  title           String?
+  phone           String?
+  email           String?
+  isPrimary       Boolean  @default(false)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  supplier        Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@index([supplierId])
+}
+
+// ============================================
+// 11. FUEL & LUBRICANTS DOMAIN
+// ============================================
+
+model FuelTank {
+  id              String   @id @default(cuid())
+  tankNumber      String   @unique
+  name            String
+  fuelType        String
+  capacity        Decimal
+  currentLevel    Decimal  @default(0)
+  location        String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  issues          FuelIssue[]
+  readings        FuelReading[]
+
+  @@index([tankNumber])
+}
+
+model FuelIssue {
+  id              String   @id @default(cuid())
+  issueNumber     String   @unique
+  tankId          String
+  assetId         String?
+  jobCardId       String?
+  issuedToId      String
+  quantity        Decimal
+  previousMeterReading Decimal?
+  currentMeterReading Decimal?
+  consumptionNorm Decimal?
+  isAbnormal      Boolean  @default(false)
+  abnormalReason  String?
+  issuedAt        DateTime @default(now())
+  notes           String?
+  createdAt       DateTime @default(now())
+
+  tank            FuelTank @relation(fields: [tankId], references: [id])
+  asset           Asset?   @relation(fields: [assetId], references: [id])
+  abnormalFlags   AbnormalDetection[]
+
+  @@index([tankId])
+  @@index([assetId])
+  @@index([issuedAt])
+}
+
+model FuelReading {
+  id              String   @id @default(cuid())
+  tankId          String
+  readingValue    Decimal
+  readingAt       DateTime @default(now())
+  readingBy       String?
+  notes           String?
+  createdAt       DateTime @default(now())
+
+  tank            FuelTank @relation(fields: [tankId], references: [id])
+
+  @@index([tankId])
+  @@index([readingAt])
+}
+
+model AbnormalDetection {
+  id              String   @id @default(cuid())
+  detectionType   String
+  referenceType   String
+  referenceId     String
+  severity        String   @default("MEDIUM")
+  description     String
+  detectedAt      DateTime @default(now())
+  resolvedAt      DateTime?
+  resolvedBy      String?
+  resolutionNotes String?
+  status          String   @default("OPEN")
+  createdAt       DateTime @default(now())
+
+  fuelIssue       FuelIssue? @relation(fields: [referenceId], references: [id])
+
+  @@index([detectionType])
+  @@index([status])
+  @@index([detectedAt])
+}
+
+// ============================================
+// 12. EXTERNAL REPAIRS DOMAIN
+// ============================================
+
+model ExternalJob {
+  id              String   @id @default(cuid())
+  jobNumber       String   @unique
+  jobCardId       String?
+  assetId         String?
+  subcontractorId String?
+  jobType         String
+  description     String
+  status          String   @default("DRAFT")
+  estimatedCost   Decimal?
+  actualCost      Decimal?
+  startDate       DateTime?
+  endDate         DateTime?
+  completedAt     DateTime?
+  invoiceRef      String?
+  warrantyExpiry  DateTime?
+  notes           String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  jobCard         JobCard? @relation(fields: [jobCardId], references: [id])
+  costs           ExtJobCost[]
+  quotations      ExternalQuotation[]
+
+  @@index([jobNumber])
+  @@index([jobCardId])
+  @@index([subcontractorId])
+}
+
+model ExternalQuotation {
+  id              String   @id @default(cuid())
+  externalJobId   String
+  quotationNumber String?
+  amount          Decimal
+  currency        String   @default("USD")
+  validUntil      DateTime?
+  status          String   @default("PENDING")
+  approvedBy      String?
+  approvedAt      DateTime?
+  notes           String?
+  createdAt       DateTime @default(now())
+
+  externalJob     ExternalJob @relation(fields: [externalJobId], references: [id])
+
+  @@index([externalJobId])
+}
+
+model ExtJobCost {
+  id              String   @id @default(cuid())
+  externalJobId   String
+  costType        String
+  description     String
+  amount          Decimal
+  invoiceRef      String?
+  costDate        DateTime @default(now())
+  notes           String?
+  createdAt       DateTime @default(now())
+
+  externalJob     ExternalJob @relation(fields: [externalJobId], references: [id])
+
+  @@index([externalJobId])
+}
+
+model Subcontractor {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  name            String
+  contactPerson   String?
+  phone           String?
+  email           String?
+  address         String?
+  specialization  String?
+  status          String   @default("ACTIVE")
+  rating          Decimal?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([code])
+}
+
+// ============================================
+// 13. LABOUR DOMAIN
+// ============================================
+
+model Employee {
+  id              String   @id @default(cuid())
+  employeeNumber  String   @unique
+  name            String
+  department      String?
+  designation     String?
+  skillLevel      String?
+  hourlyRate      Decimal?
+  overtimeRate    Decimal?
+  hireDate        DateTime?
+  status          String   @default("ACTIVE")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  timeLogs        TimeLog[]
+  trainingCompletions TrainingCompletion[]
+
+  @@index([employeeNumber])
+  @@index([status])
+}
+
+model TimeLog {
+  id              String   @id @default(cuid())
+  employeeId      String
+  jobCardId       String?
+  logDate         DateTime
+  startTime       DateTime
+  endTime         DateTime?
+  breakMinutes    Int      @default(0)
+  totalMinutes    Int?
+  hourlyRate      Decimal?
+  totalCost       Decimal?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  employee        Employee @relation(fields: [employeeId], references: [id])
+  jobCard         JobCard? @relation(fields: [jobCardId], references: [id])
+
+  @@index([employeeId])
+  @@index([jobCardId])
+  @@index([logDate])
+}
+
+model Training {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  name            String
+  description     String?
+  category        String?
+  validityPeriod  Int?
+  isRequired      Boolean  @default(false)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  completions     TrainingCompletion[]
+
+  @@index([code])
+}
+
+model TrainingCompletion {
+  id              String   @id @default(cuid())
+  employeeId      String
+  trainingId      String
+  completedAt     DateTime
+  expiresAt       DateTime?
+  score           Decimal?
+  certificateRef  String?
+  notes           String?
+  createdAt       DateTime @default(now())
+
+  employee        Employee  @relation(fields: [employeeId], references: [id])
+  training        Training  @relation(fields: [trainingId], references: [id])
+
+  @@unique([employeeId, trainingId])
+  @@index([employeeId])
+  @@index([expiresAt])
+}
+
+// ============================================
+// 14. PM SCHEDULES DOMAIN
+// ============================================
+
+model PmSchedule {
+  id              String   @id @default(cuid())
+  scheduleNumber  String   @unique
+  assetId         String
+  pmType          String
+  frequency       Int      @default(1)
+  frequencyUnit   String?
+  lastExecutedAt  DateTime?
+  nextExecutionAt DateTime?
+  estimatedDuration Int?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  asset           Asset    @relation(fields: [assetId], references: [id])
+  executions      PmExecution[]
+
+  @@index([assetId])
+  @@index([nextExecutionAt])
+}
+
+model PmExecution {
+  id              String   @id @default(cuid())
+  scheduleId      String
+  jobCardId       String?
+  executionDate   DateTime
+  status          String   @default("SCHEDULED")
+  downtimeMinutes Int?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  pmSchedule      PmSchedule @relation(fields: [scheduleId], references: [id])
+
+  @@index([scheduleId])
+  @@index([executionDate])
+}
+
+model DowntimeLog {
+  id              String   @id @default(cuid())
+  assetId         String
+  jobCardId       String?
+  downtimeType    String
+  startTime       DateTime
+  endTime         DateTime?
+  totalMinutes    Int?
+  reason          String?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  asset           Asset    @relation(fields: [assetId], references: [id])
+
+  @@index([assetId])
+  @@index([startTime])
+}
+
+// ============================================
+// 15. APPROVALS DOMAIN
+// ============================================
+
+model ApprovalWorkflow {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  name            String
+  workflowType    String
+  description     String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  steps           ApprovalStepConfig[]
+  requests        ApprovalRequest[]
+
+  @@index([code])
+  @@index([workflowType])
+}
+
+model ApprovalStepConfig {
+  id              String   @id @default(cuid())
+  workflowId      String
+  stepNumber      Int
+  stepName        String
+  approverRole    String?
+  approverId      String?
+  isRequired      Boolean  @default(true)
+  slaHours        Int?
+  createdAt       DateTime @default(now())
+
+  workflow        ApprovalWorkflow @relation(fields: [workflowId], references: [id])
+
+  @@unique([workflowId, stepNumber])
+  @@index([workflowId])
+}
+
+model ApprovalRequest {
+  id              String   @id @default(cuid())
+  workflowId      String
+  referenceType   String
+  referenceId     String
+  requesterId     String
+  status          String   @default("PENDING")
+  currentStep     Int      @default(1)
+  totalSteps      Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  workflow        ApprovalWorkflow @relation(fields: [workflowId], references: [id])
+  requester       User             @relation(fields: [requesterId], references: [id])
+  steps           ApprovalStep[]
+
+  @@index([referenceType, referenceId])
+  @@index([requesterId])
+  @@index([status])
+}
+
+model ApprovalStep {
+  id              String   @id @default(cuid())
+  requestId       String
+  stepNumber      Int
+  approverId      String
+  status          String   @default("PENDING")
+  comments        String?
+  slaDueAt        DateTime?
+  actedAt         DateTime?
+  delegatedTo     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  request         ApprovalRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  approver        User            @relation(fields: [approverId], references: [id])
+
+  @@unique([requestId, stepNumber])
+  @@index([requestId])
+  @@index([approverId])
+  @@index([status])
+}
+
+model SlaConfig {
+  id              String   @id @default(cuid())
+  slaType         String   @unique
+  name            String
+  responseHours   Int?
+  completionHours Int?
+  escalationLevels Int?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([slaType])
+}
+
+// ============================================
+// 16. AUDIT & SECURITY DOMAIN
+// ============================================
+
+model AuditLog {
+  id              String   @id @default(cuid())
+  entityType      String
+  entityId        String
+  action          String
+  oldValue        String?
+  newValue        String?
+  actorId         String
+  ipAddress       String?
+  userAgent       String?
+  hash            String?
+  previousHash    String?
+  createdAt       DateTime @default(now())
+
+  actor           User?    @relation(fields: [actorId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([actorId])
+  @@index([createdAt])
+}
+
+model IntegrityCheck {
+  id              String   @id @default(cuid())
+  checkType       String
+  referenceType   String?
+  referenceId     String?
+  status          String   @default("PENDING")
+  expectedValue   String?
+  actualValue     String?
+  variance        String?
+  checkedAt       DateTime @default(now())
+  resolvedAt      DateTime?
+  resolvedBy      String?
+  resolutionNotes String?
+  createdAt       DateTime @default(now())
+
+  @@index([checkType])
+  @@index([status])
+  @@index([checkedAt])
+}
+
+// ============================================
+// 17. KPI & REPORTS DOMAIN
+// ============================================
+
+model KpiSnapshot {
+  id              String   @id @default(cuid())
+  kpiCode         String
+  kpiName         String
+  category        String
+  value           Decimal
+  target          Decimal?
+  unit            String?
+  snapshotDate    DateTime
+  period          String?
+  createdAt       DateTime @default(now())
+
+  @@index([kpiCode])
+  @@index([snapshotDate])
+  @@index([period])
+}
+
+model ReportSchedule {
+  id              String   @id @default(cuid())
+  reportName      String
+  reportType      String
+  recipients      String?
+  format          String   @default("PDF")
+  lastRunAt       DateTime?
+  nextRunAt       DateTime?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([reportType])
+  @@index([nextRunAt])
+}
+
+// ============================================
+// 18. SYSTEM CONFIG DOMAIN
+// ============================================
+
+model SystemConfig {
+  id              String   @id @default(cuid())
+  key             String   @unique
+  value           String
+  description     String?
+  category        String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([key])
+  @@index([category])
+}
+
+model BudgetLine {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  name            String
+  department      String?
+  fiscalYear      Int
+  allocatedAmount Decimal
+  committedAmount Decimal  @default(0)
+  spentAmount     Decimal  @default(0)
+  availableAmount Decimal
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([code, fiscalYear])
+  @@index([department])
+  @@index([fiscalYear])
+}
