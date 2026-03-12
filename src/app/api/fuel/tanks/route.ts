@@ -71,17 +71,20 @@ export async function GET(request: Request) {
       db.fuelTank.count({ where }),
     ]);
 
-    // Transform data
+    // Transform data - convert Decimal to number for JSON serialization
     const data = tanks.map(tank => ({
       id: tank.id,
       tankNumber: tank.tankNumber,
       name: tank.name,
       fuelType: tank.fuelType,
-      capacity: tank.capacity,
-      currentLevel: tank.currentLevel,
+      capacity: tank.capacity ? Number(tank.capacity) : 0,
+      currentLevel: tank.currentLevel ? Number(tank.currentLevel) : 0,
       location: tank.location,
       isActive: tank.isActive,
-      lastReading: tank.readings[0] || null,
+      lastReading: tank.readings[0] ? {
+        ...tank.readings[0],
+        readingValue: tank.readings[0].readingValue ? Number(tank.readings[0].readingValue) : 0,
+      } : null,
       issueCount: tank._count.issues,
       readingCount: tank._count.readings,
       createdAt: tank.createdAt,

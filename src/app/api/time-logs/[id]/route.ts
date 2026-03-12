@@ -67,8 +67,8 @@ export async function GET(
       endTime: timeLog.endTime,
       breakMinutes: timeLog.breakMinutes,
       totalMinutes: timeLog.totalMinutes,
-      hourlyRate: timeLog.hourlyRate,
-      totalCost: timeLog.totalCost,
+      hourlyRate: timeLog.hourlyRate ? Number(timeLog.hourlyRate) : null,
+      totalCost: timeLog.totalCost ? Number(timeLog.totalCost) : null,
       notes: timeLog.notes,
       createdAt: timeLog.createdAt,
     });

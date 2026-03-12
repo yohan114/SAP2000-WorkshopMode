@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useAuth } from '@/lib/auth/hooks';
 import {
   Table,
   TableBody,
@@ -61,6 +63,7 @@ interface Asset {
   status: string;
   criticality: string;
   currentLocation?: string;
+  qrCode?: string | null;
   category?: {
     id: string;
     name: string;
@@ -108,12 +111,20 @@ const criticalityColors: Record<string, string> = {
 
 export function AssetsView() {
   const { toast } = useToast();
+  const { hasPrivilege } = useAuth();
+  
+  // Check privileges
+  const canCreateAsset = hasPrivilege('ASSET_CREATE');
+  const canEditAsset = hasPrivilege('ASSET_EDIT');
+  const canDeleteAsset = hasPrivilege('ASSET_DELETE');
+  
   const [assets, setAssets] = useState<Asset[]>([]);
   const [categories, setCategories] = useState<AssetCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+  const [qrDialogAsset, setQrDialogAsset] = useState<Asset | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 0 });
@@ -253,12 +264,14 @@ export function AssetsView() {
           <p className="text-slate-500">Manage and track all workshop assets</p>
         </div>
         <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-emerald-600 hover:bg-emerald-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Register Asset
-            </Button>
-          </DialogTrigger>
+          {canCreateAsset && (
+            <DialogTrigger asChild>
+              <Button className="bg-emerald-600 hover:bg-emerald-700">
+                <Plus className="h-4 w-4 mr-2" />
+                Register Asset
+              </Button>
+            </DialogTrigger>
+          )}
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Register New Asset</DialogTitle>
@@ -521,13 +534,21 @@ export function AssetsView() {
                               </Button>
                             </DialogTrigger>
                             <DialogContent className="max-w-2xl">
-                              <AssetDetailDialog asset={asset} />
+                              <AssetDetailDialog 
+                                asset={asset} 
+                                onViewQr={() => {
+                                  setSelectedAsset(null);
+                                  setQrDialogAsset(asset);
+                                }}
+                              />
                             </DialogContent>
                           </Dialog>
-                          <Button variant="ghost" size="icon">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon">
+                          {canEditAsset && (
+                            <Button variant="ghost" size="icon" title="Edit Asset">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          )}
+                          <Button variant="ghost" size="icon" onClick={() => setQrDialogAsset(asset)} title="View QR Code">
                             <QrCode className="h-4 w-4" />
                           </Button>
                         </div>
@@ -606,11 +627,88 @@ export function AssetsView() {
           </CardContent>
         </Card>
       </div>
+
+      {/* QR Code Dialog */}
+      <Dialog open={!!qrDialogAsset} onOpenChange={() => setQrDialogAsset(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <QrCode className="h-5 w-5" />
+              Asset QR Code
+            </DialogTitle>
+            <DialogDescription>
+              Scan this code to quickly access asset information
+            </DialogDescription>
+          </DialogHeader>
+          {qrDialogAsset && (
+            <div className="flex flex-col items-center py-6">
+              <div className="bg-white p-6 rounded-xl shadow-lg border">
+                <QRCodeSVG 
+                  value={qrDialogAsset.qrCode || `WCP-${qrDialogAsset.assetNumber}`}
+                  size={200}
+                  level="H"
+                  includeMargin={true}
+                />
+              </div>
+              <div className="mt-6 text-center">
+                <p className="font-semibold text-lg">{qrDialogAsset.assetNumber}</p>
+                <p className="text-slate-500">{qrDialogAsset.name}</p>
+                <p className="text-xs text-slate-400 mt-2 font-mono">
+                  {qrDialogAsset.qrCode || `WCP-${qrDialogAsset.assetNumber}`}
+                </p>
+              </div>
+              <div className="flex gap-2 mt-4">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    const qrData = qrDialogAsset.qrCode || `WCP-${qrDialogAsset.assetNumber}`;
+                    navigator.clipboard.writeText(qrData);
+                    toast({
+                      title: 'Copied!',
+                      description: 'QR code value copied to clipboard',
+                    });
+                  }}
+                >
+                  Copy Code
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    const svg = document.querySelector('.bg-white svg');
+                    if (svg) {
+                      const svgData = new XMLSerializer().serializeToString(svg);
+                      const canvas = document.createElement('canvas');
+                      const ctx = canvas.getContext('2d');
+                      const img = new Image();
+                      img.onload = () => {
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        ctx?.fillRect(0, 0, canvas.width, canvas.height);
+                        ctx?.drawImage(img, 0, 0);
+                        const pngFile = canvas.toDataURL('image/png');
+                        const downloadLink = document.createElement('a');
+                        downloadLink.download = `QR-${qrDialogAsset.assetNumber}.png`;
+                        downloadLink.href = pngFile;
+                        downloadLink.click();
+                      };
+                      img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+                    }
+                  }}
+                >
+                  Download PNG
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-function AssetDetailDialog({ asset }: { asset: Asset }) {
+function AssetDetailDialog({ asset, onViewQr }: { asset: Asset; onViewQr?: () => void }) {
   return (
     <>
       <DialogHeader>
@@ -691,7 +789,7 @@ function AssetDetailDialog({ asset }: { asset: Asset }) {
           <div>
             <h4 className="font-semibold text-sm text-slate-500 mb-2">Quick Actions</h4>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={onViewQr}>
                 <QrCode className="h-4 w-4 mr-2" />
                 View QR
               </Button>

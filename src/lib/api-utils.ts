@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/options';
 
 /**
  * Standard API Response Types
@@ -186,4 +188,77 @@ export function getDateRangeFilter(
   }
   
   return filter;
+}
+
+/**
+ * Get current authenticated user from session
+ */
+export async function getCurrentUser() {
+  const session = await getServerSession(authOptions);
+  return session?.user || null;
+}
+
+/**
+ * Check if user has a specific privilege
+ */
+export function hasPrivilege(user: { privileges: string[] } | null, privilegeCode: string): boolean {
+  if (!user) return false;
+  return user.privileges.includes(privilegeCode);
+}
+
+/**
+ * Check if user has any of the specified privileges
+ */
+export function hasAnyPrivilege(user: { privileges: string[] } | null, privilegeCodes: string[]): boolean {
+  if (!user) return false;
+  return privilegeCodes.some(code => user.privileges.includes(code));
+}
+
+/**
+ * Require authentication - returns user or throws unauthorized response
+ */
+export async function requireAuth() {
+  const user = await getCurrentUser();
+  if (!user) {
+    throw new Error('UNAUTHORIZED');
+  }
+  return user;
+}
+
+/**
+ * Require specific privilege - returns user or throws forbidden response
+ */
+export async function requirePrivilege(privilegeCode: string) {
+  const user = await requireAuth();
+  if (!hasPrivilege(user, privilegeCode)) {
+    throw new Error('FORBIDDEN');
+  }
+  return user;
+}
+
+/**
+ * Require any of the specified privileges
+ */
+export async function requireAnyPrivilege(privilegeCodes: string[]) {
+  const user = await requireAuth();
+  if (!hasAnyPrivilege(user, privilegeCodes)) {
+    throw new Error('FORBIDDEN');
+  }
+  return user;
+}
+
+/**
+ * Handle API errors including auth errors
+ */
+export function handleApiError(error: unknown): NextResponse<ApiResponse> {
+  if (error instanceof Error) {
+    if (error.message === 'UNAUTHORIZED') {
+      return apiUnauthorized('Authentication required');
+    }
+    if (error.message === 'FORBIDDEN') {
+      return apiForbidden('You do not have permission to perform this action');
+    }
+  }
+  console.error('API error:', error);
+  return apiError('An unexpected error occurred', 500);
 }

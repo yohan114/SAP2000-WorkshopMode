@@ -1,5 +1,11 @@
 import { db } from '@/lib/db';
-import { apiSuccess, apiError, apiNotFound } from '@/lib/api-utils';
+import { 
+  apiSuccess, 
+  apiError, 
+  apiNotFound, 
+  handleApiError, 
+  requirePrivilege 
+} from '@/lib/api-utils';
 import { z } from 'zod';
 
 // Schema for updating asset
@@ -18,12 +24,14 @@ const updateAssetSchema = z.object({
   warrantyExpiry: z.string().optional(),
 });
 
-// GET /api/assets/[id] - Get single asset
+// GET /api/assets/[id] - Get single asset (requires ASSET_VIEW)
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await requirePrivilege('ASSET_VIEW');
+    
     const { id } = await params;
 
     const asset = await db.asset.findUnique({
@@ -90,17 +98,18 @@ export async function GET(
       pmSchedules,
     });
   } catch (error) {
-    console.error('Get asset error:', error);
-    return apiError('Failed to fetch asset', 500);
+    return handleApiError(error);
   }
 }
 
-// PUT /api/assets/[id] - Update asset
+// PUT /api/assets/[id] - Update asset (requires ASSET_EDIT)
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await requirePrivilege('ASSET_EDIT');
+    
     const { id } = await params;
     const body = await request.json();
 
@@ -142,17 +151,18 @@ export async function PUT(
 
     return apiSuccess(asset, 'Asset updated successfully');
   } catch (error) {
-    console.error('Update asset error:', error);
-    return apiError('Failed to update asset', 500);
+    return handleApiError(error);
   }
 }
 
-// DELETE /api/assets/[id] - Soft delete asset
+// DELETE /api/assets/[id] - Soft delete asset (requires ASSET_DELETE)
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await requirePrivilege('ASSET_DELETE');
+    
     const { id } = await params;
 
     // Check if asset exists
@@ -184,7 +194,6 @@ export async function DELETE(
 
     return apiSuccess(null, 'Asset deleted successfully');
   } catch (error) {
-    console.error('Delete asset error:', error);
-    return apiError('Failed to delete asset', 500);
+    return handleApiError(error);
   }
 }

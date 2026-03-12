@@ -121,6 +121,7 @@ interface Employee {
   id: string;
   employeeNumber: string;
   name: string;
+  status?: string;
 }
 
 const FUEL_TYPES = ['DIESEL', 'PETROL', 'OIL', 'KEROSENE', 'LUBRICANT'];
@@ -157,7 +158,7 @@ export function FuelControlView() {
   
   // Search and filter
   const [search, setSearch] = useState('');
-  const [tankFilter, setTankFilter] = useState('');
+  const [tankFilter, setTankFilter] = useState('all');
   
   // Dialog states
   const [isTankDialogOpen, setIsTankDialogOpen] = useState(false);
@@ -181,8 +182,8 @@ export function FuelControlView() {
   
   const [issueForm, setIssueForm] = useState({
     tankId: '',
-    assetId: '',
-    jobCardId: '',
+    assetId: 'none',
+    jobCardId: 'none',
     issuedToId: '',
     quantity: '',
     previousMeterReading: '',
@@ -240,7 +241,8 @@ export function FuelControlView() {
       const res = await fetch('/api/fuel/abnormal?limit=50');
       const data = await res.json();
       if (data.success) {
-        setAbnormals(data.data);
+        // API returns { data: { data: [...], summary: {...} } }
+        setAbnormals(data.data?.data || data.data || []);
       }
     } catch (error) {
       console.error('Failed to fetch abnormals:', error);
@@ -375,7 +377,7 @@ export function FuelControlView() {
           variant: data.data.isAbnormal ? 'destructive' : 'default'
         });
         setIsIssueDialogOpen(false);
-        setIssueForm({ tankId: '', assetId: '', jobCardId: '', issuedToId: '', quantity: '', previousMeterReading: '', currentMeterReading: '', consumptionNorm: '', notes: '' });
+        setIssueForm({ tankId: '', assetId: 'none', jobCardId: 'none', issuedToId: '', quantity: '', previousMeterReading: '', currentMeterReading: '', consumptionNorm: '', notes: '' });
         fetchIssues();
         fetchTanks();
         fetchAbnormals();
@@ -593,7 +595,7 @@ export function FuelControlView() {
                     <Select value={issueForm.assetId} onValueChange={(v) => setIssueForm({ ...issueForm, assetId: v })}>
                       <SelectTrigger><SelectValue placeholder="Select asset" /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="none">None</SelectItem>
                         {assets.map((asset) => (
                           <SelectItem key={asset.id} value={asset.id}>
                             {asset.assetNumber} - {asset.name}
@@ -936,7 +938,7 @@ export function FuelControlView() {
                       <SelectValue placeholder="All Tanks" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Tanks</SelectItem>
+                      <SelectItem value="all">All Tanks</SelectItem>
                       {tanks.map((tank) => (
                         <SelectItem key={tank.id} value={tank.id}>{tank.tankNumber}</SelectItem>
                       ))}
@@ -972,7 +974,7 @@ export function FuelControlView() {
                     </TableHeader>
                     <TableBody>
                       {issues
-                        .filter(i => !tankFilter || i.tankId === tankFilter)
+                        .filter(i => tankFilter === 'all' || i.tankId === tankFilter)
                         .map((issue) => (
                           <TableRow key={issue.id}>
                             <TableCell className="font-medium">{issue.issueNumber}</TableCell>
@@ -1041,7 +1043,7 @@ export function FuelControlView() {
                   Tank Readings {selectedTank && `- ${selectedTank.name}`}
                 </CardTitle>
                 <Select 
-                  value={selectedTank?.id || ''} 
+                  value={selectedTank?.id || undefined} 
                   onValueChange={(v) => {
                     const tank = tanks.find(t => t.id === v);
                     setSelectedTank(tank || null);

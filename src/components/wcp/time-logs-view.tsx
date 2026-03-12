@@ -96,7 +96,7 @@ export function TimeLogsView() {
   const [selectedLog, setSelectedLog] = useState<TimeLog | null>(null);
   const [editFormData, setEditFormData] = useState({
     employeeId: '',
-    jobCardId: '',
+    jobCardId: 'none',
     logDate: '',
     startTime: '',
     endTime: '',
@@ -108,7 +108,7 @@ export function TimeLogsView() {
   // Form state
   const [formData, setFormData] = useState({
     employeeId: '',
-    jobCardId: '',
+    jobCardId: 'none',
     logDate: new Date().toISOString().split('T')[0],
     startTime: '',
     endTime: '',
@@ -191,7 +191,7 @@ export function TimeLogsView() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           employeeId: formData.employeeId,
-          jobCardId: formData.jobCardId || undefined,
+          jobCardId: formData.jobCardId === 'none' ? undefined : formData.jobCardId,
           logDate: formData.logDate,
           startTime: formData.startTime ? `${formData.logDate}T${formData.startTime}:00` : undefined,
           endTime: formData.endTime ? `${formData.logDate}T${formData.endTime}:00` : undefined,
@@ -207,7 +207,7 @@ export function TimeLogsView() {
         setIsCreateOpen(false);
         setFormData({
           employeeId: '',
-          jobCardId: '',
+          jobCardId: 'none',
           logDate: new Date().toISOString().split('T')[0],
           startTime: '',
           endTime: '',
@@ -243,7 +243,7 @@ export function TimeLogsView() {
     setSelectedLog(log);
     setEditFormData({
       employeeId: log.employee.id,
-      jobCardId: log.jobCard?.id || '',
+      jobCardId: log.jobCard?.id || 'none',
       logDate: new Date(log.logDate).toISOString().split('T')[0],
       startTime: log.startTime ? new Date(log.startTime).toTimeString().slice(0, 5) : '',
       endTime: log.endTime ? new Date(log.endTime).toTimeString().slice(0, 5) : '',
@@ -264,7 +264,7 @@ export function TimeLogsView() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           employeeId: editFormData.employeeId,
-          jobCardId: editFormData.jobCardId || null,
+          jobCardId: editFormData.jobCardId === 'none' ? null : editFormData.jobCardId,
           logDate: editFormData.logDate,
           startTime: editFormData.startTime ? `${editFormData.logDate}T${editFormData.startTime}:00` : undefined,
           endTime: editFormData.endTime ? `${editFormData.logDate}T${editFormData.endTime}:00` : null,
@@ -340,7 +340,7 @@ export function TimeLogsView() {
             <div className="space-y-4 mt-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Employee *</label>
-                <Select value={formData.employeeId} onValueChange={(v) => setFormData({ ...formData, employeeId: v })}>
+                <Select value={formData.employeeId || undefined} onValueChange={(v) => setFormData({ ...formData, employeeId: v })}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select employee" />
                   </SelectTrigger>
@@ -360,7 +360,7 @@ export function TimeLogsView() {
                     <SelectValue placeholder="Select job card" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     {jobCards.map((jc) => (
                       <SelectItem key={jc.id} value={jc.id}>
                         {jc.jobCardNumber} - {jc.asset?.name || 'Unknown Asset'}
@@ -691,7 +691,7 @@ export function TimeLogsView() {
           <div className="space-y-4 mt-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Employee *</label>
-              <Select value={editFormData.employeeId} onValueChange={(v) => setEditFormData({ ...editFormData, employeeId: v })}>
+              <Select value={editFormData.employeeId || undefined} onValueChange={(v) => setEditFormData({ ...editFormData, employeeId: v })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select employee" />
                 </SelectTrigger>
@@ -711,7 +711,7 @@ export function TimeLogsView() {
                   <SelectValue placeholder="Select job card" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {jobCards.map((jc) => (
                     <SelectItem key={jc.id} value={jc.id}>
                       {jc.jobCardNumber} - {jc.asset?.name || 'Unknown Asset'}

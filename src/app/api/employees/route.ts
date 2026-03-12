@@ -58,7 +58,14 @@ export async function GET(request: Request) {
       db.employee.count({ where }),
     ]);
 
-    return apiPaginated(employees, total, page, limit);
+    // Transform data - convert Decimal to number for JSON serialization
+    const data = employees.map(emp => ({
+      ...emp,
+      hourlyRate: emp.hourlyRate ? Number(emp.hourlyRate) : null,
+      overtimeRate: emp.overtimeRate ? Number(emp.overtimeRate) : null,
+    }));
+
+    return apiPaginated(data, total, page, limit);
   } catch (error) {
     console.error('Get employees error:', error);
     return apiError('Failed to fetch employees', 500);

@@ -52,17 +52,16 @@ export async function GET(request: Request) {
       where.detectedAt = dateFilter;
     }
 
-    // Build orderBy
-    const orderBy: Record<string, unknown> = {};
+    // Build orderBy - use array for multiple sort criteria
+    let orderBy: Record<string, unknown>[];
     if (sortBy) {
-      orderBy[sortBy] = sortOrder;
+      orderBy = [{ [sortBy]: sortOrder }];
     } else {
       // Prioritize HIGH severity and oldest first for OPEN items
       if (status === 'OPEN') {
-        orderBy.severity = 'desc'; // HIGH first
-        orderBy.detectedAt = 'asc'; // Oldest first
+        orderBy = [{ severity: 'desc' }, { detectedAt: 'asc' }];
       } else {
-        orderBy.detectedAt = 'desc';
+        orderBy = [{ detectedAt: 'desc' }];
       }
     }
 
@@ -137,7 +136,7 @@ export async function GET(request: Request) {
         fuelIssue: detection.fuelIssue ? {
           id: detection.fuelIssue.id,
           issueNumber: detection.fuelIssue.issueNumber,
-          quantity: detection.fuelIssue.quantity,
+          quantity: detection.fuelIssue.quantity ? Number(detection.fuelIssue.quantity) : 0,
           tank: detection.fuelIssue.tank,
           asset: detection.fuelIssue.asset,
         } : null,

@@ -204,7 +204,7 @@ export function PurchaseOrdersView() {
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [submitting, setSubmitting] = useState(false);
@@ -294,7 +294,7 @@ export function PurchaseOrdersView() {
       setLoading(true);
       const params = new URLSearchParams({ page: page.toString(), limit: limit.toString() });
       if (search) params.set('search', search);
-      if (statusFilter) params.set('status', statusFilter);
+      if (statusFilter !== 'all') params.set('status', statusFilter);
 
       const res = await fetch(`/api/purchase-orders?${params}`);
       const data = await res.json();
@@ -868,7 +868,7 @@ export function PurchaseOrdersView() {
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-44"><SelectValue placeholder="All Status" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Status</SelectItem>
+                    <SelectItem value="all">All Status</SelectItem>
                     <SelectItem value="DRAFT">Draft</SelectItem>
                     <SelectItem value="PENDING_APPROVAL">Pending Approval</SelectItem>
                     <SelectItem value="APPROVED">Approved</SelectItem>

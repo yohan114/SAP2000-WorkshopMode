@@ -135,7 +135,7 @@ export function MaterialIssuesView() {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   
@@ -186,7 +186,7 @@ export function MaterialIssuesView() {
         limit: limit.toString(),
       });
       if (search) params.set('search', search);
-      if (statusFilter) params.set('status', statusFilter);
+      if (statusFilter !== 'all') params.set('status', statusFilter);
 
       const res = await fetch(`/api/material-issues?${params}`);
       const data = await res.json();
@@ -240,11 +240,14 @@ export function MaterialIssuesView() {
     try {
       const res = await fetch('/api/material-issues/from-mr');
       const data = await res.json();
-      if (data.success) {
+      if (data.success && Array.isArray(data.data)) {
         setAvailableMRs(data.data);
+      } else {
+        setAvailableMRs([]);
       }
     } catch (error) {
       console.error('Failed to fetch MRs:', error);
+      setAvailableMRs([]);
     }
   };
 
@@ -252,12 +255,12 @@ export function MaterialIssuesView() {
     try {
       const res = await fetch(`/api/material-issues/from-mr?mrId=${mrId}`);
       const data = await res.json();
-      if (data.success) {
-        setSelectedMR(data);
-        setMRLines(data.lines || []);
+      if (data.success && data.data) {
+        setSelectedMR(data.data);
+        setMRLines(data.data.lines || []);
         // Initialize selections with max remaining qty
         const selections: Record<string, number> = {};
-        data.lines?.forEach((line: { id: string; remainingToIssue: number }) => {
+        data.data.lines?.forEach((line: { id: string; remainingToIssue: number }) => {
           selections[line.id] = line.remainingToIssue;
         });
         setIssueSelections(selections);
@@ -466,7 +469,7 @@ export function MaterialIssuesView() {
 
                       <div className="space-y-2">
                         <Label>Select Store *</Label>
-                        <Select value={selectedStoreId} onValueChange={setSelectedStoreId}>
+                        <Select value={selectedStoreId || undefined} onValueChange={setSelectedStoreId}>
                           <SelectTrigger><SelectValue placeholder="Select store" /></SelectTrigger>
                           <SelectContent>
                             {stores.map((store) => (
@@ -546,7 +549,7 @@ export function MaterialIssuesView() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label>Store *</Label>
-                    <Select value={formData.storeId} onValueChange={(v) => setFormData({ ...formData, storeId: v })}>
+                    <Select value={formData.storeId || undefined} onValueChange={(v) => setFormData({ ...formData, storeId: v })}>
                       <SelectTrigger><SelectValue placeholder="Select store" /></SelectTrigger>
                       <SelectContent>
                         {stores.map((store) => (
@@ -557,7 +560,7 @@ export function MaterialIssuesView() {
                   </div>
                   <div className="space-y-2">
                     <Label>Issue To *</Label>
-                    <Select value={formData.issuedToId} onValueChange={(v) => setFormData({ ...formData, issuedToId: v })}>
+                    <Select value={formData.issuedToId || undefined} onValueChange={(v) => setFormData({ ...formData, issuedToId: v })}>
                       <SelectTrigger><SelectValue placeholder="Select user" /></SelectTrigger>
                       <SelectContent>
                         {users.map((u) => (
@@ -591,7 +594,7 @@ export function MaterialIssuesView() {
                   {formData.lines.map((line, index) => (
                     <div key={index} className="grid grid-cols-12 gap-2 items-end">
                       <div className="col-span-5">
-                        <Select value={line.itemId} onValueChange={(v) => {
+                        <Select value={line.itemId || undefined} onValueChange={(v) => {
                           const newLines = [...formData.lines];
                           const selectedItem = items.find(i => i.id === v);
                           newLines[index] = { ...newLines[index], itemId: v, unitCost: selectedItem ? '' : newLines[index].unitCost };
@@ -689,7 +692,7 @@ export function MaterialIssuesView() {
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-40"><SelectValue placeholder="All Status" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Status</SelectItem>
+                <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="DRAFT">Draft</SelectItem>
                 <SelectItem value="ISSUED">Issued</SelectItem>
                 <SelectItem value="PARTIALLY_RETURNED">Partial Return</SelectItem>

@@ -98,16 +98,28 @@ export async function GET(request: Request) {
       db.fuelIssue.count({ where }),
     ]);
 
-    // Transform data
+    // Get unique issuedToIds and fetch employees
+    const issuedToIds = [...new Set(issues.map(i => i.issuedToId).filter(Boolean))];
+    const users = issuedToIds.length > 0 ? await db.user.findMany({
+      where: { id: { in: issuedToIds } },
+      select: { id: true, name: true, employeeId: true }
+    }) : [];
+    const userMap = new Map(users.map(u => [u.id, { id: u.id, name: u.name, employeeNumber: u.employeeId || '' }]));
+
+    // Transform data - convert Decimal to number for JSON serialization
     const data = issues.map(issue => ({
       id: issue.id,
       issueNumber: issue.issueNumber,
+      tankId: issue.tankId,
+      assetId: issue.assetId,
+      issuedToId: issue.issuedToId,
       tank: issue.tank,
       asset: issue.asset,
-      quantity: issue.quantity,
-      previousMeterReading: issue.previousMeterReading,
-      currentMeterReading: issue.currentMeterReading,
-      consumptionNorm: issue.consumptionNorm,
+      issuedTo: userMap.get(issue.issuedToId) || null,
+      quantity: issue.quantity ? Number(issue.quantity) : 0,
+      previousMeterReading: issue.previousMeterReading ? Number(issue.previousMeterReading) : null,
+      currentMeterReading: issue.currentMeterReading ? Number(issue.currentMeterReading) : null,
+      consumptionNorm: issue.consumptionNorm ? Number(issue.consumptionNorm) : null,
       isAbnormal: issue.isAbnormal,
       abnormalReason: issue.abnormalReason,
       issuedAt: issue.issuedAt,

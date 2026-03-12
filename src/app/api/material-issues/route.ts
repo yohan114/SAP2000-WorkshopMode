@@ -113,7 +113,7 @@ export async function GET(request: Request) {
       db.materialIssue.count({ where }),
     ]);
 
-    // Transform data
+    // Transform data - convert Decimal to number for JSON serialization
     const data = materialIssues.map(mi => ({
       id: mi.id,
       miNumber: mi.miNumber,
@@ -123,14 +123,14 @@ export async function GET(request: Request) {
       materialRequest: mi.materialRequest,
       issueType: mi.issueType,
       status: mi.status,
-      totalValue: mi.totalValue,
+      totalValue: mi.totalValue ? Number(mi.totalValue) : 0,
       lineCount: mi._count.lines,
       lines: mi.lines.map(line => ({
         id: line.id,
         item: line.item,
-        issuedQty: line.issuedQty,
-        unitCost: line.unitCost,
-        totalCost: line.totalCost,
+        issuedQty: line.issuedQty ? Number(line.issuedQty) : 0,
+        unitCost: line.unitCost ? Number(line.unitCost) : 0,
+        totalCost: line.totalCost ? Number(line.totalCost) : 0,
         serialNumber: line.serialNumber,
         batchNumber: line.batchNumber,
       })),

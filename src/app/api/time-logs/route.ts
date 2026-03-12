@@ -95,7 +95,7 @@ export async function GET(request: Request) {
       db.timeLog.count({ where }),
     ]);
 
-    // Transform data
+    // Transform data - convert Decimal to number for JSON serialization
     const data = timeLogs.map(tl => ({
       id: tl.id,
       employee: tl.employee,
@@ -105,8 +105,8 @@ export async function GET(request: Request) {
       endTime: tl.endTime,
       breakMinutes: tl.breakMinutes,
       totalMinutes: tl.totalMinutes,
-      hourlyRate: tl.hourlyRate,
-      totalCost: tl.totalCost,
+      hourlyRate: tl.hourlyRate ? Number(tl.hourlyRate) : null,
+      totalCost: tl.totalCost ? Number(tl.totalCost) : null,
       notes: tl.notes,
       createdAt: tl.createdAt,
     }));

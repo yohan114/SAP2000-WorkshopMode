@@ -300,8 +300,8 @@ export async function GET(request: Request) {
       },
     });
 
-    return apiSuccess({
-      data: mrs.map(mr => ({
+    return apiSuccess(
+      mrs.map(mr => ({
         id: mr.id,
         mrNumber: mr.mrNumber,
         status: mr.status,
@@ -310,8 +310,8 @@ export async function GET(request: Request) {
         requestor: mr.requestor,
         linesCount: mr._count.lines,
         createdAt: mr.createdAt,
-      })),
-    });
+      }))
+    );
   } catch (error) {
     console.error('Get MRs for MI error:', error);
     return apiError('Failed to fetch material requests', 500);

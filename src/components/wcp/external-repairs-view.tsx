@@ -194,9 +194,9 @@ export function ExternalRepairsView() {
   
   // Search and filter
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
-  const [subcontractorFilter, setSubcontractorFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [subcontractorFilter, setSubcontractorFilter] = useState('all');
   
   // Dialog states
   const [isJobDialogOpen, setIsJobDialogOpen] = useState(false);
@@ -209,8 +209,8 @@ export function ExternalRepairsView() {
   // Form states
   const [jobForm, setJobForm] = useState({
     subcontractorId: '',
-    jobCardId: '',
-    assetId: '',
+    jobCardId: 'none',
+    assetId: 'none',
     jobType: 'REPAIR',
     description: '',
     estimatedCost: '',
@@ -708,7 +708,7 @@ export function ExternalRepairsView() {
                     <Select value={jobForm.jobCardId} onValueChange={(v) => setJobForm({ ...jobForm, jobCardId: v })}>
                       <SelectTrigger><SelectValue placeholder="Select job card" /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="none">None</SelectItem>
                         {jobCards.map((jc) => (
                           <SelectItem key={jc.id} value={jc.id}>{jc.jobCardNumber}</SelectItem>
                         ))}
@@ -720,7 +720,7 @@ export function ExternalRepairsView() {
                     <Select value={jobForm.assetId} onValueChange={(v) => setJobForm({ ...jobForm, assetId: v })}>
                       <SelectTrigger><SelectValue placeholder="Select asset" /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="none">None</SelectItem>
                         {assets.map((asset) => (
                           <SelectItem key={asset.id} value={asset.id}>
                             {asset.assetNumber} - {asset.name}
@@ -887,7 +887,7 @@ export function ExternalRepairsView() {
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-44"><SelectValue placeholder="All Status" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Status</SelectItem>
+                    <SelectItem value="all">All Status</SelectItem>
                     {Object.keys(STATUS_COLORS).map((status) => (
                       <SelectItem key={status} value={status}>{status.replace(/_/g, ' ')}</SelectItem>
                     ))}
@@ -896,7 +896,7 @@ export function ExternalRepairsView() {
                 <Select value={typeFilter} onValueChange={setTypeFilter}>
                   <SelectTrigger className="w-40"><SelectValue placeholder="All Types" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Types</SelectItem>
+                    <SelectItem value="all">All Types</SelectItem>
                     {Object.entries(JOB_TYPES).map(([key, label]) => (
                       <SelectItem key={key} value={key}>{label}</SelectItem>
                     ))}
@@ -905,7 +905,7 @@ export function ExternalRepairsView() {
                 <Select value={subcontractorFilter} onValueChange={setSubcontractorFilter}>
                   <SelectTrigger className="w-48"><SelectValue placeholder="All Subcontractors" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Subcontractors</SelectItem>
+                    <SelectItem value="all">All Subcontractors</SelectItem>
                     {subcontractors.map((sub) => (
                       <SelectItem key={sub.id} value={sub.id}>{sub.name}</SelectItem>
                     ))}

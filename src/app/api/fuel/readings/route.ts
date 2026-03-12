@@ -113,14 +113,17 @@ export async function GET(request: Request) {
 
         return {
           id: reading.id,
-          readingValue: reading.readingValue,
+          readingValue: reading.readingValue ? Number(reading.readingValue) : 0,
           readingAt: reading.readingAt,
           readingBy: reading.readingBy,
           notes: reading.notes,
           createdAt: reading.createdAt,
-          tank: reading.tank,
+          tank: {
+            ...reading.tank,
+            capacity: reading.tank.capacity ? Number(reading.tank.capacity) : 0,
+          },
           capacityPercent,
-          previousReadingValue: previousReading?.readingValue ?? null,
+          previousReadingValue: previousReading?.readingValue ? Number(previousReading.readingValue) : null,
           previousReadingAt: previousReading?.readingAt ?? null,
           consumption, // Negative = fuel added, Positive = fuel consumed
         };
