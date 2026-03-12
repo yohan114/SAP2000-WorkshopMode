@@ -1638,6 +1638,7 @@ model Employee {
 
   timeLogs        TimeLog[]
   trainingCompletions TrainingCompletion[]
+  technicianSkills TechnicianSkill[]
 
   @@index([employeeNumber])
   @@index([status])
@@ -1700,6 +1701,49 @@ model TrainingCompletion {
   @@unique([employeeId, trainingId])
   @@index([employeeId])
   @@index([expiresAt])
+}
+
+model Skill {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  name            String
+  category        String   @default("GENERAL") // MECHANICAL | ELECTRICAL | HYDRAULIC | WELDING | BODY | GENERAL
+  level           Int      @default(1) // 1=Basic, 2=Intermediate, 3=Advanced, 4=Expert
+  description     String?
+  expires         Boolean  @default(false)
+  validityDays    Int?
+  certifyingBody  String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  technicianSkills TechnicianSkill[]
+
+  @@index([code])
+  @@index([category])
+}
+
+model TechnicianSkill {
+  id              String   @id @default(cuid())
+  employeeId      String
+  skillId         String
+  status          String   @default("ACTIVE") // ACTIVE | EXPIRED | SUSPENDED
+  awardedDate     DateTime @default(now())
+  expiryDate      DateTime?
+  certificateUrl  String?
+  trainingRef     String?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  employee        Employee @relation(fields: [employeeId], references: [id])
+  skill           Skill    @relation(fields: [skillId], references: [id])
+
+  @@unique([employeeId, skillId])
+  @@index([employeeId])
+  @@index([skillId])
+  @@index([status])
+  @@index([expiryDate])
 }
 
 // ============================================

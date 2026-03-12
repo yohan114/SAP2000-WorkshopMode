@@ -34,7 +34,8 @@ import {
   Shield,
   Loader2,
   Fuel,
-  ExternalLink
+  ExternalLink,
+  GraduationCap
 } from 'lucide-react';
 import { DashboardView } from '@/components/wcp/dashboard-view';
 import { AssetsView } from '@/components/wcp/assets-view';
@@ -47,6 +48,7 @@ import { PurchaseOrdersView } from '@/components/wcp/purchase-orders-view';
 import { ReportsView } from '@/components/wcp/reports-view';
 import { FuelControlView } from '@/components/wcp/fuel-control-view';
 import { ExternalRepairsView } from '@/components/wcp/external-repairs-view';
+import { LabourTrainingView } from '@/components/wcp/labour-training-view';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useRouter } from 'next/navigation';
 
@@ -318,6 +320,13 @@ export default function Home() {
                 <span className="text-sm">External</span>
               </TabsTrigger>
               <TabsTrigger 
+                value="labour" 
+                className="flex items-center gap-2 data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-700 rounded-lg px-4"
+              >
+                <GraduationCap className="h-4 w-4" />
+                <span className="text-sm">Training</span>
+              </TabsTrigger>
+              <TabsTrigger 
                 value="reports" 
                 className="flex items-center gap-2 data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-700 rounded-lg px-4"
               >
@@ -401,6 +410,13 @@ export default function Home() {
                 <span className="text-xs">External</span>
               </TabsTrigger>
               <TabsTrigger 
+                value="labour" 
+                className="flex flex-col items-center gap-1 data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-700 rounded-lg px-3 py-2 min-w-[60px]"
+              >
+                <GraduationCap className="h-4 w-4" />
+                <span className="text-xs">Training</span>
+              </TabsTrigger>
+              <TabsTrigger 
                 value="reports" 
                 className="flex flex-col items-center gap-1 data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-700 rounded-lg px-3 py-2 min-w-[60px]"
               >
@@ -449,6 +465,10 @@ export default function Home() {
 
           <TabsContent value="external" className="flex-1 mt-0 p-4 sm:p-6 lg:p-8">
             <ExternalRepairsView />
+          </TabsContent>
+
+          <TabsContent value="labour" className="flex-1 mt-0 p-4 sm:p-6 lg:p-8">
+            <LabourTrainingView />
           </TabsContent>
 
           <TabsContent value="reports" className="flex-1 mt-0 p-4 sm:p-6 lg:p-8">
