@@ -5,9 +5,8 @@ npm-debug.log
 README.md
 .next
 .git
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
-test
+.env
+.env.*
+!.env.example
 *.log
-local-*
+docker-compose.yml

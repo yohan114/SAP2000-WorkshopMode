@@ -12,20 +12,20 @@ async function main() {
   await seedItemCategories();
   await seedStores();
   await seedAssetCategories();
-  await seedAssets();
-  await seedItems();
-  await seedSuppliers();
-  await seedPurchaseAuthority();
-  await seedSlaConfigs();
-  await seedApprovalWorkflows();
-  await seedFuelTanks();
-  await seedTrainings();
-  await seedEmployees();
-  await seedBudgetLines();
-  await seedJobCards();
-  await seedMaterialRequests();
-  await seedMaterialIssues();
-  await seedTimeLogs();
+//   await seedAssets();
+//   await seedItems();
+//   await seedSuppliers();
+//   await seedPurchaseAuthority();
+//   await seedSlaConfigs();
+//   await seedApprovalWorkflows();
+//   await seedFuelTanks();
+//   await seedTrainings();
+//   await seedEmployees();
+//   await seedBudgetLines();
+//   await seedJobCards();
+//   await seedMaterialRequests();
+//   await seedMaterialIssues();
+//   await seedTimeLogs();
 
   console.log('\n✨ Seed completed successfully!');
 }

@@ -25,21 +25,21 @@ export async function GET(request: Request) {
     ] = await Promise.all([
       // Monthly job cards created
       db.$queryRaw<Array<{ month: string; count: bigint }>>`
-        SELECT strftime('%Y-%m', createdAt) as month, COUNT(*) as count
-        FROM JobCard
-        WHERE isActive = 1 AND createdAt >= ${sixMonthsAgo}
-        GROUP BY strftime('%Y-%m', createdAt)
+        SELECT TO_CHAR("createdAt", 'YYYY-MM') as month, COUNT(*) as count
+        FROM "JobCard"
+        WHERE "isActive" = true AND "createdAt" >= ${sixMonthsAgo}
+        GROUP BY TO_CHAR("createdAt", 'YYYY-MM')
         ORDER BY month ASC
       `,
 
       // Monthly job cards completed
       db.$queryRaw<Array<{ month: string; count: bigint }>>`
-        SELECT strftime('%Y-%m', COALESCE(closedAt, actualEnd)) as month, COUNT(*) as count
-        FROM JobCard
-        WHERE isActive = 1 
+        SELECT TO_CHAR(COALESCE("closedAt", "actualEnd"), 'YYYY-MM') as month, COUNT(*) as count
+        FROM "JobCard"
+        WHERE "isActive" = true 
           AND status IN ('COMPLETED', 'CLOSED')
-          AND COALESCE(closedAt, actualEnd) >= ${sixMonthsAgo}
-        GROUP BY strftime('%Y-%m', COALESCE(closedAt, actualEnd))
+          AND COALESCE("closedAt", "actualEnd") >= ${sixMonthsAgo}
+        GROUP BY TO_CHAR(COALESCE("closedAt", "actualEnd"), 'YYYY-MM')
         ORDER BY month ASC
       `,
 
@@ -50,12 +50,12 @@ export async function GET(request: Request) {
         actualCost: number | null;
       }>>`
         SELECT 
-          strftime('%Y-%m', createdAt) as month,
-          SUM(CASE WHEN estimatedCost IS NOT NULL THEN CAST(estimatedCost AS REAL) ELSE 0 END) as estimatedCost,
-          SUM(CASE WHEN actualCost IS NOT NULL THEN CAST(actualCost AS REAL) ELSE 0 END) as actualCost
-        FROM JobCard
-        WHERE isActive = 1 AND createdAt >= ${sixMonthsAgo}
-        GROUP BY strftime('%Y-%m', createdAt)
+          TO_CHAR("createdAt", 'YYYY-MM') as month,
+          SUM(CASE WHEN "estimatedCost" IS NOT NULL THEN CAST("estimatedCost" AS DOUBLE PRECISION) ELSE 0 END) as "estimatedCost",
+          SUM(CASE WHEN "actualCost" IS NOT NULL THEN CAST("actualCost" AS DOUBLE PRECISION) ELSE 0 END) as "actualCost"
+        FROM "JobCard"
+        WHERE "isActive" = true AND "createdAt" >= ${sixMonthsAgo}
+        GROUP BY TO_CHAR("createdAt", 'YYYY-MM')
         ORDER BY month ASC
       `,
 
@@ -144,12 +144,12 @@ export async function GET(request: Request) {
         totalValue: number;
       }>>`
         SELECT 
-          strftime('%Y-%m', createdAt) as month,
-          transactionType,
-          SUM(CAST(totalValue AS REAL)) as totalValue
-        FROM StockTransaction
-        WHERE createdAt >= ${sixMonthsAgo}
-        GROUP BY strftime('%Y-%m', createdAt), transactionType
+          TO_CHAR("createdAt", 'YYYY-MM') as month,
+          "transactionType",
+          SUM(CAST("totalValue" AS DOUBLE PRECISION)) as "totalValue"
+        FROM "StockTransaction"
+        WHERE "createdAt" >= ${sixMonthsAgo}
+        GROUP BY TO_CHAR("createdAt", 'YYYY-MM'), "transactionType"
         ORDER BY month ASC
       `,
 
@@ -158,10 +158,10 @@ export async function GET(request: Request) {
         status: string; 
         count: bigint;
       }>>`
-        SELECT status, COUNT(*) as count
-        FROM Asset
-        WHERE isActive = 1
-        GROUP BY status
+        SELECT "status", COUNT(*) as count
+        FROM "Asset"
+        WHERE "isActive" = true
+        GROUP BY "status"
       `,
     ]);
 

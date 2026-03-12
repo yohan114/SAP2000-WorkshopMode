@@ -105,9 +105,9 @@ export async function GET(request: Request) {
       // Low stock count - items where available qty <= reorder level
       db.$queryRaw<Array<{ count: bigint }>>`
         SELECT COUNT(*) as count 
-        FROM StoreStock
-        INNER JOIN Item ON StoreStock.itemId = Item.id
-        WHERE StoreStock.availableQty <= Item.reorderLevel AND Item.reorderLevel IS NOT NULL
+        FROM "StoreStock"
+        INNER JOIN "Item" ON "StoreStock"."itemId" = "Item"."id"
+        WHERE "StoreStock"."availableQty" <= "Item"."reorderLevel" AND "Item"."reorderLevel" IS NOT NULL
       `,
 
       // Total stock value
