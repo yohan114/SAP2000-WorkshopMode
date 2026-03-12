@@ -67,9 +67,6 @@ export async function GET(request: Request) {
         requestor: {
           select: { name: true, email: true },
         },
-        approver: {
-          select: { name: true },
-        },
         lines: {
           include: {
             item: {
@@ -83,14 +80,28 @@ export async function GET(request: Request) {
         },
       },
     });
+
+    // Get approver info separately if needed
+    const approverIds = materialRequests
+      .filter(mr => mr.approvedBy)
+      .map(mr => mr.approvedBy as string);
+
+    const approvers = approverIds.length > 0
+      ? await db.user.findMany({
+          where: { id: { in: approverIds } },
+          select: { id: true, name: true },
+        })
+      : [];
+
+    const approverMap = new Map(approvers.map(a => [a.id, a.name]));
     
     // Transform data for main sheet (one row per MR)
     const exportData = materialRequests.map((mr, index) => {
-      const totalRequested = mr.lines.reduce((sum, line) => sum + line.requestedQty, 0);
-      const totalApproved = mr.lines.reduce((sum, line) => sum + (line.approvedQty || 0), 0);
-      const totalIssued = mr.lines.reduce((sum, line) => sum + (line.issuedQty || 0), 0);
+      const totalRequested = mr.lines.reduce((sum, line) => sum + Number(line.requestedQty), 0);
+      const totalApproved = mr.lines.reduce((sum, line) => sum + (line.approvedQty ? Number(line.approvedQty) : 0), 0);
+      const totalIssued = mr.lines.reduce((sum, line) => sum + (line.issuedQty ? Number(line.issuedQty) : 0), 0);
       
-      const itemsList = mr.lines.map(l => `${l.item?.name || 'Unknown'} (${l.requestedQty})`).join('; ');
+      const itemsList = mr.lines.map(l => `${l.item?.name || 'Unknown'} (${Number(l.requestedQty)})`).join('; ');
       
       return {
         'No': index + 1,
@@ -107,7 +118,7 @@ export async function GET(request: Request) {
         'Total Approved': totalApproved,
         'Total Issued': totalIssued,
         'Items Summary': itemsList,
-        'Approved By': mr.approver?.name || '',
+        'Approved By': mr.approvedBy ? (approverMap.get(mr.approvedBy) || '') : '',
         'Approved At': mr.approvedAt ? new Date(mr.approvedAt).toLocaleDateString() : '',
         'Rejection Reason': mr.rejectionReason || '',
         'Created At': new Date(mr.createdAt).toLocaleDateString(),
@@ -123,9 +134,9 @@ export async function GET(request: Request) {
           'Line No': lineIndex + 1,
           'Item Code': line.item?.itemCode || '',
           'Item Name': line.item?.name || '',
-          'Requested Qty': line.requestedQty,
-          'Approved Qty': line.approvedQty || '',
-          'Issued Qty': line.issuedQty || '',
+          'Requested Qty': Number(line.requestedQty),
+          'Approved Qty': line.approvedQty ? Number(line.approvedQty) : '',
+          'Issued Qty': line.issuedQty ? Number(line.issuedQty) : '',
           'Unit': line.item?.unitOfMeasure || '',
           'Line Status': line.status,
           'Notes': line.notes || '',

@@ -66,14 +66,11 @@ export async function GET(request: Request) {
           select: {
             assetNumber: true,
             name: true,
-            location: true,
+            currentLocation: true,
           },
         },
         creator: {
           select: { name: true, email: true },
-        },
-        supervisor: {
-          select: { name: true },
         },
         technicianAssignments: {
           where: { isActive: true },
@@ -95,15 +92,15 @@ export async function GET(request: Request) {
       'Job Card Number': jc.jobCardNumber,
       'Asset Number': jc.asset?.assetNumber || '',
       'Asset Name': jc.asset?.name || '',
-      'Asset Location': jc.asset?.location || '',
+      'Asset Location': jc.asset?.currentLocation || '',
       'Job Type': jc.jobType,
       'Priority': jc.priority,
       'Status': jc.status,
       'Fault Description': jc.faultDescription || '',
       'Diagnosis Notes': jc.diagnosisNotes || '',
       'Work Performed': jc.workPerformed || '',
-      'Estimated Cost': jc.estimatedCost || 0,
-      'Actual Cost': jc.actualCost || 0,
+      'Estimated Cost': jc.estimatedCost ? Number(jc.estimatedCost) : 0,
+      'Actual Cost': jc.actualCost ? Number(jc.actualCost) : 0,
       'Estimated Duration (hrs)': jc.estimatedDuration || 0,
       'Actual Duration (hrs)': jc.actualDuration || 0,
       'Scheduled Start': jc.scheduledStart ? new Date(jc.scheduledStart).toLocaleDateString() : '',
@@ -111,7 +108,6 @@ export async function GET(request: Request) {
       'Actual Start': jc.actualStart ? new Date(jc.actualStart).toLocaleDateString() : '',
       'Actual End': jc.actualEnd ? new Date(jc.actualEnd).toLocaleDateString() : '',
       'Created By': jc.creator?.name || '',
-      'Supervisor': jc.supervisor?.name || '',
       'Technicians': jc.technicianAssignments.map(ta => ta.technician.name).join(', ') || '',
       'Tasks Count': jc._count.tasks,
       'Material Requests': jc._count.materialRequests,
@@ -176,8 +172,8 @@ export async function GET(request: Request) {
         { 'Metric': 'Closed', 'Value': jobCards.filter(jc => jc.status === 'CLOSED').length },
         { 'Metric': 'Cancelled', 'Value': jobCards.filter(jc => jc.status === 'CANCELLED').length },
         { 'Metric': 'Critical Priority', 'Value': jobCards.filter(jc => ['CRITICAL', 'EMERGENCY'].includes(jc.priority)).length },
-        { 'Metric': 'Total Estimated Cost', 'Value': jobCards.reduce((sum, jc) => sum + (jc.estimatedCost || 0), 0) },
-        { 'Metric': 'Total Actual Cost', 'Value': jobCards.reduce((sum, jc) => sum + (jc.actualCost || 0), 0) },
+        { 'Metric': 'Total Estimated Cost', 'Value': jobCards.reduce((sum, jc) => sum + (jc.estimatedCost ? Number(jc.estimatedCost) : 0), 0) },
+        { 'Metric': 'Total Actual Cost', 'Value': jobCards.reduce((sum, jc) => sum + (jc.actualCost ? Number(jc.actualCost) : 0), 0) },
         { 'Metric': 'Export Date', 'Value': new Date().toLocaleString() },
       ];
       
