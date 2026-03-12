@@ -1750,49 +1750,131 @@ model TechnicianSkill {
 // 14. PM SCHEDULES DOMAIN
 // ============================================
 
-model PmSchedule {
+model PmTemplate {
   id              String   @id @default(cuid())
-  scheduleNumber  String   @unique
-  assetId         String
-  pmType          String
-  frequency       Int      @default(1)
-  frequencyUnit   String?
-  lastExecutedAt  DateTime?
-  nextExecutionAt DateTime?
-  estimatedDuration Int?
+  code            String   @unique
+  name            String
+  assetCategory   String   // LIGHT_VEHICLE | HEAVY_VEHICLE | EQUIPMENT | GENERATOR
+  description     String?
+  estimatedHours  Decimal?
   isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  asset           Asset    @relation(fields: [assetId], references: [id])
-  executions      PmExecution[]
+  checklistItems  PmChecklistItem[]
+  schedules       PmSchedule[]
 
-  @@index([assetId])
-  @@index([nextExecutionAt])
+  @@index([code])
+  @@index([assetCategory])
 }
 
-model PmExecution {
+model PmChecklistItem {
   id              String   @id @default(cuid())
-  scheduleId      String
-  jobCardId       String?
-  executionDate   DateTime
-  status          String   @default("SCHEDULED")
-  downtimeMinutes Int?
+  templateId      String
+  sequence        Int      @default(1)
+  itemType        String   // REPLACE | INSPECT | MEASURE | ACTION | TOP_UP
+  description     String
+  partRequired    Boolean  @default(false)
+  partCode        String?
+  quantity        Decimal?
+  unitOfMeasure   String?
+  isMandatory     Boolean  @default(true)
   notes           String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  pmSchedule      PmSchedule @relation(fields: [scheduleId], references: [id])
+  template        PmTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  executionItems  PmExecutionItem[]
+
+  @@unique([templateId, sequence])
+  @@index([templateId])
+}
+
+model PmSchedule {
+  id                  String   @id @default(cuid())
+  scheduleNumber      String   @unique
+  assetId             String
+  templateId          String?
+  pmType              String   @default("SCHEDULED") // SCHEDULED | INSPECTION | SAFETY
+  calendarInterval    Int?     // days between PM
+  kmInterval          Int?     // km between PM
+  hourInterval        Decimal? // hours between PM
+  leadDays            Int      @default(7)
+  lastExecutedAt      DateTime?
+  lastOdometer        Decimal?
+  lastHours           Decimal?
+  nextExecutionAt     DateTime?
+  nextDueKm           Decimal?
+  nextDueHours        Decimal?
+  estimatedDuration   Int?     // minutes
+  priority            String   @default("NORMAL") // LOW | NORMAL | HIGH | CRITICAL
+  status              String   @default("ACTIVE") // ACTIVE | PAUSED | COMPLETED | CANCELLED
+  pauseReason         String?
+  pausedAt            DateTime?
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  asset               Asset    @relation(fields: [assetId], references: [id])
+  template            PmTemplate? @relation(fields: [templateId], references: [id])
+  executions          PmExecution[]
+
+  @@index([assetId])
+  @@index([nextExecutionAt])
+  @@index([status])
+}
+
+model PmExecution {
+  id                  String   @id @default(cuid())
+  executionNumber     String   @unique
+  scheduleId          String
+  jobCardId           String?
+  scheduledDate       DateTime?
+  executionDate       DateTime?
+  startedAt           DateTime?
+  completedAt         DateTime?
+  status              String   @default("SCHEDULED") // SCHEDULED | IN_PROGRESS | COMPLETED | CANCELLED | DEFERRED
+  odometerReading     Decimal?
+  hourReading         Decimal?
+  downtimeMinutes     Int?
+  technicianNotes     String?
+  supervisorNotes     String?
+  failItemsCount      Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  schedule            PmSchedule @relation(fields: [scheduleId], references: [id])
+  executionItems      PmExecutionItem[]
 
   @@index([scheduleId])
   @@index([executionDate])
+  @@index([status])
+}
+
+model PmExecutionItem {
+  id              String   @id @default(cuid())
+  executionId     String
+  checklistItemId String
+  status          String   @default("PENDING") // PENDING | PASS | FAIL | REPLACED | SKIPPED
+  measuredValue   String?
+  notes           String?
+  completedAt     DateTime?
+  completedBy     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  execution       PmExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  checklistItem   PmChecklistItem @relation(fields: [checklistItemId], references: [id])
+
+  @@unique([executionId, checklistItemId])
+  @@index([executionId])
 }
 
 model DowntimeLog {
   id              String   @id @default(cuid())
   assetId         String
   jobCardId       String?
-  downtimeType    String
+  downtimeType    String   // PLANNED | BREAKDOWN | WAITING_PARTS | WAITING_LABOUR | OTHER
   startTime       DateTime
   endTime         DateTime?
   totalMinutes    Int?
@@ -1805,6 +1887,7 @@ model DowntimeLog {
 
   @@index([assetId])
   @@index([startTime])
+  @@index([downtimeType])
 }
 
 // ============================================
@@ -1902,6 +1985,28 @@ model SlaConfig {
   @@index([slaType])
 }
 
+model SlaTracking {
+  id              String   @id @default(cuid())
+  entityType      String   // JOB_CARD | MATERIAL_REQUEST | PURCHASE_ORDER
+  entityId        String
+  slaType         String
+  startedAt       DateTime @default(now())
+  targetAt        DateTime
+  respondedAt     DateTime?
+  completedAt     DateTime?
+  status          String   @default("ACTIVE") // ACTIVE | MET | BREACH | WAIVED
+  breachReason    String?
+  waiverReason    String?
+  waiverApprovedBy String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([entityType, entityId])
+  @@index([slaType])
+  @@index([status])
+  @@index([targetAt])
+}
+
 // ============================================
 // 16. AUDIT & SECURITY DOMAIN
 // ============================================
@@ -1966,6 +2071,24 @@ model KpiSnapshot {
   @@index([kpiCode])
   @@index([snapshotDate])
   @@index([period])
+}
+
+model KpiThresholdConfig {
+  id              String   @id @default(cuid())
+  kpiCode         String
+  kpiName         String
+  category        String
+  amberThreshold  Decimal
+  redThreshold    Decimal
+  higherIsWorse   Boolean  @default(false)
+  unit            String?
+  description     String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([kpiCode])
+  @@index([category])
 }
 
 model ReportSchedule {
