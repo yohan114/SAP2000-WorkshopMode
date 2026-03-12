@@ -51,6 +51,7 @@ import { FuelControlView } from '@/components/wcp/fuel-control-view';
 import { ExternalRepairsView } from '@/components/wcp/external-repairs-view';
 import { LabourTrainingView } from '@/components/wcp/labour-training-view';
 import { KpiSlaView } from '@/components/wcp/kpi-sla-view';
+import { NotificationBell } from '@/components/wcp/notification-bell';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useRouter } from 'next/navigation';
 
@@ -58,11 +59,6 @@ export default function Home() {
   const { user, isLoading, isAuthenticated, logout, isAdmin, isSupervisor } = useAuth();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [notifications] = useState([
-    { id: 1, title: 'Emergency job card created', time: '5m ago', type: 'urgent' },
-    { id: 2, title: 'Material request pending approval', time: '1h ago', type: 'pending' },
-    { id: 3, title: 'Low stock alert: Engine Oil', time: '2h ago', type: 'warning' },
-  ]);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -117,30 +113,7 @@ export default function Home() {
 
             <div className="flex items-center gap-2 sm:gap-4">
               {/* Notifications */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="relative">
-                    <Bell className="h-5 w-5 text-slate-600" />
-                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-red-500 text-white text-xs">
-                      {notifications.length}
-                    </Badge>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-72">
-                  <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {notifications.map((n) => (
-                    <DropdownMenuItem key={n.id} className="flex flex-col items-start py-2">
-                      <span className="font-medium text-sm">{n.title}</span>
-                      <span className="text-xs text-slate-500">{n.time}</span>
-                    </DropdownMenuItem>
-                  ))}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-center text-emerald-600 font-medium">
-                    View all notifications
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <NotificationBell />
 
               {/* User Menu - Desktop */}
               <div className="hidden sm:flex items-center gap-3 pl-3 border-l">

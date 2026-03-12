@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
   TableBody,
@@ -36,28 +37,30 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { 
   Wrench, 
   Search, 
   Plus, 
   MoreHorizontal,
-  CheckCircle,
-  AlertTriangle,
   Eye,
   Edit,
   Trash2,
-  ArrowRight,
-  Play,
   Loader2,
   ChevronLeft,
   ChevronRight,
-  Clock,
-  User
+  User,
+  Download,
+  X,
+  CheckSquare,
+  ArrowRight,
+  Users,
+  AlertTriangle
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
-import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { ExportButton } from '@/components/wcp/export-button';
 
 interface JobCard {
   id: string;
@@ -98,6 +101,12 @@ interface Asset {
   id: string;
   assetNumber: string;
   name: string;
+}
+
+interface Technician {
+  id: string;
+  name: string;
+  employeeId?: string;
 }
 
 interface PaginatedResponse {
@@ -162,10 +171,21 @@ const validTransitions: Record<string, Array<{ action: string; label: string; ne
   'CANCELLED': [],
 };
 
+// Valid bulk status transitions
+const bulkStatusOptions = [
+  { status: 'APPROVED', label: 'Approve', description: 'Approve selected job cards' },
+  { status: 'IN_PROGRESS', label: 'Start Work', description: 'Start work on selected job cards' },
+  { status: 'ON_HOLD', label: 'Put on Hold', description: 'Put selected job cards on hold' },
+  { status: 'COMPLETED', label: 'Complete', description: 'Mark selected job cards as completed' },
+  { status: 'CANCELLED', label: 'Cancel', description: 'Cancel selected job cards' },
+  { status: 'CLOSED', label: 'Close', description: 'Close selected job cards' },
+];
+
 export function JobCardsView() {
   const { toast } = useToast();
   const [jobCards, setJobCards] = useState<JobCard[]>([]);
   const [assets, setAssets] = useState<Asset[]>([]);
+  const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -193,6 +213,15 @@ export function JobCardsView() {
     jobType: string;
   } | null>(null);
 
+  // Bulk operation state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+  const [bulkAction, setBulkAction] = useState<'CHANGE_STATUS' | 'ASSIGN_TECHNICIAN' | 'CANCEL' | 'DELETE' | null>(null);
+  const [bulkStatus, setBulkStatus] = useState<string>('');
+  const [bulkTechnicianId, setBulkTechnicianId] = useState<string>('');
+  const [bulkReason, setBulkReason] = useState('');
+  const [bulkNotes, setBulkNotes] = useState('');
+
   // Form state
   const [formData, setFormData] = useState({
     assetId: '',
@@ -209,6 +238,12 @@ export function JobCardsView() {
   useEffect(() => {
     fetchJobCards();
     fetchAssets();
+    fetchTechnicians();
+  }, [searchTerm, statusFilter, priorityFilter, pagination.page]);
+
+  // Clear selection when filters change
+  useEffect(() => {
+    setSelectedIds(new Set());
   }, [searchTerm, statusFilter, priorityFilter, pagination.page]);
 
   const fetchJobCards = async () => {
@@ -248,6 +283,136 @@ export function JobCardsView() {
       }
     } catch (error) {
       console.error('Failed to fetch assets:', error);
+    }
+  };
+
+  const fetchTechnicians = async () => {
+    try {
+      const response = await fetch('/api/users?role=TECHNICIAN&limit=100');
+      if (response.ok) {
+        const data = await response.json();
+        setTechnicians(data.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch technicians:', error);
+    }
+  };
+
+  // Selection handlers
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds(new Set(jobCards.map(jc => jc.id)));
+    } else {
+      setSelectedIds(new Set());
+    }
+  };
+
+  const handleSelectOne = (id: string, checked: boolean) => {
+    const newSelected = new Set(selectedIds);
+    if (checked) {
+      newSelected.add(id);
+    } else {
+      newSelected.delete(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const clearSelection = () => {
+    setSelectedIds(new Set());
+  };
+
+  // Bulk operation handlers
+  const handleBulkAction = async () => {
+    if (selectedIds.size === 0) return;
+
+    try {
+      setSubmitting(true);
+      const jobCardIds = Array.from(selectedIds);
+
+      let requestBody: Record<string, unknown> = { jobCardIds };
+
+      switch (bulkAction) {
+        case 'CHANGE_STATUS':
+          requestBody = { ...requestBody, action: 'CHANGE_STATUS', newStatus: bulkStatus, notes: bulkNotes };
+          break;
+        case 'ASSIGN_TECHNICIAN':
+          requestBody = { ...requestBody, action: 'ASSIGN_TECHNICIAN', technicianId: bulkTechnicianId };
+          break;
+        case 'CANCEL':
+          requestBody = { ...requestBody, action: 'CANCEL', reason: bulkReason };
+          break;
+        case 'DELETE':
+          requestBody = { ...requestBody, action: 'DELETE', reason: bulkReason };
+          break;
+      }
+
+      const response = await fetch('/api/job-cards/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        toast({
+          title: 'Success',
+          description: result.message || 'Bulk operation completed successfully',
+        });
+        clearSelection();
+        fetchJobCards();
+        setBulkDialogOpen(false);
+        resetBulkForm();
+      } else {
+        const error = await response.json();
+        toast({
+          title: 'Error',
+          description: error.message || 'Failed to perform bulk operation',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Bulk operation error:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to perform bulk operation',
+        variant: 'destructive',
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const resetBulkForm = () => {
+    setBulkAction(null);
+    setBulkStatus('');
+    setBulkTechnicianId('');
+    setBulkReason('');
+    setBulkNotes('');
+  };
+
+  const openBulkDialog = (action: 'CHANGE_STATUS' | 'ASSIGN_TECHNICIAN' | 'CANCEL' | 'DELETE') => {
+    setBulkAction(action);
+    setBulkDialogOpen(true);
+  };
+
+  const getBulkDialogTitle = () => {
+    switch (bulkAction) {
+      case 'CHANGE_STATUS': return 'Bulk Status Change';
+      case 'ASSIGN_TECHNICIAN': return 'Bulk Assign Technician';
+      case 'CANCEL': return 'Bulk Cancel Job Cards';
+      case 'DELETE': return 'Bulk Delete Job Cards';
+      default: return 'Bulk Operation';
+    }
+  };
+
+  const getBulkDialogDescription = () => {
+    const count = selectedIds.size;
+    switch (bulkAction) {
+      case 'CHANGE_STATUS': return `Change status for ${count} selected job card(s)`;
+      case 'ASSIGN_TECHNICIAN': return `Assign a technician to ${count} selected job card(s)`;
+      case 'CANCEL': return `Cancel ${count} selected job card(s). This action cannot be undone.`;
+      case 'DELETE': return `Permanently delete ${count} selected job card(s). This action cannot be undone.`;
+      default: return '';
     }
   };
 
@@ -433,21 +598,110 @@ export function JobCardsView() {
     });
   };
 
+  const allSelected = jobCards.length > 0 && selectedIds.size === jobCards.length;
+  const someSelected = selectedIds.size > 0 && selectedIds.size < jobCards.length;
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
+      {/* Bulk Action Toolbar */}
+      {selectedIds.size > 0 && (
+        <Card className="bg-slate-900 text-white border-slate-700">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <CheckSquare className="h-5 w-5 text-emerald-400" />
+                  <span className="font-semibold">{selectedIds.size} selected</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearSelection}
+                  className="text-slate-300 hover:text-white hover:bg-slate-700"
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Clear
+                </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="secondary" size="sm">
+                      <ArrowRight className="h-4 w-4 mr-2" />
+                      Change Status
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {bulkStatusOptions.map((option) => (
+                      <DropdownMenuItem
+                        key={option.status}
+                        onClick={() => {
+                          setBulkStatus(option.status);
+                          openBulkDialog('CHANGE_STATUS');
+                        }}
+                      >
+                        <div>
+                          <div className="font-medium">{option.label}</div>
+                          <div className="text-xs text-slate-500">{option.description}</div>
+                        </div>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => openBulkDialog('ASSIGN_TECHNICIAN')}
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  Assign
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => openBulkDialog('CANCEL')}
+                  className="bg-amber-600 hover:bg-amber-700"
+                >
+                  <AlertTriangle className="h-4 w-4 mr-2" />
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => openBulkDialog('DELETE')}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">Job Cards</h2>
           <p className="text-slate-500">Manage maintenance work orders</p>
         </div>
-        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-emerald-600 hover:bg-emerald-700">
-              <Plus className="h-4 w-4 mr-2" />
-              New Job Card
-            </Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <ExportButton
+            exportType="job-cards"
+            filters={{
+              status: statusFilter,
+              priority: priorityFilter,
+              search: searchTerm,
+            }}
+            buttonText="Export"
+          />
+          <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-emerald-600 hover:bg-emerald-700">
+                <Plus className="h-4 w-4 mr-2" />
+                New Job Card
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create New Job Card</DialogTitle>
@@ -564,6 +818,7 @@ export function JobCardsView() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Filters */}
@@ -625,6 +880,14 @@ export function JobCardsView() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-slate-50">
+                  <TableHead className="w-12">
+                    <Checkbox
+                      checked={allSelected}
+                      onCheckedChange={handleSelectAll}
+                      aria-label="Select all"
+                      className={someSelected ? 'opacity-50' : ''}
+                    />
+                  </TableHead>
                   <TableHead className="font-semibold">Job Card</TableHead>
                   <TableHead className="font-semibold">Asset</TableHead>
                   <TableHead className="font-semibold hidden md:table-cell">Type</TableHead>
@@ -638,14 +901,14 @@ export function JobCardsView() {
                 {loading ? (
                   [...Array(5)].map((_, i) => (
                     <TableRow key={i}>
-                      <TableCell colSpan={7} className="h-16">
+                      <TableCell colSpan={8} className="h-16">
                         <div className="animate-pulse bg-slate-200 h-4 rounded w-full"></div>
                       </TableCell>
                     </TableRow>
                   ))
                 ) : jobCards.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="h-32 text-center text-slate-500">
+                    <TableCell colSpan={8} className="h-32 text-center text-slate-500">
                       <div className="flex flex-col items-center gap-2">
                         <Wrench className="h-8 w-8 text-slate-300" />
                         <p>No job cards found</p>
@@ -658,7 +921,14 @@ export function JobCardsView() {
                   </TableRow>
                 ) : (
                   jobCards.map((jc) => (
-                    <TableRow key={jc.id} className="hover:bg-slate-50">
+                    <TableRow key={jc.id} className={`hover:bg-slate-50 ${selectedIds.has(jc.id) ? 'bg-emerald-50' : ''}`}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedIds.has(jc.id)}
+                          onCheckedChange={(checked) => handleSelectOne(jc.id, checked as boolean)}
+                          aria-label={`Select ${jc.jobCardNumber}`}
+                        />
+                      </TableCell>
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
                           <div className="p-1.5 bg-slate-100 rounded">
@@ -723,13 +993,16 @@ export function JobCardsView() {
                                 Edit
                               </DropdownMenuItem>
                               {['DRAFT', 'APPROVED', 'ON_HOLD'].includes(jc.status) && (
-                                <DropdownMenuItem 
-                                  className="text-red-600"
-                                  onClick={() => setTransitionDialog({ open: true, action: 'CANCEL', jobCard: jc })}
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Cancel Job Card
-                                </DropdownMenuItem>
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem 
+                                    className="text-red-600"
+                                    onClick={() => setTransitionDialog({ open: true, action: 'CANCEL', jobCard: jc })}
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Cancel Job Card
+                                  </DropdownMenuItem>
+                                </>
                               )}
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -970,6 +1243,83 @@ export function JobCardsView() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Bulk Action Dialog */}
+      <Dialog open={bulkDialogOpen} onOpenChange={(open) => { setBulkDialogOpen(open); if (!open) resetBulkForm(); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{getBulkDialogTitle()}</DialogTitle>
+            <DialogDescription>{getBulkDialogDescription()}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {bulkAction === 'CHANGE_STATUS' && (
+              <div className="space-y-2">
+                <Label>New Status</Label>
+                <Select value={bulkStatus} onValueChange={setBulkStatus}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select new status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="APPROVED">Approve</SelectItem>
+                    <SelectItem value="IN_PROGRESS">Start Work</SelectItem>
+                    <SelectItem value="ON_HOLD">Put on Hold</SelectItem>
+                    <SelectItem value="COMPLETED">Complete</SelectItem>
+                    <SelectItem value="CLOSED">Close</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="space-y-2 mt-4">
+                  <Label>Notes (Optional)</Label>
+                  <Textarea
+                    placeholder="Add notes for this status change..."
+                    value={bulkNotes}
+                    onChange={(e) => setBulkNotes(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+            {bulkAction === 'ASSIGN_TECHNICIAN' && (
+              <div className="space-y-2">
+                <Label>Technician</Label>
+                <Select value={bulkTechnicianId} onValueChange={setBulkTechnicianId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select technician" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {technicians.map((tech) => (
+                      <SelectItem key={tech.id} value={tech.id}>
+                        {tech.name} {tech.employeeId ? `(${tech.employeeId})` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {(bulkAction === 'CANCEL' || bulkAction === 'DELETE') && (
+              <div className="space-y-2">
+                <Label>Reason *</Label>
+                <Textarea
+                  placeholder={`Please provide a reason for ${bulkAction === 'DELETE' ? 'deletion' : 'cancellation'}...`}
+                  value={bulkReason}
+                  onChange={(e) => setBulkReason(e.target.value)}
+                />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setBulkDialogOpen(false); resetBulkForm(); }}>
+              Cancel
+            </Button>
+            <Button 
+              className={bulkAction === 'DELETE' ? 'bg-red-600 hover:bg-red-700' : bulkAction === 'CANCEL' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-emerald-600 hover:bg-emerald-700'}
+              onClick={handleBulkAction}
+              disabled={submitting || (bulkAction === 'CHANGE_STATUS' && !bulkStatus) || (bulkAction === 'ASSIGN_TECHNICIAN' && !bulkTechnicianId) || ((bulkAction === 'CANCEL' || bulkAction === 'DELETE') && !bulkReason)}
+            >
+              {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Confirm {selectedIds.size} Job Card(s)
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -1038,58 +1388,23 @@ function JobCardDetailDialog({ jobCard, onTransition }: { jobCard: JobCard; onTr
 
         {/* Right Column */}
         <div className="space-y-4">
-          {/* Costs & Duration */}
-          <div>
-            <h4 className="font-semibold text-sm text-slate-500 mb-2">Estimates vs Actual</h4>
-            <div className="bg-slate-50 rounded-lg p-4 space-y-3">
-              <div className="flex justify-between">
-                <span className="text-slate-600">Estimated Cost</span>
-                <span className="font-medium">${jobCard.estimatedCost || 'N/A'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-600">Actual Cost</span>
-                <span className="font-medium">${jobCard.actualCost || 'N/A'}</span>
-              </div>
-              <Separator />
-              <div className="flex justify-between">
-                <span className="text-slate-600">Estimated Duration</span>
-                <span className="font-medium">{jobCard.estimatedDuration || 'N/A'} hrs</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-600">Actual Duration</span>
-                <span className="font-medium">{jobCard.actualDuration || 'N/A'} hrs</span>
-              </div>
+          {/* Cost & Duration */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-slate-50 rounded-lg p-4">
+              <div className="text-sm text-slate-500">Estimated Cost</div>
+              <div className="text-xl font-bold">${jobCard.estimatedCost?.toLocaleString() || 'N/A'}</div>
+            </div>
+            <div className="bg-slate-50 rounded-lg p-4">
+              <div className="text-sm text-slate-500">Actual Cost</div>
+              <div className="text-xl font-bold">${jobCard.actualCost?.toLocaleString() || 'N/A'}</div>
             </div>
           </div>
 
-          {/* Schedule */}
-          {(jobCard.scheduledStart || jobCard.actualStart) && (
-            <div>
-              <h4 className="font-semibold text-sm text-slate-500 mb-2">Schedule</h4>
-              <div className="bg-slate-50 rounded-lg p-4 space-y-3">
-                {jobCard.scheduledStart && (
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-slate-400" />
-                    <span className="text-slate-600">Scheduled:</span>
-                    <span className="font-medium">{new Date(jobCard.scheduledStart).toLocaleString()}</span>
-                  </div>
-                )}
-                {jobCard.actualStart && (
-                  <div className="flex items-center gap-2">
-                    <Play className="h-4 w-4 text-emerald-500" />
-                    <span className="text-slate-600">Started:</span>
-                    <span className="font-medium">{new Date(jobCard.actualStart).toLocaleString()}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Assigned Technicians */}
+          {/* Technicians */}
           {jobCard.technicians && jobCard.technicians.length > 0 && (
             <div>
               <h4 className="font-semibold text-sm text-slate-500 mb-2">Assigned Technicians</h4>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {jobCard.technicians.map((tech) => (
                   <Badge key={tech.id} variant="outline" className="flex items-center gap-1">
                     <User className="h-3 w-3" />
@@ -1100,36 +1415,46 @@ function JobCardDetailDialog({ jobCard, onTransition }: { jobCard: JobCard; onTr
             </div>
           )}
 
-          {/* Created By */}
-          <div className="text-xs text-slate-400">
-            <div>Created: {new Date(jobCard.createdAt).toLocaleString()}</div>
-            {jobCard.creator && <div>By: {jobCard.creator.name}</div>}
+          {/* Dates */}
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-slate-500">Created:</span>
+              <span>{new Date(jobCard.createdAt).toLocaleString()}</span>
+            </div>
+            {jobCard.scheduledStart && (
+              <div className="flex justify-between">
+                <span className="text-slate-500">Scheduled Start:</span>
+                <span>{new Date(jobCard.scheduledStart).toLocaleString()}</span>
+              </div>
+            )}
+            {jobCard.actualStart && (
+              <div className="flex justify-between">
+                <span className="text-slate-500">Actual Start:</span>
+                <span>{new Date(jobCard.actualStart).toLocaleString()}</span>
+              </div>
+            )}
           </div>
+
+          {/* Actions */}
+          {transitions.length > 0 && (
+            <div>
+              <h4 className="font-semibold text-sm text-slate-500 mb-2">Actions</h4>
+              <div className="flex flex-wrap gap-2">
+                {transitions.map((t) => (
+                  <Button
+                    key={t.action}
+                    size="sm"
+                    variant={t.action === 'CANCEL' ? 'destructive' : 'default'}
+                    onClick={() => onTransition(t.action, jobCard)}
+                  >
+                    {t.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Action Buttons */}
-      {transitions.length > 0 && (
-        <div className="flex flex-wrap gap-2 mt-6 pt-4 border-t">
-          {transitions.map((t) => (
-            <Button
-              key={t.action}
-              className={t.action === 'CANCEL' ? 'bg-red-600 hover:bg-red-700' : 'bg-emerald-600 hover:bg-emerald-700'}
-              onClick={() => onTransition(t.action, jobCard)}
-            >
-              {t.action === 'START' && <Play className="h-4 w-4 mr-2" />}
-              {t.action === 'COMPLETE' && <CheckCircle className="h-4 w-4 mr-2" />}
-              {t.action === 'CANCEL' && <Trash2 className="h-4 w-4 mr-2" />}
-              {t.action !== 'START' && t.action !== 'COMPLETE' && t.action !== 'CANCEL' && <ArrowRight className="h-4 w-4 mr-2" />}
-              {t.label}
-            </Button>
-          ))}
-          <Button variant="outline">
-            <Edit className="h-4 w-4 mr-2" />
-            Edit
-          </Button>
-        </div>
-      )}
     </>
   );
 }

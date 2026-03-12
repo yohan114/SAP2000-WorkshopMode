@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
   TableBody,
@@ -23,7 +23,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   Select,
@@ -54,10 +53,12 @@ import {
   AlertCircle,
   CheckCircle,
   XCircle,
-  RefreshCw
+  RefreshCw,
+  X,
+  CheckSquare,
+  ArrowRight
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
-import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/auth/hooks';
 
@@ -166,6 +167,15 @@ export function InventoryView() {
   const [adjustmentType, setAdjustmentType] = useState<'ADJUSTMENT_IN' | 'ADJUSTMENT_OUT'>('ADJUSTMENT_IN');
   const [submitting, setSubmitting] = useState(false);
 
+  // Bulk operation state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+  const [bulkAction, setBulkAction] = useState<'ADJUST_STOCK' | 'TRANSFER_STOCK' | null>(null);
+  const [bulkQty, setBulkQty] = useState('');
+  const [bulkReason, setBulkReason] = useState('');
+  const [bulkTargetStoreId, setBulkTargetStoreId] = useState('');
+  const [bulkAdjustmentType, setBulkAdjustmentType] = useState<'ADJUSTMENT_IN' | 'ADJUSTMENT_OUT'>('ADJUSTMENT_IN');
+
   useEffect(() => {
     fetchStock();
     fetchStores();
@@ -176,6 +186,11 @@ export function InventoryView() {
     if (activeTab === 'reservations') fetchReservations();
     if (activeTab === 'transactions') fetchTransactions();
   }, [activeTab]);
+
+  // Clear selection when filters change
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [searchTerm, storeFilter, stockFilter, pagination.page, activeTab]);
 
   const fetchStock = async () => {
     try {
@@ -258,6 +273,128 @@ export function InventoryView() {
     }
   };
 
+  // Selection handlers
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds(new Set(stockItems.map(item => item.id)));
+    } else {
+      setSelectedIds(new Set());
+    }
+  };
+
+  const handleSelectOne = (id: string, checked: boolean) => {
+    const newSelected = new Set(selectedIds);
+    if (checked) {
+      newSelected.add(id);
+    } else {
+      newSelected.delete(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const clearSelection = () => {
+    setSelectedIds(new Set());
+  };
+
+  // Bulk operation handlers
+  const handleBulkAction = async () => {
+    if (selectedIds.size === 0 || !user) return;
+
+    try {
+      setSubmitting(true);
+      const stockIds = Array.from(selectedIds);
+
+      let requestBody: Record<string, unknown> = { stockIds };
+
+      switch (bulkAction) {
+        case 'ADJUST_STOCK':
+          requestBody = {
+            ...requestBody,
+            operation: 'ADJUST_STOCK',
+            adjustmentType: bulkAdjustmentType,
+            quantity: parseFloat(bulkQty),
+            reason: bulkReason,
+            performedBy: user.id,
+          };
+          break;
+        case 'TRANSFER_STOCK':
+          requestBody = {
+            ...requestBody,
+            operation: 'TRANSFER_STOCK',
+            targetStoreId: bulkTargetStoreId,
+            notes: bulkReason,
+            performedBy: user.id,
+          };
+          break;
+      }
+
+      const response = await fetch('/api/inventory/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        toast({
+          title: 'Success',
+          description: result.message || 'Bulk operation completed successfully',
+        });
+        clearSelection();
+        fetchStock();
+        fetchAlerts();
+        setBulkDialogOpen(false);
+        resetBulkForm();
+      } else {
+        const error = await response.json();
+        toast({
+          title: 'Error',
+          description: error.message || 'Failed to perform bulk operation',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Bulk operation error:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to perform bulk operation',
+        variant: 'destructive',
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const resetBulkForm = () => {
+    setBulkAction(null);
+    setBulkQty('');
+    setBulkReason('');
+    setBulkTargetStoreId('');
+    setBulkAdjustmentType('ADJUSTMENT_IN');
+  };
+
+  const openBulkDialog = (action: 'ADJUST_STOCK' | 'TRANSFER_STOCK') => {
+    setBulkAction(action);
+    setBulkDialogOpen(true);
+  };
+
+  const getBulkDialogTitle = () => {
+    switch (bulkAction) {
+      case 'ADJUST_STOCK': return 'Bulk Stock Adjustment';
+      case 'TRANSFER_STOCK': return 'Bulk Stock Transfer';
+      default: return 'Bulk Operation';
+    }
+  };
+
+  const getBulkDialogDescription = () => {
+    const count = selectedIds.size;
+    switch (bulkAction) {
+      case 'ADJUST_STOCK': return `Adjust stock for ${count} selected item(s)`;
+      case 'TRANSFER_STOCK': return `Transfer ${count} selected item(s) to another store`;
+      default: return '';
+    }
+  };
+
   const handleAdjustment = async () => {
     if (!selectedStock || !adjustmentQty || !user) return;
 
@@ -307,8 +444,54 @@ export function InventoryView() {
   const lowStockCount = alerts.filter(a => a.alertLevel !== 'CRITICAL').length;
   const outOfStockCount = alerts.filter(a => a.alertLevel === 'CRITICAL').length;
 
+  const allSelected = stockItems.length > 0 && selectedIds.size === stockItems.length;
+  const someSelected = selectedIds.size > 0 && selectedIds.size < stockItems.length;
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
+      {/* Bulk Action Toolbar */}
+      {selectedIds.size > 0 && activeTab === 'stock' && (
+        <Card className="bg-slate-900 text-white border-slate-700">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <CheckSquare className="h-5 w-5 text-emerald-400" />
+                  <span className="font-semibold">{selectedIds.size} selected</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearSelection}
+                  className="text-slate-300 hover:text-white hover:bg-slate-700"
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Clear
+                </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => openBulkDialog('ADJUST_STOCK')}
+                >
+                  <ArrowRightLeft className="h-4 w-4 mr-2" />
+                  Adjust Stock
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => openBulkDialog('TRANSFER_STOCK')}
+                >
+                  <ArrowRight className="h-4 w-4 mr-2" />
+                  Transfer
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -443,6 +626,14 @@ export function InventoryView() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-slate-50">
+                      <TableHead className="w-12">
+                        <Checkbox
+                          checked={allSelected}
+                          onCheckedChange={handleSelectAll}
+                          aria-label="Select all"
+                          className={someSelected ? 'opacity-50' : ''}
+                        />
+                      </TableHead>
                       <TableHead className="font-semibold">Item</TableHead>
                       <TableHead className="font-semibold hidden lg:table-cell">Class</TableHead>
                       <TableHead className="font-semibold text-center">Available</TableHead>
@@ -457,12 +648,12 @@ export function InventoryView() {
                     {loading ? (
                       [...Array(5)].map((_, i) => (
                         <TableRow key={i}>
-                          <TableCell colSpan={8} className="h-14"><div className="animate-pulse bg-slate-200 h-4 rounded w-full"></div></TableCell>
+                          <TableCell colSpan={9} className="h-14"><div className="animate-pulse bg-slate-200 h-4 rounded w-full"></div></TableCell>
                         </TableRow>
                       ))
                     ) : stockItems.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="h-32 text-center text-slate-500">
+                        <TableCell colSpan={9} className="h-32 text-center text-slate-500">
                           <div className="flex flex-col items-center gap-2">
                             <Package className="h-8 w-8 text-slate-300" />
                             <p>No inventory items found</p>
@@ -478,7 +669,14 @@ export function InventoryView() {
                           : 100;
                         
                         return (
-                          <TableRow key={item.id} className="hover:bg-slate-50">
+                          <TableRow key={item.id} className={`hover:bg-slate-50 ${selectedIds.has(item.id) ? 'bg-emerald-50' : ''}`}>
+                            <TableCell>
+                              <Checkbox
+                                checked={selectedIds.has(item.id)}
+                                onCheckedChange={(checked) => handleSelectOne(item.id, checked as boolean)}
+                                aria-label={`Select ${item.item.name}`}
+                              />
+                            </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-3">
                                 <div className="p-2 bg-slate-100 rounded"><Package className="h-4 w-4 text-slate-600" /></div>
@@ -804,6 +1002,80 @@ export function InventoryView() {
             >
               {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {adjustmentType === 'ADJUSTMENT_IN' ? 'Add Stock' : 'Remove Stock'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Action Dialog */}
+      <Dialog open={bulkDialogOpen} onOpenChange={(open) => { setBulkDialogOpen(open); if (!open) resetBulkForm(); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{getBulkDialogTitle()}</DialogTitle>
+            <DialogDescription>{getBulkDialogDescription()}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {bulkAction === 'ADJUST_STOCK' && (
+              <>
+                <div className="space-y-2">
+                  <Label>Adjustment Type</Label>
+                  <Select value={bulkAdjustmentType} onValueChange={(v) => setBulkAdjustmentType(v as 'ADJUSTMENT_IN' | 'ADJUSTMENT_OUT')}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ADJUSTMENT_IN">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="h-4 w-4 text-emerald-500" />Add Stock
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="ADJUSTMENT_OUT">
+                        <div className="flex items-center gap-2">
+                          <TrendingDown className="h-4 w-4 text-red-500" />Remove Stock
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Quantity</Label>
+                  <Input type="number" placeholder="Enter quantity" value={bulkQty} onChange={(e) => setBulkQty(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Reason *</Label>
+                  <Textarea placeholder="Enter reason for adjustment..." value={bulkReason} onChange={(e) => setBulkReason(e.target.value)} />
+                </div>
+              </>
+            )}
+            {bulkAction === 'TRANSFER_STOCK' && (
+              <>
+                <div className="space-y-2">
+                  <Label>Target Store</Label>
+                  <Select value={bulkTargetStoreId} onValueChange={setBulkTargetStoreId}>
+                    <SelectTrigger><SelectValue placeholder="Select target store" /></SelectTrigger>
+                    <SelectContent>
+                      {stores.map((store) => (
+                        <SelectItem key={store.id} value={store.id}>{store.name} ({store.code})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Notes (Optional)</Label>
+                  <Textarea placeholder="Enter notes for transfer..." value={bulkReason} onChange={(e) => setBulkReason(e.target.value)} />
+                </div>
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setBulkDialogOpen(false); resetBulkForm(); }}>
+              Cancel
+            </Button>
+            <Button 
+              className="bg-emerald-600 hover:bg-emerald-700"
+              onClick={handleBulkAction}
+              disabled={submitting || (bulkAction === 'ADJUST_STOCK' && (!bulkQty || !bulkReason)) || (bulkAction === 'TRANSFER_STOCK' && !bulkTargetStoreId)}
+            >
+              {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Confirm {selectedIds.size} Item(s)
             </Button>
           </DialogFooter>
         </DialogContent>

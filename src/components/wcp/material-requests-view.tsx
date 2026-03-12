@@ -63,11 +63,13 @@ import {
   X,
   History,
   List,
-  Minus
+  Minus,
+  Download
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/auth/hooks';
+import { ExportButton } from '@/components/wcp/export-button';
 
 interface MaterialRequest {
   id: string;
@@ -499,13 +501,22 @@ export function MaterialRequestsView() {
           <h2 className="text-2xl font-bold text-slate-900">Material Requests</h2>
           <p className="text-slate-500">Request and approve materials for job cards</p>
         </div>
-        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-emerald-600 hover:bg-emerald-700">
-              <Plus className="h-4 w-4 mr-2" />
-              New Request
-            </Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <ExportButton
+            exportType="material-requests"
+            filters={{
+              status: statusFilter,
+              search: searchTerm,
+            }}
+            buttonText="Export"
+          />
+          <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-emerald-600 hover:bg-emerald-700">
+                <Plus className="h-4 w-4 mr-2" />
+                New Request
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
             <DialogHeader>
               <DialogTitle>Create Material Request</DialogTitle>
@@ -622,6 +633,7 @@ export function MaterialRequestsView() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Filters */}

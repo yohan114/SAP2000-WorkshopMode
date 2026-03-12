@@ -5,18 +5,26 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Truck, 
   Wrench, 
   Package, 
   AlertTriangle,
   TrendingUp,
+  TrendingDown,
   Clock,
   CheckCircle,
   Calendar,
   Activity,
   ArrowUpRight,
-  Loader2
+  Loader2,
+  DollarSign,
+  BarChart3,
+  PieChart as PieChartIcon,
+  RefreshCw,
+  Timer,
+  Gauge
 } from 'lucide-react';
 import {
   ChartConfig,
@@ -24,7 +32,24 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  ResponsiveContainer, 
+  PieChart, 
+  Pie, 
+  Cell, 
+  LineChart, 
+  Line, 
+  Legend,
+  AreaChart,
+  Area,
+  ComposedChart,
+  Tooltip
+} from 'recharts';
 
 interface DashboardStats {
   summary: {
@@ -90,7 +115,106 @@ interface DashboardStats {
   generatedAt: string;
 }
 
-const COLORS = ['#10b981', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6', '#6b7280'];
+interface AnalyticsData {
+  monthlyTrends: {
+    jobCards: Array<{
+      month: string;
+      fullMonth: string;
+      created: number;
+      completed: number;
+    }>;
+    costs: Array<{
+      month: string;
+      fullMonth: string;
+      estimated: number;
+      actual: number;
+    }>;
+  };
+  reliability: {
+    mttr: {
+      overall: number;
+      byCategory: Array<{
+        id: string;
+        category: string;
+        code: string;
+        mttr: number;
+        jobCount: number;
+      }>;
+    };
+    mtbf: {
+      overall: number;
+      byCategory: Array<{
+        id: string;
+        category: string;
+        code: string;
+        mtbf: number;
+        breakdownCount: number;
+        totalDowntimeHours: number;
+      }>;
+    };
+  };
+  costs: {
+    totalEstimated: number;
+    totalActual: number;
+    variance: number;
+    isOverBudget: boolean;
+    monthly: Array<{
+      month: string;
+      estimated: number;
+      actual: number;
+    }>;
+  };
+  inventory: {
+    turnover: Array<{
+      month: string;
+      fullMonth: string;
+      receipts: number;
+      issues: number;
+      adjustments: number;
+      turnover: number;
+    }>;
+    summary: {
+      totalReceipts: number;
+      totalIssues: number;
+      avgTurnover: number;
+    };
+  };
+  assets: {
+    utilization: {
+      rate: number;
+      operational: number;
+      underRepair: number;
+      total: number;
+      byStatus: Array<{
+        status: string;
+        count: number;
+        percentage: number;
+      }>;
+    };
+    byCategory: Array<{
+      id: string;
+      category: string;
+      operational: number;
+      total: number;
+      utilizationRate: number;
+    }>;
+  };
+  period: {
+    months: number;
+    startDate: string;
+    endDate: string;
+  };
+  generatedAt: string;
+}
+
+const COLORS = ['#10b981', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6', '#6b7280', '#06b6d4', '#ec4899'];
+const STATUS_COLORS: Record<string, string> = {
+  'OPERATIONAL': '#10b981',
+  'UNDER_REPAIR': '#f59e0b',
+  'STANDBY': '#3b82f6',
+  'OUT_OF_SERVICE': '#ef4444',
+  'DISPOSED': '#6b7280',
+};
 
 const chartConfig = {
   completed: {
@@ -100,6 +224,30 @@ const chartConfig = {
   created: {
     label: "Created",
     color: "#3b82f6",
+  },
+  estimated: {
+    label: "Estimated",
+    color: "#3b82f6",
+  },
+  actual: {
+    label: "Actual",
+    color: "#10b981",
+  },
+  receipts: {
+    label: "Receipts",
+    color: "#10b981",
+  },
+  issues: {
+    label: "Issues",
+    color: "#f59e0b",
+  },
+  mttr: {
+    label: "MTTR (hrs)",
+    color: "#ef4444",
+  },
+  mtbf: {
+    label: "MTBF (hrs)",
+    color: "#10b981",
   },
 } satisfies ChartConfig;
 
@@ -123,11 +271,14 @@ const priorityColors: Record<string, string> = {
 
 export function DashboardView() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDashboardStats();
+    fetchAnalytics();
   }, []);
 
   const fetchDashboardStats = async () => {
@@ -146,6 +297,21 @@ export function DashboardView() {
       setError('Failed to load dashboard data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAnalytics = async () => {
+    try {
+      setAnalyticsLoading(true);
+      const response = await fetch('/api/dashboard/analytics?months=6');
+      if (response.ok) {
+        const data = await response.json();
+        setAnalytics(data.data || data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch analytics:', err);
+    } finally {
+      setAnalyticsLoading(false);
     }
   };
 
@@ -232,12 +398,43 @@ export function DashboardView() {
     },
   ];
 
-  // Generate monthly trend data from real data
-  const monthlyTrend = [
-    { month: 'Jan', completed: 12, created: 15 },
-    { month: 'Feb', completed: 18, created: 16 },
-    { month: 'Mar', completed: summary?.jobCards?.completed || 22, created: summary?.jobCards?.total || 20 },
-  ];
+  // Additional KPI cards from analytics
+  const analyticsKpiCards = analytics ? [
+    {
+      title: 'MTTR (Avg Repair Time)',
+      value: `${analytics.reliability.mttr.overall.toFixed(1)}h`,
+      subtitle: 'Mean Time To Repair',
+      icon: Timer,
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-50',
+      trend: analytics.reliability.mttr.overall < 24 ? 'down' as const : 'up' as const,
+    },
+    {
+      title: 'MTBF (Avg Between Failures)',
+      value: `${analytics.reliability.mtbf.overall.toFixed(0)}h`,
+      subtitle: 'Mean Time Between Failures',
+      icon: RefreshCw,
+      color: 'text-emerald-600',
+      bgColor: 'bg-emerald-50',
+      trend: analytics.reliability.mtbf.overall > 720 ? 'up' as const : 'down' as const,
+    },
+    {
+      title: 'Asset Utilization',
+      value: `${analytics.assets.utilization.rate}%`,
+      subtitle: `${analytics.assets.utilization.operational} of ${analytics.assets.utilization.total} operational`,
+      icon: Gauge,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50',
+    },
+    {
+      title: 'Cost Variance',
+      value: `${Math.abs(analytics.costs.variance).toFixed(1)}%`,
+      subtitle: analytics.costs.isOverBudget ? 'Over budget' : 'Under budget',
+      icon: analytics.costs.isOverBudget ? TrendingUp : TrendingDown,
+      color: analytics.costs.isOverBudget ? 'text-red-600' : 'text-emerald-600',
+      bgColor: analytics.costs.isOverBudget ? 'bg-red-50' : 'bg-emerald-50',
+    },
+  ] : [];
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -268,46 +465,447 @@ export function DashboardView() {
         ))}
       </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Monthly Trend */}
+      {/* Analytics KPI Cards */}
+      {analytics && !analyticsLoading && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {analyticsKpiCards.map((kpi, index) => (
+            <Card key={index} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-sm text-slate-500">{kpi.title}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-3xl font-bold text-slate-900 mt-1">{kpi.value}</p>
+                      {kpi.trend === 'up' ? (
+                        <TrendingUp className="h-4 w-4 text-emerald-500" />
+                      ) : (
+                        <TrendingDown className="h-4 w-4 text-red-500" />
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-400 mt-1">{kpi.subtitle}</p>
+                  </div>
+                  <div className={`p-3 rounded-lg ${kpi.bgColor}`}>
+                    <kpi.icon className={`h-6 w-6 ${kpi.color}`} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Advanced Analytics Tabs */}
+      {analytics && !analyticsLoading && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-emerald-600" />
-              Job Card Activity
+              <BarChart3 className="h-5 w-5 text-emerald-600" />
+              Advanced Analytics
             </CardTitle>
-            <CardDescription>Created vs Completed job cards</CardDescription>
+            <CardDescription>
+              Last {analytics.period.months} months performance metrics
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={chartConfig} className="h-[250px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={monthlyTrend}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="month" stroke="#6b7280" fontSize={12} />
-                  <YAxis stroke="#6b7280" fontSize={12} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Legend />
-                  <Line 
-                    type="monotone" 
-                    dataKey="created" 
-                    stroke="#3b82f6" 
-                    strokeWidth={2}
-                    dot={{ fill: '#3b82f6', strokeWidth: 2 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="completed" 
-                    stroke="#10b981" 
-                    strokeWidth={2}
-                    dot={{ fill: '#10b981', strokeWidth: 2 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartContainer>
+            <Tabs defaultValue="trends" className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="trends">Trends</TabsTrigger>
+                <TabsTrigger value="reliability">Reliability</TabsTrigger>
+                <TabsTrigger value="costs">Costs</TabsTrigger>
+                <TabsTrigger value="inventory">Inventory</TabsTrigger>
+              </TabsList>
+              
+              {/* Trends Tab */}
+              <TabsContent value="trends" className="space-y-6 mt-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Monthly Job Card Trends */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Job Card Activity</CardTitle>
+                      <CardDescription>Created vs Completed job cards</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={analytics.monthlyTrends.jobCards}>
+                            <defs>
+                              <linearGradient id="colorCreated" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                              </linearGradient>
+                              <linearGradient id="colorCompleted" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
+                                <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                            <XAxis dataKey="month" stroke="#6b7280" fontSize={12} />
+                            <YAxis stroke="#6b7280" fontSize={12} />
+                            <ChartTooltip content={<ChartTooltipContent />} />
+                            <Legend />
+                            <Area 
+                              type="monotone" 
+                              dataKey="created" 
+                              stroke="#3b82f6" 
+                              fillOpacity={1} 
+                              fill="url(#colorCreated)"
+                              strokeWidth={2}
+                            />
+                            <Area 
+                              type="monotone" 
+                              dataKey="completed" 
+                              stroke="#10b981" 
+                              fillOpacity={1} 
+                              fill="url(#colorCompleted)"
+                              strokeWidth={2}
+                            />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </ChartContainer>
+                    </CardContent>
+                  </Card>
+
+                  {/* Asset Utilization by Category */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Asset Utilization by Category</CardTitle>
+                      <CardDescription>Operational rate by asset type</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={analytics.assets.byCategory} layout="vertical">
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                            <XAxis type="number" domain={[0, 100]} stroke="#6b7280" fontSize={12} />
+                            <YAxis dataKey="category" type="category" stroke="#6b7280" fontSize={11} width={80} />
+                            <ChartTooltip content={<ChartTooltipContent />} />
+                            <Bar dataKey="utilizationRate" fill="#10b981" radius={[0, 4, 4, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </ChartContainer>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+
+              {/* Reliability Tab */}
+              <TabsContent value="reliability" className="space-y-6 mt-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* MTTR by Category */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Timer className="h-4 w-4 text-orange-500" />
+                        MTTR by Asset Category
+                      </CardTitle>
+                      <CardDescription>Mean Time To Repair (hours)</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {analytics.reliability.mttr.byCategory.length > 0 ? (
+                        <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={analytics.reliability.mttr.byCategory}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                              <XAxis dataKey="code" stroke="#6b7280" fontSize={12} />
+                              <YAxis stroke="#6b7280" fontSize={12} label={{ value: 'Hours', angle: -90, position: 'insideLeft' }} />
+                              <ChartTooltip 
+                                content={({ active, payload, label }) => {
+                                  if (active && payload && payload.length) {
+                                    const data = payload[0].payload;
+                                    return (
+                                      <div className="bg-white p-2 border rounded shadow-sm">
+                                        <p className="font-medium">{data.category}</p>
+                                        <p className="text-sm text-slate-600">MTTR: {data.mttr}h</p>
+                                        <p className="text-sm text-slate-500">Jobs: {data.jobCount}</p>
+                                      </div>
+                                    );
+                                  }
+                                  return null;
+                                }}
+                              />
+                              <Bar dataKey="mttr" fill="#f97316" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </ChartContainer>
+                      ) : (
+                        <div className="h-[250px] flex items-center justify-center text-slate-500">
+                          No repair time data available
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* MTBF by Category */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <RefreshCw className="h-4 w-4 text-emerald-500" />
+                        MTBF by Asset Category
+                      </CardTitle>
+                      <CardDescription>Mean Time Between Failures (hours)</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {analytics.reliability.mtbf.byCategory.length > 0 ? (
+                        <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={analytics.reliability.mtbf.byCategory}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                              <XAxis dataKey="code" stroke="#6b7280" fontSize={12} />
+                              <YAxis stroke="#6b7280" fontSize={12} label={{ value: 'Hours', angle: -90, position: 'insideLeft' }} />
+                              <ChartTooltip 
+                                content={({ active, payload, label }) => {
+                                  if (active && payload && payload.length) {
+                                    const data = payload[0].payload;
+                                    return (
+                                      <div className="bg-white p-2 border rounded shadow-sm">
+                                        <p className="font-medium">{data.category}</p>
+                                        <p className="text-sm text-slate-600">MTBF: {data.mtbf}h</p>
+                                        <p className="text-sm text-slate-500">Breakdowns: {data.breakdownCount}</p>
+                                      </div>
+                                    );
+                                  }
+                                  return null;
+                                }}
+                              />
+                              <Bar dataKey="mtbf" fill="#10b981" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </ChartContainer>
+                      ) : (
+                        <div className="h-[250px] flex items-center justify-center text-slate-500">
+                          No breakdown data available
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Asset Status Distribution */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Asset Status Distribution</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center gap-8">
+                      <div className="w-[200px] h-[200px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={analytics.assets.utilization.byStatus}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={50}
+                              outerRadius={80}
+                              paddingAngle={2}
+                              dataKey="count"
+                              nameKey="status"
+                            >
+                              {analytics.assets.utilization.byStatus.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={STATUS_COLORS[entry.status] || COLORS[index % COLORS.length]} />
+                              ))}
+                            </Pie>
+                            <Tooltip />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="flex-1 space-y-3">
+                        {analytics.assets.utilization.byStatus.map((item, index) => (
+                          <div key={item.status} className="flex items-center gap-3">
+                            <div 
+                              className="w-4 h-4 rounded" 
+                              style={{ backgroundColor: STATUS_COLORS[item.status] || COLORS[index % COLORS.length] }}
+                            />
+                            <span className="text-sm font-medium w-32">{item.status}</span>
+                            <div className="flex-1">
+                              <Progress value={item.percentage} className="h-2" />
+                            </div>
+                            <span className="text-sm text-slate-600 w-20 text-right">
+                              {item.count} ({item.percentage}%)
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Costs Tab */}
+              <TabsContent value="costs" className="space-y-6 mt-4">
+                {/* Cost Summary Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-50 rounded-lg">
+                          <DollarSign className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-slate-500">Estimated Cost</p>
+                          <p className="text-xl font-bold">${analytics.costs.totalEstimated.toLocaleString()}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-emerald-50 rounded-lg">
+                          <DollarSign className="h-5 w-5 text-emerald-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-slate-500">Actual Cost</p>
+                          <p className="text-xl font-bold">${analytics.costs.totalActual.toLocaleString()}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg ${analytics.costs.isOverBudget ? 'bg-red-50' : 'bg-emerald-50'}`}>
+                          {analytics.costs.isOverBudget ? (
+                            <TrendingUp className="h-5 w-5 text-red-600" />
+                          ) : (
+                            <TrendingDown className="h-5 w-5 text-emerald-600" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-sm text-slate-500">Variance</p>
+                          <p className={`text-xl font-bold ${analytics.costs.isOverBudget ? 'text-red-600' : 'text-emerald-600'}`}>
+                            {analytics.costs.isOverBudget ? '+' : '-'}{Math.abs(analytics.costs.variance)}%
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Cost Comparison Chart */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Estimated vs Actual Cost</CardTitle>
+                    <CardDescription>Monthly cost comparison</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ChartContainer config={chartConfig} className="h-[300px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart data={analytics.costs.monthly}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                          <XAxis dataKey="month" stroke="#6b7280" fontSize={12} />
+                          <YAxis stroke="#6b7280" fontSize={12} />
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <Legend />
+                          <Bar dataKey="estimated" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Estimated" />
+                          <Line type="monotone" dataKey="actual" stroke="#10b981" strokeWidth={2} dot={{ fill: '#10b981' }} name="Actual" />
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                    </ChartContainer>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Inventory Tab */}
+              <TabsContent value="inventory" className="space-y-6 mt-4">
+                {/* Inventory Summary */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-emerald-50 rounded-lg">
+                          <TrendingDown className="h-5 w-5 text-emerald-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-slate-500">Total Receipts</p>
+                          <p className="text-xl font-bold">${analytics.inventory.summary.totalReceipts.toLocaleString()}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-amber-50 rounded-lg">
+                          <Package className="h-5 w-5 text-amber-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-slate-500">Total Issues</p>
+                          <p className="text-xl font-bold">${analytics.inventory.summary.totalIssues.toLocaleString()}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-50 rounded-lg">
+                          <Activity className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-slate-500">Avg Turnover Rate</p>
+                          <p className="text-xl font-bold">{analytics.inventory.summary.avgTurnover.toFixed(2)}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Inventory Turnover Chart */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Inventory Movement</CardTitle>
+                    <CardDescription>Monthly receipts and issues</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ChartContainer config={chartConfig} className="h-[300px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={analytics.inventory.turnover}>
+                          <defs>
+                            <linearGradient id="colorReceipts" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
+                              <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                            </linearGradient>
+                            <linearGradient id="colorIssuesInv" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8}/>
+                              <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                          <XAxis dataKey="month" stroke="#6b7280" fontSize={12} />
+                          <YAxis stroke="#6b7280" fontSize={12} />
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <Legend />
+                          <Area 
+                            type="monotone" 
+                            dataKey="receipts" 
+                            stroke="#10b981" 
+                            fillOpacity={1} 
+                            fill="url(#colorReceipts)"
+                            strokeWidth={2}
+                            name="Receipts"
+                          />
+                          <Area 
+                            type="monotone" 
+                            dataKey="issues" 
+                            stroke="#f59e0b" 
+                            fillOpacity={1} 
+                            fill="url(#colorIssuesInv)"
+                            strokeWidth={2}
+                            name="Issues"
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </ChartContainer>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
+      )}
 
+      {/* Original Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Job Cards by Status */}
         <Card>
           <CardHeader>
@@ -361,10 +959,7 @@ export function DashboardView() {
             )}
           </CardContent>
         </Card>
-      </div>
 
-      {/* Priority Distribution and Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Priority Distribution */}
         <Card>
           <CardHeader>
@@ -387,7 +982,6 @@ export function DashboardView() {
                     <Progress 
                       value={percentage} 
                       className="h-2" 
-                      indicatorClassName={priorityColors[item.priority] || 'bg-slate-400'} 
                     />
                   </div>
                 );
@@ -399,9 +993,12 @@ export function DashboardView() {
             )}
           </CardContent>
         </Card>
+      </div>
 
-        {/* Recent Activity */}
-        <Card className="lg:col-span-2">
+      {/* Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Job Cards */}
+        <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
@@ -437,7 +1034,7 @@ export function DashboardView() {
                         {new Date(jc.createdAt).toLocaleString()}
                       </p>
                     </div>
-                    <Badge variant="outline" className={priorityColors[jc.priority] ? `border-l-4 border-l-${priorityColors[jc.priority].replace('bg-', '')}` : ''}>
+                    <Badge variant="outline">
                       {jc.priority}
                     </Badge>
                   </div>
@@ -450,10 +1047,8 @@ export function DashboardView() {
             )}
           </CardContent>
         </Card>
-      </div>
 
-      {/* Top Assets */}
-      {stats?.topAssets && stats.topAssets.length > 0 && (
+        {/* Top Assets */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -463,27 +1058,37 @@ export function DashboardView() {
             <CardDescription>Assets requiring the most maintenance attention</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-              {stats.topAssets.map((asset, index) => (
-                <div 
-                  key={asset.id}
-                  className="p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-lg font-bold text-emerald-600">#{index + 1}</span>
-                    <Badge className={statusColors[asset.status] || 'bg-slate-100'}>
-                      {asset.status}
-                    </Badge>
+            {stats?.topAssets && stats.topAssets.length > 0 ? (
+              <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                {stats.topAssets.map((asset, index) => (
+                  <div 
+                    key={asset.id}
+                    className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+                  >
+                    <div className="flex items-center justify-center w-8 h-8 bg-emerald-100 rounded-full">
+                      <span className="text-sm font-bold text-emerald-600">#{index + 1}</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">{asset.name}</p>
+                      <p className="text-xs text-slate-500">{asset.assetNumber}</p>
+                    </div>
+                    <div className="text-right">
+                      <Badge className={statusColors[asset.status] || 'bg-slate-100'}>
+                        {asset.status}
+                      </Badge>
+                      <p className="text-sm font-bold text-slate-900 mt-1">{asset.jobCardCount} jobs</p>
+                    </div>
                   </div>
-                  <p className="font-medium text-sm truncate">{asset.name}</p>
-                  <p className="text-xs text-slate-500">{asset.assetNumber}</p>
-                  <p className="text-lg font-bold text-slate-900 mt-2">{asset.jobCardCount} jobs</p>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center text-slate-500 py-8">
+                No asset data available
+              </div>
+            )}
           </CardContent>
         </Card>
-      )}
+      </div>
 
       {/* Quick Actions */}
       <Card>
