@@ -19,12 +19,12 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     
-    const result = createFromMRSchema.safeParse(body);
-    if (!result.success) {
-      return apiError('Validation failed', 400, result.error.errors[0]?.message);
+    const validationResult = createFromMRSchema.safeParse(body);
+    if (!validationResult.success) {
+      return apiError('Validation failed', 400, validationResult.error.errors[0]?.message);
     }
 
-    const { mrId, storeId, issuedToId, issuedBy, lineSelections, notes } = result.data;
+    const { mrId, storeId, issuedToId, issuedBy, lineSelections, notes } = validationResult.data;
 
     // Get the MR with lines
     const mr = await db.materialRequest.findUnique({

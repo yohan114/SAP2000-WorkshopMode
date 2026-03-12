@@ -104,12 +104,12 @@ export async function POST(
     const { id } = await params;
     const body = await request.json();
 
-    const result = createQuotationSchema.safeParse(body);
-    if (!result.success) {
-      return apiValidationError(result.error);
+    const validationResult = createQuotationSchema.safeParse(body);
+    if (!validationResult.success) {
+      return apiValidationError(validationResult.error);
     }
 
-    const data = result.data;
+    const data = validationResult.data;
 
     // Verify external job exists
     const externalJob = await db.externalJob.findUnique({
@@ -172,12 +172,12 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
 
-    const result = updateQuotationSchema.safeParse(body);
-    if (!result.success) {
-      return apiValidationError(result.error);
+    const validationResult = updateQuotationSchema.safeParse(body);
+    if (!validationResult.success) {
+      return apiValidationError(validationResult.error);
     }
 
-    const data = result.data;
+    const data = validationResult.data;
 
     // Verify external job exists
     const externalJob = await db.externalJob.findUnique({
