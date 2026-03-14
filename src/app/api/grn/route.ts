@@ -1,0 +1,186 @@
+import { db } from '@/lib/db';
+import { apiSuccess, apiPaginated, apiError, parsePagination, getSkip, generateDocumentNumber } from '@/lib/api-utils';
+import { z } from 'zod';
+
+const createGRNSchema = z.object({
+  poId: z.string().min(1),
+  storeId: z.string().min(1),
+  deliveryNoteNo: z.string().optional(),
+  deliveryDate: z.string().optional(),
+  notes: z.string().optional(),
+  createdBy: z.string().min(1),
+  lines: z.array(z.object({
+    poLineId: z.string(),
+    itemId: z.string(),
+    receivedQty: z.number().positive(),
+    acceptedQty: z.number().min(0),
+    rejectedQty: z.number().min(0).optional(),
+    rejectionReason: z.string().optional(),
+    unitCost: z.number().positive(),
+    batchNumber: z.string().optional(),
+    expiryDate: z.string().optional(),
+    notes: z.string().optional(),
+  })).min(1),
+});
+
+// GET - List GRNs
+export async function GET(request: Request) {
+  try {
+    const url = new URL(request.url);
+    const { page, limit, search } = parsePagination(url);
+    const skip = getSkip(page, limit);
+
+    const status = url.searchParams.get('status');
+    const storeId = url.searchParams.get('storeId');
+    const poId = url.searchParams.get('poId');
+
+    const where: Record<string, unknown> = { isActive: true };
+    if (status) where.status = status;
+    if (storeId) where.storeId = storeId;
+    if (poId) where.poId = poId;
+    if (search) where.grnNumber = { contains: search };
+
+    const [grns, total] = await Promise.all([
+      db.grnHeader.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          supplier: { select: { id: true, supplierCode: true, name: true } },
+          store: { select: { id: true, code: true, name: true } },
+          purchaseOrder: { select: { id: true, poNumber: true } },
+          creator: { select: { id: true, name: true } },
+          lines: {
+            include: {
+              item: { select: { id: true, itemCode: true, name: true, unitOfMeasure: true } },
+            },
+          },
+          _count: { select: { lines: true } },
+        },
+      }),
+      db.grnHeader.count({ where }),
+    ]);
+
+    return apiPaginated(
+      grns.map(grn => ({
+        id: grn.id,
+        grnNumber: grn.grnNumber,
+        po: grn.purchaseOrder,
+        supplier: grn.supplier,
+        store: grn.store,
+        status: grn.status,
+        totalValue: grn.totalValue.toNumber(),
+        lineCount: grn._count.lines,
+        lines: grn.lines.map(l => ({
+          id: l.id,
+          item: l.item,
+          receivedQty: l.receivedQty.toNumber(),
+          acceptedQty: l.acceptedQty.toNumber(),
+          rejectedQty: l.rejectedQty.toNumber(),
+          unitCost: l.unitCost.toNumber(),
+          totalCost: l.totalCost.toNumber(),
+        })),
+        createdBy: grn.creator,
+        createdAt: grn.createdAt,
+      })),
+      total,
+      page,
+      limit
+    );
+  } catch (error) {
+    console.error('Get GRNs error:', error);
+    return apiError('Failed to fetch GRNs', 500);
+  }
+}
+
+// POST - Create GRN from PO
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const result = createGRNSchema.safeParse(body);
+    
+    if (!result.success) {
+      return apiError('Validation failed', 400, result.error.issues[0]?.message);
+    }
+
+    const { poId, storeId, deliveryNoteNo, deliveryDate, notes, createdBy, lines } = result.data;
+
+    // Verify PO exists and is in correct status
+    const po = await db.purchaseOrder.findUnique({
+      where: { id: poId },
+      include: { lines: true },
+    });
+
+    if (!po) {
+      return apiError('Purchase order not found', 404);
+    }
+
+    if (!['ISSUED', 'ACKNOWLEDGED', 'PARTIALLY_RECEIVED'].includes(po.status)) {
+      return apiError('PO must be issued or acknowledged to create GRN', 400);
+    }
+
+    // Verify store exists
+    const store = await db.store.findUnique({ where: { id: storeId } });
+    if (!store) {
+      return apiError('Store not found', 404);
+    }
+
+    // Generate GRN number
+    const count = await db.grnHeader.count();
+    const grnNumber = generateDocumentNumber('GRN', count + 1);
+
+    // Calculate total value
+    let totalValue = 0;
+    const linesData = lines.map(line => {
+      const totalCost = line.unitCost * line.acceptedQty;
+      totalValue += totalCost;
+      return {
+        itemId: line.itemId,
+        receivedQty: line.receivedQty,
+        acceptedQty: line.acceptedQty,
+        rejectedQty: line.rejectedQty || 0,
+        rejectionReason: line.rejectionReason,
+        unitCost: line.unitCost,
+        totalCost,
+        batchNumber: line.batchNumber,
+        expiryDate: line.expiryDate ? new Date(line.expiryDate) : undefined,
+        notes: line.notes,
+      };
+    });
+
+    // Create GRN
+    const grn = await db.grnHeader.create({
+      data: {
+        grnNumber,
+        poId,
+        supplierId: po.supplierId,
+        storeId,
+        deliveryNoteNo,
+        deliveryDate: deliveryDate ? new Date(deliveryDate) : undefined,
+        status: 'DRAFT',
+        createdBy,
+        totalValue,
+        notes,
+        lines: { create: linesData },
+      },
+      include: {
+        supplier: true,
+        store: true,
+        purchaseOrder: true,
+        lines: { include: { item: true } },
+      },
+    });
+
+    return apiSuccess({
+      id: grn.id,
+      grnNumber: grn.grnNumber,
+      status: grn.status,
+      totalValue: grn.totalValue.toNumber(),
+      linesCount: grn.lines.length,
+    }, 'GRN created successfully', 201);
+  } catch (error) {
+    console.error('Create GRN error:', error);
+    return apiError('Failed to create GRN', 500);
+  }
+}
