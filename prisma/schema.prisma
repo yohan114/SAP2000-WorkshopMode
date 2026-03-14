@@ -1235,6 +1235,7 @@ model SupplierInvoice {
   approvedAt      DateTime?
   paidAt          DateTime?
   paymentRef      String?
+  invoicePdfPath  String?  // Path to uploaded invoice PDF
   isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

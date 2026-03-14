@@ -42,11 +42,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  ShoppingCart, Plus, Search, Loader2, Building2, DollarSign, Calendar, 
+import {
+  ShoppingCart, Plus, Search, Loader2, Building2, DollarSign, Calendar,
   Truck, Eye, CheckCircle, XCircle, Package, ArrowRight, Send, FileText,
   MoreHorizontal, ChevronLeft, ChevronRight, Check, AlertCircle, FileCheck,
-  Receipt, Edit, History
+  Receipt, Edit, History, ClipboardList, Upload, X, File
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/auth/hooks';
@@ -81,7 +81,16 @@ interface Supplier {
   id: string;
   supplierCode: string;
   name: string;
+  contactPerson?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  country?: string;
   status: string;
+  paymentTerms?: string;
+  currency?: string;
+  createdAt: string;
 }
 
 interface Item {
@@ -129,6 +138,7 @@ interface Invoice {
   totalValue: number;
   invoiceDate: string;
   dueDate: string | null;
+  invoicePdfPath: string | null;
   createdAt: string;
 }
 
@@ -142,6 +152,73 @@ interface Amendment {
   approvedBy: string | null;
   approvedAt: string | null;
   createdAt: string;
+}
+
+interface RFQ {
+  id: string;
+  rfqNumber: string;
+  status: string;
+  issueDate: string | null;
+  closingDate: string | null;
+  notes: string | null;
+  createdAt: string;
+  _count: {
+    lines: number;
+    suppliers: number;
+    quotations: number;
+  };
+  quotations: Quotation[];
+  suppliers: Array<{
+    supplierId: string;
+    status: string;
+    supplier: { id: string; supplierCode: string; name: string };
+  }>;
+}
+
+interface Quotation {
+  id: string;
+  quotationNumber: string;
+  supplierId: string;
+  quotationDate: string;
+  validUntil: string | null;
+  currency: string;
+  totalValue: number;
+  status: string;
+  terms: string | null;
+  notes: string | null;
+  supplier?: { id: string; supplierCode: string; name: string };
+  lines?: Array<{
+    id: string;
+    description: string;
+    quantity: number;
+    unitPrice: number;
+    totalPrice: number;
+    leadTime: number | null;
+  }>;
+}
+
+interface PurchaseRequest {
+  id: string;
+  prNumber: string;
+  department: string | null;
+  requestType: string;
+  priority: string;
+  status: string;
+  estimatedValue: number | null;
+  requiredBy: string | null;
+  createdAt: string;
+  requestor: { id: string; name: string; department: string | null };
+  _count?: { lines: number };
+  lines?: Array<{
+    id: string;
+    lineNumber: number;
+    description: string;
+    quantity: number;
+    unitOfMeasure: string | null;
+    estimatedCost: number | null;
+    totalEstCost: number | null;
+    status: string;
+  }>;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -161,7 +238,14 @@ const STATUS_COLORS: Record<string, string> = {
   DISPUTED: 'bg-red-100 text-red-700',
   PAID: 'bg-emerald-100 text-emerald-700',
   PENDING: 'bg-slate-100 text-slate-700',
-  APPROVED: 'bg-blue-100 text-blue-700',
+  // RFQ/Quotation statuses
+  INVITED: 'bg-slate-100 text-slate-700',
+  SENT: 'bg-cyan-100 text-cyan-700',
+  RESPONDED: 'bg-blue-100 text-blue-700',
+  SUBMITTED: 'bg-amber-100 text-amber-700',
+  EVALUATED: 'bg-purple-100 text-purple-700',
+  AWARDED: 'bg-emerald-100 text-emerald-700',
+  REJECTED: 'bg-red-100 text-red-700',
 };
 
 const validTransitions: Record<string, Array<{ action: string; label: string; newStatus: string }>> = {
@@ -220,7 +304,25 @@ export function PurchaseOrdersView() {
   const [invoiceLoading, setInvoiceLoading] = useState(false);
   const [invoiceTotal, setInvoiceTotal] = useState(0);
   const [invoicePage, setInvoicePage] = useState(1);
-  
+
+  // Supplier state
+  const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
+  const [supplierLoading, setSupplierLoading] = useState(false);
+  const [supplierTotal, setSupplierTotal] = useState(0);
+  const [supplierPage, setSupplierPage] = useState(1);
+
+  // RFQ state
+  const [rfqs, setRFQs] = useState<RFQ[]>([]);
+  const [rfqLoading, setRFQLoading] = useState(false);
+  const [rfqTotal, setRFQTotal] = useState(0);
+  const [rfqPage, setRFQPage] = useState(1);
+
+  // PR state
+  const [prs, setPRs] = useState<PurchaseRequest[]>([]);
+  const [prLoading, setPRLoading] = useState(false);
+  const [prTotal, setPRTotal] = useState(0);
+  const [prPage, setPRPage] = useState(1);
+
   // Dialogs
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedPO, setSelectedPO] = useState<PurchaseOrder | null>(null);
@@ -234,7 +336,29 @@ export function PurchaseOrdersView() {
   const [actionDialog, setActionDialog] = useState<{ open: boolean; action: string; po: PurchaseOrder | null }>({
     open: false, action: '', po: null,
   });
-  
+
+  // Supplier dialog
+  const [isSupplierOpen, setIsSupplierOpen] = useState(false);
+
+  // RFQ dialog
+  const [isRFQOpen, setIsRFQOpen] = useState(false);
+  const [selectedRFQ, setSelectedRFQ] = useState<RFQ | null>(null);
+  const [rfqDetailOpen, setRFQDetailOpen] = useState(false);
+  const [isQuotationOpen, setIsQuotationOpen] = useState(false);
+
+  // PR dialog
+  const [isPROpen, setIsPROpen] = useState(false);
+  const [selectedPR, setSelectedPR] = useState<PurchaseRequest | null>(null);
+  const [prDetailOpen, setPRDetailOpen] = useState(false);
+
+  // GRN from PO selection
+  const [isGRNSelectOpen, setIsGRNSelectOpen] = useState(false);
+  const [issuedPOs, setIssuedPOs] = useState<PurchaseOrder[]>([]);
+
+  // Invoice from PO selection
+  const [isInvoiceSelectOpen, setIsInvoiceSelectOpen] = useState(false);
+  const [invoicePOs, setInvoicePOs] = useState<PurchaseOrder[]>([]);
+
   // Form state
   const [formData, setFormData] = useState({
     supplierId: '',
@@ -272,7 +396,55 @@ export function PurchaseOrdersView() {
     currency: 'USD',
     totalValue: 0,
     taxAmount: 0,
+    invoicePdfPath: '',
     lines: [] as Array<{ description: string; invoicedQty: number; invoicedPrice: number }>,
+  });
+  const [invoicePdfFile, setInvoicePdfFile] = useState<File | null>(null);
+  const [uploadingPdf, setUploadingPdf] = useState(false);
+
+  // Supplier form
+  const [supplierForm, setSupplierForm] = useState({
+    supplierCode: '',
+    name: '',
+    contactPerson: '',
+    phone: '',
+    email: '',
+    address: '',
+    city: '',
+    country: '',
+    taxId: '',
+    paymentTerms: '',
+    currency: 'USD',
+    notes: '',
+  });
+
+  // RFQ form
+  const [rfqForm, setRqqForm] = useState({
+    closingDate: '',
+    notes: '',
+    lines: [{ itemId: '', description: '', quantity: 1, unitOfMeasure: '' }],
+    supplierIds: [] as string[],
+  });
+
+  // Quotation form
+  const [quotationForm, setQuotationForm] = useState({
+    supplierId: '',
+    quotationNumber: '',
+    quotationDate: '',
+    validUntil: '',
+    currency: 'USD',
+    terms: '',
+    notes: '',
+    lines: [] as Array<{ rfqLineId: string; description: string; quantity: number; unitPrice: number; leadTime: number | null }>,
+  });
+
+  // PR form
+  const [prForm, setPrForm] = useState({
+    department: '',
+    requestType: 'STANDARD',
+    priority: 'NORMAL',
+    requiredBy: '',
+    lines: [{ itemId: '', description: '', quantity: 1, unitOfMeasure: '', estimatedCost: 0 }],
   });
 
   const limit = 10;
@@ -287,7 +459,10 @@ export function PurchaseOrdersView() {
   useEffect(() => {
     if (activeTab === 'grns') fetchGRNs();
     if (activeTab === 'invoices') fetchInvoices();
-  }, [activeTab, grnPage, invoicePage]);
+    if (activeTab === 'suppliers') fetchAllSuppliers();
+    if (activeTab === 'rfqs') fetchRFQs();
+    if (activeTab === 'prs') fetchPRs();
+  }, [activeTab, grnPage, invoicePage, supplierPage, rfqPage, prPage]);
 
   const fetchPurchaseOrders = async () => {
     try {
@@ -354,6 +529,323 @@ export function PurchaseOrdersView() {
     }
   };
 
+  const fetchAllSuppliers = async () => {
+    try {
+      setSupplierLoading(true);
+      const params = new URLSearchParams({ page: supplierPage.toString(), limit: limit.toString() });
+      const res = await fetch(`/api/suppliers?${params}`);
+      const data = await res.json();
+      if (data.success) {
+        setAllSuppliers(data.data);
+        setSupplierTotal(data.pagination.total);
+      }
+    } catch (error) {
+      console.error('Failed to fetch suppliers:', error);
+    } finally {
+      setSupplierLoading(false);
+    }
+  };
+
+  const handleCreateSupplier = async () => {
+    try {
+      setSubmitting(true);
+      const res = await fetch('/api/suppliers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(supplierForm),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: 'Success', description: 'Supplier created successfully' });
+        setIsSupplierOpen(false);
+        setSupplierForm({
+          supplierCode: '',
+          name: '',
+          contactPerson: '',
+          phone: '',
+          email: '',
+          address: '',
+          city: '',
+          country: '',
+          taxId: '',
+          paymentTerms: '',
+          currency: 'USD',
+          notes: '',
+        });
+        fetchAllSuppliers();
+        fetchSuppliers(); // Refresh dropdown data
+      } else {
+        toast({ title: 'Error', description: data.error || 'Failed to create supplier', variant: 'destructive' });
+      }
+      } catch (error) {
+      console.error('Create supplier error:', error);
+      toast({ title: 'Error', description: 'Failed to create supplier', variant: 'destructive' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const fetchRFQs = async () => {
+    try {
+      setRFQLoading(true);
+      const params = new URLSearchParams({ page: rfqPage.toString(), limit: limit.toString() });
+      const res = await fetch(`/api/rfq?${params}`);
+      const data = await res.json();
+      if (data.success) {
+        setRFQs(data.data);
+        setRFQTotal(data.pagination.total);
+      }
+    } catch (error) {
+      console.error('Failed to fetch RFQs:', error);
+    } finally {
+      setRFQLoading(false);
+    }
+  };
+
+  const handleCreateRFQ = async () => {
+    try {
+      setSubmitting(true);
+      const res = await fetch('/api/rfq', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          closingDate: rfqForm.closingDate || undefined,
+          notes: rfqForm.notes || undefined,
+          lines: rfqForm.lines
+            .filter(l => l.description && l.quantity > 0)
+            .map(l => ({
+              itemId: l.itemId || undefined,
+              description: l.description,
+              quantity: l.quantity,
+              unitOfMeasure: l.unitOfMeasure || undefined,
+            })),
+          supplierIds: rfqForm.supplierIds,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: 'Success', description: 'RFQ created successfully' });
+        setIsRFQOpen(false);
+        setRqqForm({
+          closingDate: '',
+          notes: '',
+          lines: [{ itemId: '', description: '', quantity: 1, unitOfMeasure: '' }],
+          supplierIds: [],
+        });
+        fetchRFQs();
+      } else {
+        toast({ title: 'Error', description: data.error || 'Failed to create RFQ', variant: 'destructive' });
+      }
+    } catch (error) {
+      console.error('Create RFQ error:', error);
+      toast({ title: 'Error', description: 'Failed to create RFQ', variant: 'destructive' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSendRFQ = async (rfqId: string) => {
+    try {
+      setSubmitting(true);
+      const res = await fetch(`/api/rfq/${rfqId}/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: 'Success', description: 'RFQ sent to suppliers' });
+        setRFQDetailOpen(false);
+        fetchRFQs();
+      } else {
+        toast({ title: 'Error', description: data.error || 'Failed to send RFQ', variant: 'destructive' });
+      }
+    } catch (error) {
+      console.error('Send RFQ error:', error);
+      toast({ title: 'Error', description: 'Failed to send RFQ', variant: 'destructive' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleCreateQuotation = async () => {
+    if (!selectedRFQ) return;
+
+    try {
+      setSubmitting(true);
+      const res = await fetch(`/api/rfq/${selectedRFQ.id}/quotation`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          supplierId: quotationForm.supplierId,
+          quotationNumber: quotationForm.quotationNumber,
+          quotationDate: quotationForm.quotationDate,
+          validUntil: quotationForm.validUntil || undefined,
+          currency: quotationForm.currency,
+          terms: quotationForm.terms || undefined,
+          notes: quotationForm.notes || undefined,
+          lines: quotationForm.lines
+            .filter(l => l.description && l.quantity > 0 && l.unitPrice >= 0)
+            .map(l => ({
+              rfqLineId: l.rfqLineId || undefined,
+              description: l.description,
+              quantity: l.quantity,
+              unitPrice: l.unitPrice,
+              leadTime: l.leadTime || undefined,
+            })),
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: 'Success', description: 'Quotation submitted successfully' });
+        setIsQuotationOpen(false);
+        setQuotationForm({
+          supplierId: '',
+          quotationNumber: '',
+          quotationDate: '',
+          validUntil: '',
+          currency: 'USD',
+          terms: '',
+          notes: '',
+          lines: [],
+        });
+        fetchRFQs();
+      } else {
+        toast({ title: 'Error', description: data.error || 'Failed to submit quotation', variant: 'destructive' });
+      }
+    } catch (error) {
+      console.error('Create quotation error:', error);
+      toast({ title: 'Error', description: 'Failed to submit quotation', variant: 'destructive' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleAwardQuotation = async (quotationId: string) => {
+    try {
+      setSubmitting(true);
+      const res = await fetch(`/api/quotation/${quotationId}/award`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: 'Success', description: 'Quotation awarded - PO created' });
+        setRFQDetailOpen(false);
+        fetchRFQs();
+        fetchPurchaseOrders();
+      } else {
+        toast({ title: 'Error', description: data.error || 'Failed to award quotation', variant: 'destructive' });
+      }
+    } catch (error) {
+      console.error('Award quotation error:', error);
+      toast({ title: 'Error', description: 'Failed to award quotation', variant: 'destructive' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // PR Functions
+  const fetchPRs = async () => {
+    try {
+      setPRLoading(true);
+      const params = new URLSearchParams({ page: prPage.toString(), limit: limit.toString() });
+      const res = await fetch(`/api/pr?${params}`);
+      const data = await res.json();
+      if (data.success) {
+        setPRs(data.data);
+        setPRTotal(data.pagination.total);
+      }
+    } catch (error) {
+      console.error('Failed to fetch PRs:', error);
+    } finally {
+      setPRLoading(false);
+    }
+  };
+
+  const handleCreatePR = async () => {
+    if (!user) return;
+
+    try {
+      setSubmitting(true);
+      const res = await fetch('/api/pr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          department: prForm.department || undefined,
+          requestType: prForm.requestType,
+          priority: prForm.priority,
+          requiredBy: prForm.requiredBy || undefined,
+          lines: prForm.lines
+            .filter(l => l.description && l.quantity > 0)
+            .map(l => ({
+              itemId: l.itemId || undefined,
+              description: l.description,
+              quantity: l.quantity,
+              unitOfMeasure: l.unitOfMeasure || undefined,
+              estimatedCost: l.estimatedCost || undefined,
+            })),
+          requestorId: user.id,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: 'Success', description: 'Purchase request created' });
+        setIsPROpen(false);
+        setPrForm({
+          department: '',
+          requestType: 'STANDARD',
+          priority: 'NORMAL',
+          requiredBy: '',
+          lines: [{ itemId: '', description: '', quantity: 1, unitOfMeasure: '', estimatedCost: 0 }],
+        });
+        fetchPRs();
+      } else {
+        toast({ title: 'Error', description: data.error || 'Failed to create PR', variant: 'destructive' });
+      }
+    } catch (error) {
+      console.error('Create PR error:', error);
+      toast({ title: 'Error', description: 'Failed to create PR', variant: 'destructive' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleApprovePR = async (prId: string, action: 'APPROVE' | 'REJECT') => {
+    if (!user) return;
+
+    try {
+      setSubmitting(true);
+      const res = await fetch(`/api/pr/${prId}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          approverId: user.id,
+          action,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: 'Success', description: `PR ${action.toLowerCase()}d` });
+        setPRDetailOpen(false);
+        fetchPRs();
+      } else {
+        toast({ title: 'Error', description: data.error || 'Failed to process approval', variant: 'destructive' });
+      }
+    } catch (error) {
+      console.error('Approve PR error:', error);
+      toast({ title: 'Error', description: 'Failed to process approval', variant: 'destructive' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const fetchItems = async () => {
     try {
       const res = await fetch('/api/items?limit=200');
@@ -382,6 +874,88 @@ export function PurchaseOrdersView() {
     } catch (error) {
       console.error('Failed to fetch amendments:', error);
     }
+  };
+
+  const fetchIssuedPOs = async () => {
+    try {
+      // Fetch both ISSUED and PARTIALLY_RECEIVED POs
+      const [issuedRes, partialRes] = await Promise.all([
+        fetch('/api/purchase-orders?limit=100&status=ISSUED'),
+        fetch('/api/purchase-orders?limit=100&status=PARTIALLY_RECEIVED'),
+      ]);
+      const issuedData = await issuedRes.json();
+      const partialData = await partialRes.json();
+      const allPOs = [
+        ...(issuedData.success ? issuedData.data : []),
+        ...(partialData.success ? partialData.data : []),
+      ];
+      setIssuedPOs(allPOs);
+    } catch (error) {
+      console.error('Failed to fetch issued POs:', error);
+    }
+  };
+
+  const openGRNFromTab = (po: PurchaseOrder) => {
+    setSelectedPO(po);
+    setGrnForm({
+      storeId: stores[0]?.id || '',
+      deliveryNoteNo: '',
+      deliveryDate: '',
+      notes: '',
+      lines: po.lines.map(l => ({
+        poLineId: l.id,
+        itemId: l.itemId || '',
+        receivedQty: l.orderedQty - l.receivedQty,
+        acceptedQty: l.orderedQty - l.receivedQty,
+        rejectedQty: 0,
+        unitCost: l.unitPrice,
+      })),
+    });
+    setIsGRNSelectOpen(false);
+    setIsGRNOpen(true);
+  };
+
+  const fetchInvoicePOs = async () => {
+    try {
+      // Fetch POs that can have invoices (ISSUED, PARTIALLY_RECEIVED, RECEIVED)
+      const [issuedRes, partialRes, receivedRes] = await Promise.all([
+        fetch('/api/purchase-orders?limit=100&status=ISSUED'),
+        fetch('/api/purchase-orders?limit=100&status=PARTIALLY_RECEIVED'),
+        fetch('/api/purchase-orders?limit=100&status=RECEIVED'),
+      ]);
+      const issuedData = await issuedRes.json();
+      const partialData = await partialRes.json();
+      const receivedData = await receivedRes.json();
+      const allPOs = [
+        ...(issuedData.success ? issuedData.data : []),
+        ...(partialData.success ? partialData.data : []),
+        ...(receivedData.success ? receivedData.data : []),
+      ];
+      setInvoicePOs(allPOs);
+    } catch (error) {
+      console.error('Failed to fetch invoice POs:', error);
+    }
+  };
+
+  const openInvoiceFromTab = (po: PurchaseOrder) => {
+    setSelectedPO(po);
+    setInvoiceForm({
+      invoiceNumber: '',
+      invoiceDate: '',
+      dueDate: '',
+      currency: po.currency || 'USD',
+      totalValue: po.totalValue,
+      taxAmount: 0,
+      invoicePdfPath: '',
+      lines: po.lines.map(l => ({
+        description: l.description,
+        invoicedQty: l.orderedQty,
+        invoicedPrice: l.unitPrice,
+      })),
+    });
+    setInvoicePdfFile(null);
+    setIsInvoiceSelectOpen(false);
+    setIsInvoiceOpen(true);
   };
 
   const handleTransition = async () => {
@@ -590,12 +1164,36 @@ export function PurchaseOrdersView() {
 
     try {
       setSubmitting(true);
+      
+      // Upload PDF file first if selected
+      let pdfPath = invoiceForm.invoicePdfPath;
+      if (invoicePdfFile) {
+        setUploadingPdf(true);
+        const formData = new FormData();
+        formData.append('file', invoicePdfFile);
+        formData.append('folder', 'invoices');
+        
+        const uploadRes = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        const uploadData = await uploadRes.json();
+        if (uploadData.success) {
+          pdfPath = uploadData.data.filePath;
+        } else {
+          toast({ title: 'Warning', description: 'Failed to upload PDF, continuing without it', variant: 'destructive' });
+        }
+        setUploadingPdf(false);
+      }
+      
       const res = await fetch('/api/invoices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           poId: selectedPO.id,
           ...invoiceForm,
+          invoicePdfPath: pdfPath || undefined,
         }),
       });
 
@@ -603,6 +1201,17 @@ export function PurchaseOrdersView() {
       if (data.success) {
         toast({ title: 'Success', description: `Invoice created - Match Status: ${data.data.matchStatus}` });
         setIsInvoiceOpen(false);
+        setInvoicePdfFile(null);
+        setInvoiceForm({
+          invoiceNumber: '',
+          invoiceDate: '',
+          dueDate: '',
+          currency: 'USD',
+          totalValue: 0,
+          taxAmount: 0,
+          invoicePdfPath: '',
+          lines: [],
+        });
         if (activeTab === 'invoices') fetchInvoices();
       } else {
         toast({ title: 'Error', description: data.error || 'Failed to create invoice', variant: 'destructive' });
@@ -612,6 +1221,7 @@ export function PurchaseOrdersView() {
       toast({ title: 'Error', description: 'Failed to create invoice', variant: 'destructive' });
     } finally {
       setSubmitting(false);
+      setUploadingPdf(false);
     }
   };
 
@@ -843,15 +1453,24 @@ export function PurchaseOrdersView() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="orders" className="flex items-center gap-2">
-            <ShoppingCart className="h-4 w-4" />Purchase Orders
+            <ShoppingCart className="h-4 w-4" />POs
+          </TabsTrigger>
+          <TabsTrigger value="prs" className="flex items-center gap-2">
+            <ClipboardList className="h-4 w-4" />PRs
+          </TabsTrigger>
+          <TabsTrigger value="rfqs" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />RFQs
           </TabsTrigger>
           <TabsTrigger value="grns" className="flex items-center gap-2">
             <Package className="h-4 w-4" />GRNs
           </TabsTrigger>
           <TabsTrigger value="invoices" className="flex items-center gap-2">
             <Receipt className="h-4 w-4" />Invoices
+          </TabsTrigger>
+          <TabsTrigger value="suppliers" className="flex items-center gap-2">
+            <Building2 className="h-4 w-4" />Suppliers
           </TabsTrigger>
         </TabsList>
 
@@ -979,6 +1598,54 @@ export function PurchaseOrdersView() {
 
         {/* GRNs Tab */}
         <TabsContent value="grns" className="space-y-4">
+          <div className="flex justify-end">
+            <Dialog open={isGRNSelectOpen} onOpenChange={(open) => {
+              setIsGRNSelectOpen(open);
+              if (open) fetchIssuedPOs();
+            }}>
+              <DialogTrigger asChild>
+                <Button className="bg-emerald-600 hover:bg-emerald-700">
+                  <Plus className="h-4 w-4 mr-2" />Create GRN
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-3xl">
+                <DialogHeader>
+                  <DialogTitle>Select Purchase Order</DialogTitle>
+                  <DialogDescription>Choose an issued PO to create a Goods Receipt Note</DialogDescription>
+                </DialogHeader>
+                <div className="max-h-[60vh] overflow-y-auto">
+                  {issuedPOs.length === 0 ? (
+                    <div className="text-center py-8 text-slate-500">
+                      <Package className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                      <p>No issued purchase orders available</p>
+                      <p className="text-sm">Create and issue a PO first to receive goods</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {issuedPOs.map((po) => (
+                        <div
+                          key={po.id}
+                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
+                          onClick={() => openGRNFromTab(po)}
+                        >
+                          <div>
+                            <div className="font-medium">{po.poNumber}</div>
+                            <div className="text-sm text-slate-500">{po.supplier.name}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-medium">LKR {po.totalValue.toFixed(2)}</div>
+                            <div className="text-sm text-slate-500">{po.lineCount} lines • {po.lines.filter(l => l.orderedQty > l.receivedQty).length} pending</div>
+                          </div>
+                          <ArrowRight className="h-5 w-5 text-slate-400" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+
           <Card>
             <CardContent className="p-0">
               {grnLoading ? (
@@ -1030,6 +1697,54 @@ export function PurchaseOrdersView() {
 
         {/* Invoices Tab */}
         <TabsContent value="invoices" className="space-y-4">
+          <div className="flex justify-end">
+            <Dialog open={isInvoiceSelectOpen} onOpenChange={(open) => {
+              setIsInvoiceSelectOpen(open);
+              if (open) fetchInvoicePOs();
+            }}>
+              <DialogTrigger asChild>
+                <Button className="bg-emerald-600 hover:bg-emerald-700">
+                  <Plus className="h-4 w-4 mr-2" />Create Invoice
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-3xl">
+                <DialogHeader>
+                  <DialogTitle>Select Purchase Order</DialogTitle>
+                  <DialogDescription>Choose a PO to create a supplier invoice</DialogDescription>
+                </DialogHeader>
+                <div className="max-h-[60vh] overflow-y-auto">
+                  {invoicePOs.length === 0 ? (
+                    <div className="text-center py-8 text-slate-500">
+                      <Receipt className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                      <p>No purchase orders available for invoicing</p>
+                      <p className="text-sm">Create and issue a PO first</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {invoicePOs.map((po) => (
+                        <div
+                          key={po.id}
+                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
+                          onClick={() => openInvoiceFromTab(po)}
+                        >
+                          <div>
+                            <div className="font-medium">{po.poNumber}</div>
+                            <div className="text-sm text-slate-500">{po.supplier.name}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-medium">LKR {po.totalValue.toFixed(2)}</div>
+                            <div className="text-sm text-slate-500">{po.lineCount} lines</div>
+                          </div>
+                          <ArrowRight className="h-5 w-5 text-slate-400" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+
           <Card>
             <CardContent className="p-0">
               {invoiceLoading ? (
@@ -1056,7 +1771,22 @@ export function PurchaseOrdersView() {
                     <TableBody>
                       {invoices.map((inv) => (
                         <TableRow key={inv.id}>
-                          <TableCell className="font-medium">{inv.invoiceNumber}</TableCell>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              {inv.invoiceNumber}
+                              {inv.invoicePdfPath && (
+                                <a
+                                  href={inv.invoicePdfPath}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-emerald-600 hover:text-emerald-700"
+                                  title="View PDF"
+                                >
+                                  <FileText className="h-4 w-4" />
+                                </a>
+                              )}
+                            </div>
+                          </TableCell>
                           <TableCell>{inv.po?.poNumber || '-'}</TableCell>
                           <TableCell>{inv.supplier.name}</TableCell>
                           <TableCell className="text-right">LKR {inv.totalValue.toFixed(2)}</TableCell>
@@ -1089,6 +1819,523 @@ export function PurchaseOrdersView() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Suppliers Tab */}
+        <TabsContent value="suppliers" className="space-y-4">
+          <div className="flex justify-end">
+            <Dialog open={isSupplierOpen} onOpenChange={setIsSupplierOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-emerald-600 hover:bg-emerald-700">
+                  <Plus className="h-4 w-4 mr-2" />Add Supplier
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-xl">
+                <DialogHeader>
+                  <DialogTitle>Add New Supplier</DialogTitle>
+                  <DialogDescription>Create a new supplier in the system</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>Supplier Code *</Label>
+                      <Input placeholder="SUP001" value={supplierForm.supplierCode} onChange={(e) => setSupplierForm({ ...supplierForm, supplierCode: e.target.value })} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Supplier Name *</Label>
+                      <Input placeholder="ABC Trading Co." value={supplierForm.name} onChange={(e) => setSupplierForm({ ...supplierForm, name: e.target.value })} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>Contact Person</Label>
+                      <Input placeholder="John Doe" value={supplierForm.contactPerson} onChange={(e) => setSupplierForm({ ...supplierForm, contactPerson: e.target.value })} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Phone</Label>
+                      <Input placeholder="+94 77 123 4567" value={supplierForm.phone} onChange={(e) => setSupplierForm({ ...supplierForm, phone: e.target.value })} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>Email</Label>
+                      <Input type="email" placeholder="contact@supplier.com" value={supplierForm.email} onChange={(e) => setSupplierForm({ ...supplierForm, email: e.target.value })} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Currency</Label>
+                      <Select value={supplierForm.currency} onValueChange={(v) => setSupplierForm({ ...supplierForm, currency: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="USD">USD</SelectItem>
+                          <SelectItem value="EUR">EUR</SelectItem>
+                          <SelectItem value="LKR">LKR</SelectItem>
+                          <SelectItem value="KES">KES</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Address</Label>
+                    <Input placeholder="123 Main Street" value={supplierForm.address} onChange={(e) => setSupplierForm({ ...supplierForm, address: e.target.value })} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>City</Label>
+                      <Input placeholder="Colombo" value={supplierForm.city} onChange={(e) => setSupplierForm({ ...supplierForm, city: e.target.value })} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Country</Label>
+                      <Input placeholder="Sri Lanka" value={supplierForm.country} onChange={(e) => setSupplierForm({ ...supplierForm, country: e.target.value })} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>Tax ID</Label>
+                      <Input placeholder="TIN-123456" value={supplierForm.taxId} onChange={(e) => setSupplierForm({ ...supplierForm, taxId: e.target.value })} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Payment Terms</Label>
+                      <Input placeholder="Net 30" value={supplierForm.paymentTerms} onChange={(e) => setSupplierForm({ ...supplierForm, paymentTerms: e.target.value })} />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Notes</Label>
+                    <Textarea placeholder="Additional notes..." value={supplierForm.notes} onChange={(e) => setSupplierForm({ ...supplierForm, notes: e.target.value })} />
+                  </div>
+                </div>
+                <DialogFooter className="border-t pt-4">
+                  <Button variant="outline" onClick={() => setIsSupplierOpen(false)}>Cancel</Button>
+                  <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleCreateSupplier} disabled={submitting || !supplierForm.supplierCode || !supplierForm.name}>
+                    {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    Create Supplier
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          <Card>
+            <CardContent className="p-0">
+              {supplierLoading ? (
+                <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-emerald-600" /></div>
+              ) : allSuppliers.length === 0 ? (
+                <div className="text-center py-12 text-slate-500">
+                  <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No suppliers found</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="font-semibold">Code</TableHead>
+                        <TableHead className="font-semibold">Name</TableHead>
+                        <TableHead className="font-semibold hidden md:table-cell">Contact</TableHead>
+                        <TableHead className="font-semibold hidden lg:table-cell">Email</TableHead>
+                        <TableHead className="font-semibold hidden lg:table-cell">Phone</TableHead>
+                        <TableHead className="font-semibold">Status</TableHead>
+                        <TableHead className="font-semibold hidden xl:table-cell">Created</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {allSuppliers.map((supplier) => (
+                        <TableRow key={supplier.id} className="hover:bg-slate-50">
+                          <TableCell className="font-medium">{supplier.supplierCode}</TableCell>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{supplier.name}</div>
+                              {supplier.city && <div className="text-xs text-slate-500">{supplier.city}{supplier.country && `, ${supplier.country}`}</div>}
+                            </div>
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">{supplier.contactPerson || '-'}</TableCell>
+                          <TableCell className="hidden lg:table-cell">{supplier.email || '-'}</TableCell>
+                          <TableCell className="hidden lg:table-cell">{supplier.phone || '-'}</TableCell>
+                          <TableCell>
+                            <Badge className={supplier.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}>
+                              {supplier.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="hidden xl:table-cell">
+                            {new Date(supplier.createdAt).toLocaleDateString()}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Supplier Pagination */}
+          {Math.ceil(supplierTotal / limit) > 1 && (
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-slate-500">Showing {((supplierPage - 1) * limit) + 1} to {Math.min(supplierPage * limit, supplierTotal)} of {supplierTotal}</p>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => setSupplierPage(p => Math.max(1, p - 1))} disabled={supplierPage === 1}>Previous</Button>
+                <Button variant="outline" size="sm" onClick={() => setSupplierPage(p => Math.min(Math.ceil(supplierTotal / limit), p + 1))} disabled={supplierPage === Math.ceil(supplierTotal / limit)}>Next</Button>
+              </div>
+            </div>
+          )}
+        </TabsContent>
+
+        {/* RFQs Tab */}
+        <TabsContent value="rfqs" className="space-y-4">
+          <div className="flex justify-end">
+            <Dialog open={isRFQOpen} onOpenChange={setIsRFQOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-emerald-600 hover:bg-emerald-700">
+                  <Plus className="h-4 w-4 mr-2" />New RFQ
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Create Request for Quotation</DialogTitle>
+                  <DialogDescription>Request quotes from multiple suppliers</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>Closing Date</Label>
+                      <Input type="date" value={rfqForm.closingDate} onChange={(e) => setRqqForm({ ...rfqForm, closingDate: e.target.value })} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Notes</Label>
+                      <Input placeholder="Optional notes..." value={rfqForm.notes} onChange={(e) => setRqqForm({ ...rfqForm, notes: e.target.value })} />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Select Suppliers *</Label>
+                    <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto border rounded-lg p-2">
+                      {suppliers.map((s) => (
+                        <label key={s.id} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={rfqForm.supplierIds.includes(s.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setRqqForm({ ...rfqForm, supplierIds: [...rfqForm.supplierIds, s.id] });
+                              } else {
+                                setRqqForm({ ...rfqForm, supplierIds: rfqForm.supplierIds.filter(id => id !== s.id) });
+                              }
+                            }}
+                            className="rounded border-slate-300"
+                          />
+                          <span className="text-sm">{s.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <Label>Items to Quote *</Label>
+                      <Button size="sm" variant="outline" onClick={() => setRqqForm({
+                        ...rfqForm,
+                        lines: [...rfqForm.lines, { itemId: '', description: '', quantity: 1, unitOfMeasure: '' }],
+                      })}><Plus className="h-4 w-4 mr-1" />Add</Button>
+                    </div>
+                    {rfqForm.lines.map((line, index) => (
+                      <div key={index} className="grid grid-cols-12 gap-2 items-end">
+                        <div className="col-span-5">
+                          <Input placeholder="Description *" value={line.description} onChange={(e) => {
+                            const newLines = [...rfqForm.lines];
+                            newLines[index] = { ...newLines[index], description: e.target.value };
+                            setRqqForm({ ...rfqForm, lines: newLines });
+                          }} className="h-9" />
+                        </div>
+                        <div className="col-span-2">
+                          <Input type="number" placeholder="Qty" value={line.quantity} onChange={(e) => {
+                            const newLines = [...rfqForm.lines];
+                            newLines[index] = { ...newLines[index], quantity: parseFloat(e.target.value) || 0 };
+                            setRqqForm({ ...rfqForm, lines: newLines });
+                          }} className="h-9" />
+                        </div>
+                        <div className="col-span-3">
+                          <Input placeholder="UoM" value={line.unitOfMeasure} onChange={(e) => {
+                            const newLines = [...rfqForm.lines];
+                            newLines[index] = { ...newLines[index], unitOfMeasure: e.target.value };
+                            setRqqForm({ ...rfqForm, lines: newLines });
+                          }} className="h-9" />
+                        </div>
+                        <div className="col-span-2">
+                          {rfqForm.lines.length > 1 && (
+                            <Button size="sm" variant="ghost" onClick={() => setRqqForm({
+                              ...rfqForm, lines: rfqForm.lines.filter((_, i) => i !== index),
+                            })} className="h-9 text-red-500">×</Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <DialogFooter className="border-t pt-4">
+                  <Button variant="outline" onClick={() => setIsRFQOpen(false)}>Cancel</Button>
+                  <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleCreateRFQ} disabled={submitting || rfqForm.supplierIds.length === 0 || rfqForm.lines.filter(l => l.description).length === 0}>
+                    {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    Create RFQ
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          <Card>
+            <CardContent className="p-0">
+              {rfqLoading ? (
+                <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-emerald-600" /></div>
+              ) : rfqs.length === 0 ? (
+                <div className="text-center py-12 text-slate-500">
+                  <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No RFQs found</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="font-semibold">RFQ Number</TableHead>
+                        <TableHead className="font-semibold hidden md:table-cell">Suppliers</TableHead>
+                        <TableHead className="font-semibold hidden md:table-cell">Lines</TableHead>
+                        <TableHead className="font-semibold hidden lg:table-cell">Closing Date</TableHead>
+                        <TableHead className="font-semibold">Quotations</TableHead>
+                        <TableHead className="font-semibold">Status</TableHead>
+                        <TableHead className="font-semibold text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {rfqs.map((rfq) => (
+                        <TableRow key={rfq.id} className="cursor-pointer hover:bg-slate-50" onClick={() => { setSelectedRFQ(rfq); setRFQDetailOpen(true); }}>
+                          <TableCell className="font-medium">{rfq.rfqNumber}</TableCell>
+                          <TableCell className="hidden md:table-cell">{rfq._count.suppliers}</TableCell>
+                          <TableCell className="hidden md:table-cell">{rfq._count.lines}</TableCell>
+                          <TableCell className="hidden lg:table-cell">
+                            {rfq.closingDate ? new Date(rfq.closingDate).toLocaleDateString() : '-'}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={rfq._count.quotations > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}>
+                              {rfq._count.quotations} received
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={STATUS_COLORS[rfq.status] || ''}>{rfq.status}</Badge>
+                          </TableCell>
+                          <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                            {rfq.status === 'DRAFT' && (
+                              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleSendRFQ(rfq.id)}>
+                                <Send className="h-4 w-4 mr-1" />Send
+                              </Button>
+                            )}
+                            {rfq.status === 'ISSUED' && rfq._count.quotations > 0 && (
+                              <Button size="sm" variant="outline" onClick={() => { setSelectedRFQ(rfq); setRFQDetailOpen(true); }}>
+                                <Eye className="h-4 w-4 mr-1" />Review
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* RFQ Pagination */}
+          {Math.ceil(rfqTotal / limit) > 1 && (
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-slate-500">Showing {((rfqPage - 1) * limit) + 1} to {Math.min(rfqPage * limit, rfqTotal)} of {rfqTotal}</p>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => setRFQPage(p => Math.max(1, p - 1))} disabled={rfqPage === 1}>Previous</Button>
+                <Button variant="outline" size="sm" onClick={() => setRFQPage(p => Math.min(Math.ceil(rfqTotal / limit), p + 1))} disabled={rfqPage === Math.ceil(rfqTotal / limit)}>Next</Button>
+              </div>
+            </div>
+          )}
+        </TabsContent>
+
+        {/* PRs Tab */}
+        <TabsContent value="prs" className="space-y-4">
+          <div className="flex justify-end">
+            <Dialog open={isPROpen} onOpenChange={setIsPROpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-emerald-600 hover:bg-emerald-700">
+                  <Plus className="h-4 w-4 mr-2" />New PR
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Create Purchase Request</DialogTitle>
+                  <DialogDescription>Request items for procurement</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>Department</Label>
+                      <Input placeholder="e.g., Maintenance" value={prForm.department} onChange={(e) => setPrForm({ ...prForm, department: e.target.value })} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Request Type</Label>
+                      <Select value={prForm.requestType} onValueChange={(v) => setPrForm({ ...prForm, requestType: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="STANDARD">Standard</SelectItem>
+                          <SelectItem value="URGENT">Urgent</SelectItem>
+                          <SelectItem value="EMERGENCY">Emergency</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>Priority</Label>
+                      <Select value={prForm.priority} onValueChange={(v) => setPrForm({ ...prForm, priority: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="LOW">Low</SelectItem>
+                          <SelectItem value="NORMAL">Normal</SelectItem>
+                          <SelectItem value="HIGH">High</SelectItem>
+                          <SelectItem value="CRITICAL">Critical</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Required By</Label>
+                      <Input type="date" value={prForm.requiredBy} onChange={(e) => setPrForm({ ...prForm, requiredBy: e.target.value })} />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <Label>Items *</Label>
+                      <Button size="sm" variant="outline" onClick={() => setPrForm({
+                        ...prForm,
+                        lines: [...prForm.lines, { itemId: '', description: '', quantity: 1, unitOfMeasure: '', estimatedCost: 0 }],
+                      })}><Plus className="h-4 w-4 mr-1" />Add</Button>
+                    </div>
+                    {prForm.lines.map((line, index) => (
+                      <div key={index} className="grid grid-cols-12 gap-2 items-end">
+                        <div className="col-span-4">
+                          <Input placeholder="Description *" value={line.description} onChange={(e) => {
+                            const newLines = [...prForm.lines];
+                            newLines[index] = { ...newLines[index], description: e.target.value };
+                            setPrForm({ ...prForm, lines: newLines });
+                          }} className="h-9" />
+                        </div>
+                        <div className="col-span-2">
+                          <Input type="number" placeholder="Qty" value={line.quantity} onChange={(e) => {
+                            const newLines = [...prForm.lines];
+                            newLines[index] = { ...newLines[index], quantity: parseFloat(e.target.value) || 0 };
+                            setPrForm({ ...prForm, lines: newLines });
+                          }} className="h-9" />
+                        </div>
+                        <div className="col-span-2">
+                          <Input placeholder="UoM" value={line.unitOfMeasure} onChange={(e) => {
+                            const newLines = [...prForm.lines];
+                            newLines[index] = { ...newLines[index], unitOfMeasure: e.target.value };
+                            setPrForm({ ...prForm, lines: newLines });
+                          }} className="h-9" />
+                        </div>
+                        <div className="col-span-3">
+                          <Input type="number" placeholder="Est. Cost" value={line.estimatedCost || ''} onChange={(e) => {
+                            const newLines = [...prForm.lines];
+                            newLines[index] = { ...newLines[index], estimatedCost: parseFloat(e.target.value) || 0 };
+                            setPrForm({ ...prForm, lines: newLines });
+                          }} className="h-9" />
+                        </div>
+                        <div className="col-span-1">
+                          {prForm.lines.length > 1 && (
+                            <Button size="sm" variant="ghost" onClick={() => setPrForm({
+                              ...prForm, lines: prForm.lines.filter((_, i) => i !== index),
+                            })} className="h-9 text-red-500">×</Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    <div className="text-right font-medium text-sm">
+                      Total Est: LKR {prForm.lines.reduce((sum, l) => sum + ((l.estimatedCost || 0) * l.quantity), 0).toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter className="border-t pt-4">
+                  <Button variant="outline" onClick={() => setIsPROpen(false)}>Cancel</Button>
+                  <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleCreatePR} disabled={submitting || prForm.lines.filter(l => l.description).length === 0}>
+                    {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    Create PR
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          <Card>
+            <CardContent className="p-0">
+              {prLoading ? (
+                <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-emerald-600" /></div>
+              ) : prs.length === 0 ? (
+                <div className="text-center py-12 text-slate-500">
+                  <ClipboardList className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No purchase requests found</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="font-semibold">PR Number</TableHead>
+                        <TableHead className="font-semibold hidden md:table-cell">Requestor</TableHead>
+                        <TableHead className="font-semibold hidden md:table-cell">Department</TableHead>
+                        <TableHead className="font-semibold hidden lg:table-cell">Lines</TableHead>
+                        <TableHead className="font-semibold hidden lg:table-cell">Est. Value</TableHead>
+                        <TableHead className="font-semibold">Priority</TableHead>
+                        <TableHead className="font-semibold">Status</TableHead>
+                        <TableHead className="font-semibold text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {prs.map((pr) => (
+                        <TableRow key={pr.id} className="cursor-pointer hover:bg-slate-50" onClick={() => { setSelectedPR(pr); setPRDetailOpen(true); }}>
+                          <TableCell className="font-medium">{pr.prNumber}</TableCell>
+                          <TableCell className="hidden md:table-cell">{pr.requestor?.name || '-'}</TableCell>
+                          <TableCell className="hidden md:table-cell">{pr.department || '-'}</TableCell>
+                          <TableCell className="hidden lg:table-cell">{pr._count?.lines || 0}</TableCell>
+                          <TableCell className="hidden lg:table-cell">
+                            {pr.estimatedValue ? `LKR ${Number(pr.estimatedValue).toFixed(2)}` : '-'}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={pr.priority === 'CRITICAL' ? 'bg-red-100 text-red-700' : pr.priority === 'HIGH' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}>
+                              {pr.priority}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={STATUS_COLORS[pr.status] || ''}>{pr.status}</Badge>
+                          </TableCell>
+                          <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                            {pr.status === 'DRAFT' && (
+                              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleApprovePR(pr.id, 'APPROVE')}>
+                                <Check className="h-4 w-4 mr-1" />Approve
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* PR Pagination */}
+          {Math.ceil(prTotal / limit) > 1 && (
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-slate-500">Showing {((prPage - 1) * limit) + 1} to {Math.min(prPage * limit, prTotal)} of {prTotal}</p>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => setPRPage(p => Math.max(1, p - 1))} disabled={prPage === 1}>Previous</Button>
+                <Button variant="outline" size="sm" onClick={() => setPRPage(p => Math.min(Math.ceil(prTotal / limit), p + 1))} disabled={prPage === Math.ceil(prTotal / limit)}>Next</Button>
+              </div>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
 
@@ -1437,6 +2684,59 @@ export function PurchaseOrdersView() {
                 <div className="space-y-2">
                   <Label>Total Value *</Label>
                   <Input type="number" step="0.01" value={invoiceForm.totalValue} onChange={(e) => setInvoiceForm({ ...invoiceForm, totalValue: parseFloat(e.target.value) || 0 })} />
+                </div>
+              </div>
+              
+              {/* PDF Upload Section */}
+              <div className="space-y-2">
+                <Label>Invoice PDF (Scan/Document)</Label>
+                <div className="border-2 border-dashed border-slate-200 rounded-lg p-4">
+                  {invoicePdfFile ? (
+                    <div className="flex items-center justify-between bg-emerald-50 p-3 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <File className="h-8 w-8 text-emerald-600" />
+                        <div>
+                          <p className="font-medium text-sm">{invoicePdfFile.name}</p>
+                          <p className="text-xs text-slate-500">{(invoicePdfFile.size / 1024).toFixed(1)} KB</p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setInvoicePdfFile(null)}
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            if (file.size > 10 * 1024 * 1024) {
+                              toast({ title: 'Error', description: 'File size must be less than 10MB', variant: 'destructive' });
+                              return;
+                            }
+                            setInvoicePdfFile(file);
+                          }
+                        }}
+                        className="hidden"
+                        id="invoice-pdf-upload"
+                      />
+                      <label
+                        htmlFor="invoice-pdf-upload"
+                        className="cursor-pointer flex flex-col items-center gap-2 py-4"
+                      >
+                        <Upload className="h-10 w-10 text-slate-400" />
+                        <span className="text-sm text-slate-500">Click to upload invoice PDF or image</span>
+                        <span className="text-xs text-slate-400">PDF, JPG, PNG (max 10MB)</span>
+                      </label>
+                    </div>
+                  )}
                 </div>
               </div>
               

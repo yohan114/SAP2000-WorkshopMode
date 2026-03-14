@@ -36,6 +36,7 @@ const createInvoiceSchema = z.object({
   currency: z.string().default('USD'),
   totalValue: z.number().nonnegative(),
   taxAmount: z.number().optional(),
+  invoicePdfPath: z.string().optional(),
   lines: z.array(z.object({
     description: z.string(),
     invoicedQty: z.number().positive(),
@@ -90,6 +91,7 @@ export async function GET(request: Request) {
         taxAmount: inv.taxAmount?.toNumber() || 0,
         status: inv.status,
         matchStatus: inv.matchStatus,
+        invoicePdfPath: inv.invoicePdfPath,
         lineCount: inv._count.lines,
         approvedAt: inv.approvedAt,
         paidAt: inv.paidAt,
@@ -163,6 +165,7 @@ export async function POST(request: Request) {
           currency: data.currency,
           totalValue: data.totalValue,
           taxAmount: data.taxAmount || 0,
+          invoicePdfPath: data.invoicePdfPath || null,
           status: InvoiceStatus.PENDING,
           lines: {
             create: linesData,
