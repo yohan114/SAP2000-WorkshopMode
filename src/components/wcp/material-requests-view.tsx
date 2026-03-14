@@ -442,8 +442,16 @@ export function MaterialRequestsView() {
     try {
       const response = await fetch(`/api/material-requests/${mrId}/lines`);
       if (response.ok) {
-        const data = await response.json();
-        setSelectedMR(prev => prev ? { ...prev, lines: data.data } : null);
+        const result = await response.json();
+        console.log('MR Details response:', result);
+        // Only update lines if we received valid data with items
+        if (result.success && Array.isArray(result.data) && result.data.length > 0) {
+          setSelectedMR(prev => prev ? { ...prev, lines: result.data } : null);
+        } else if (!result.success) {
+          console.error('API returned error:', result);
+        }
+      } else {
+        console.error('Failed to fetch MR details, status:', response.status);
       }
     } catch (error) {
       console.error('Failed to fetch MR details:', error);

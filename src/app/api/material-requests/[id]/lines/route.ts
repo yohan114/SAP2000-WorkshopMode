@@ -53,21 +53,19 @@ export async function GET(
 
     const stockMap = new Map(stockInfo.map(s => [s.itemId, s]));
 
-    return apiSuccess({
-      data: lines.map(line => ({
-        id: line.id,
-        lineNumber: line.lineNumber,
-        item: line.item,
-        requestedQty: line.requestedQty,
-        approvedQty: line.approvedQty,
-        issuedQty: line.issuedQty,
-        unitCost: line.unitCost,
-        status: line.status,
-        notes: line.notes,
-        availableStock: stockMap.get(line.itemId)?.availableQty?.toNumber() || 0,
-        wac: stockMap.get(line.itemId)?.wac?.toNumber() || 0,
-      })),
-    });
+    return apiSuccess(lines.map(line => ({
+      id: line.id,
+      lineNumber: line.lineNumber,
+      item: line.item,
+      requestedQty: line.requestedQty,
+      approvedQty: line.approvedQty,
+      issuedQty: line.issuedQty,
+      unitCost: line.unitCost,
+      status: line.status,
+      notes: line.notes,
+      availableStock: stockMap.get(line.itemId)?.availableQty?.toNumber() || 0,
+      wac: stockMap.get(line.itemId)?.wac?.toNumber() || 0,
+    })));
   } catch (error) {
     console.error('Get MR lines error:', error);
     return apiError('Failed to fetch lines', 500);

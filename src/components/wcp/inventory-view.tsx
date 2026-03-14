@@ -56,7 +56,8 @@ import {
   RefreshCw,
   X,
   CheckSquare,
-  ArrowRight
+  ArrowRight,
+  ArrowDownToLine
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
@@ -127,6 +128,21 @@ interface Transaction {
   createdAt: string;
 }
 
+interface Item {
+  id: string;
+  itemCode: string;
+  name: string;
+  description?: string;
+  unitOfMeasure: string;
+  itemClass: string;
+  isTool: boolean;
+  isCritical: boolean;
+  minimumStock?: number;
+  reorderLevel?: number;
+  availableStock: number;
+  wac: number;
+}
+
 const itemClassColors: Record<string, string> = {
   'SPARE_PART': 'bg-blue-100 text-blue-700',
   'CONSUMABLE': 'bg-emerald-100 text-emerald-700',
@@ -176,15 +192,42 @@ export function InventoryView() {
   const [bulkTargetStoreId, setBulkTargetStoreId] = useState('');
   const [bulkAdjustmentType, setBulkAdjustmentType] = useState<'ADJUSTMENT_IN' | 'ADJUSTMENT_OUT'>('ADJUSTMENT_IN');
 
+  // Items management state
+  const [items, setItems] = useState<Item[]>([]);
+  const [addItemDialogOpen, setAddItemDialogOpen] = useState(false);
+  const [itemForm, setItemForm] = useState({
+    itemCode: '',
+    name: '',
+    description: '',
+    unitOfMeasure: 'PCS',
+    itemClass: 'CONSUMABLE',
+    minimumStock: 0,
+    reorderLevel: 0,
+    isTool: false,
+    isCritical: false,
+  });
+
+  // Receive stock state
+  const [receiveDialogOpen, setReceiveDialogOpen] = useState(false);
+  const [receiveForm, setReceiveForm] = useState({
+    itemId: '',
+    storeId: '',
+    quantity: 0,
+    unitCost: 0,
+    notes: '',
+  });
+
   useEffect(() => {
     fetchStock();
     fetchStores();
     fetchAlerts();
+    fetchItems();
   }, [searchTerm, storeFilter, stockFilter, pagination.page]);
 
   useEffect(() => {
     if (activeTab === 'reservations') fetchReservations();
     if (activeTab === 'transactions') fetchTransactions();
+    if (activeTab === 'items') fetchItems();
   }, [activeTab]);
 
   // Clear selection when filters change
@@ -270,6 +313,112 @@ export function InventoryView() {
       }
     } catch (error) {
       console.error('Failed to fetch transactions:', error);
+    }
+  };
+
+  const fetchItems = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (searchTerm) params.append('search', searchTerm);
+      params.append('limit', '100');
+      
+      const response = await fetch(`/api/items?${params.toString()}`);
+      if (response.ok) {
+        const data = await response.json();
+        setItems(data.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch items:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddItem = async () => {
+    if (!itemForm.itemCode || !itemForm.name || !itemForm.unitOfMeasure) {
+      toast({ title: 'Validation Error', description: 'Please fill in all required fields', variant: 'destructive' });
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const response = await fetch('/api/items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(itemForm),
+      });
+
+      if (response.ok) {
+        toast({ title: 'Success', description: 'Item created successfully' });
+        setAddItemDialogOpen(false);
+        setItemForm({
+          itemCode: '',
+          name: '',
+          description: '',
+          unitOfMeasure: 'PCS',
+          itemClass: 'CONSUMABLE',
+          minimumStock: 0,
+          reorderLevel: 0,
+          isTool: false,
+          isCritical: false,
+        });
+        fetchItems();
+      } else {
+        const error = await response.json();
+        toast({ title: 'Error', description: error.error || 'Failed to create item', variant: 'destructive' });
+      }
+    } catch (error) {
+      console.error('Add item error:', error);
+      toast({ title: 'Error', description: 'Failed to create item', variant: 'destructive' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleReceiveStock = async () => {
+    if (!receiveForm.itemId || !receiveForm.storeId || receiveForm.quantity <= 0 || !user) {
+      toast({ title: 'Validation Error', description: 'Please select an item, store, and enter a valid quantity', variant: 'destructive' });
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const response = await fetch('/api/inventory/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storeId: receiveForm.storeId,
+          itemId: receiveForm.itemId,
+          transactionType: 'RECEIPT',
+          quantity: receiveForm.quantity,
+          unitCost: receiveForm.unitCost,
+          notes: receiveForm.notes,
+          performedBy: user.id,
+        }),
+      });
+
+      if (response.ok) {
+        toast({ title: 'Success', description: 'Stock received successfully' });
+        setReceiveDialogOpen(false);
+        setReceiveForm({
+          itemId: '',
+          storeId: '',
+          quantity: 0,
+          unitCost: 0,
+          notes: '',
+        });
+        fetchStock();
+        fetchAlerts();
+      } else {
+        const error = await response.json();
+        toast({ title: 'Error', description: error.error || 'Failed to receive stock', variant: 'destructive' });
+      }
+    } catch (error) {
+      console.error('Receive stock error:', error);
+      toast({ title: 'Error', description: 'Failed to receive stock', variant: 'destructive' });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -503,7 +652,27 @@ export function InventoryView() {
             <History className="h-4 w-4 mr-2" />
             Transactions
           </Button>
-          <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => { setSelectedStock(null); setAdjustDialogOpen(true); }}>
+          <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setAddItemDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Item
+          </Button>
+          <Button className="bg-blue-600 hover:bg-blue-700" onClick={async () => { 
+            // Fetch all items without search filter for the dialog
+            try {
+              const response = await fetch('/api/items?limit=100');
+              if (response.ok) {
+                const data = await response.json();
+                setItems(data.data || []);
+              }
+            } catch (e) {
+              console.error('Failed to fetch items:', e);
+            }
+            setReceiveDialogOpen(true); 
+          }}>
+            <ArrowDownToLine className="h-4 w-4 mr-2" />
+            Receive Stock
+          </Button>
+          <Button variant="outline" onClick={() => { setSelectedStock(null); setAdjustDialogOpen(true); }}>
             <ArrowRightLeft className="h-4 w-4 mr-2" />
             Adjust Stock
           </Button>
@@ -570,8 +739,9 @@ export function InventoryView() {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="stock"><Package className="h-4 w-4 mr-2" />Stock</TabsTrigger>
+          <TabsTrigger value="items"><Package className="h-4 w-4 mr-2" />Items</TabsTrigger>
           <TabsTrigger value="alerts" className="relative">
             <AlertCircle className="h-4 w-4 mr-2" />
             Alerts
@@ -725,6 +895,97 @@ export function InventoryView() {
                           </TableRow>
                         );
                       })
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Items Tab */}
+        <TabsContent value="items" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5 text-emerald-500" />
+                Item Master Data
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-slate-50">
+                      <TableHead className="font-semibold">Item Code</TableHead>
+                      <TableHead className="font-semibold">Name</TableHead>
+                      <TableHead className="font-semibold hidden md:table-cell">Class</TableHead>
+                      <TableHead className="font-semibold">UoM</TableHead>
+                      <TableHead className="font-semibold text-center hidden sm:table-cell">Stock</TableHead>
+                      <TableHead className="font-semibold text-center hidden lg:table-cell">Reorder Level</TableHead>
+                      <TableHead className="font-semibold hidden lg:table-cell">Flags</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {loading ? (
+                      [...Array(5)].map((_, i) => (
+                        <TableRow key={i}>
+                          <TableCell colSpan={7} className="h-14">
+                            <div className="animate-pulse bg-slate-200 h-4 rounded w-full"></div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : items.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="h-32 text-center text-slate-500">
+                          <div className="flex flex-col items-center gap-2">
+                            <Package className="h-8 w-8 text-slate-300" />
+                            <p>No items found</p>
+                            <Button variant="outline" size="sm" onClick={() => setAddItemDialogOpen(true)}>
+                              <Plus className="h-4 w-4 mr-2" />Add your first item
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      items.map((item) => (
+                        <TableRow key={item.id} className="hover:bg-slate-50">
+                          <TableCell className="font-mono font-medium">{item.itemCode}</TableCell>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{item.name}</div>
+                              {item.description && (
+                                <div className="text-xs text-slate-500 truncate max-w-xs">{item.description}</div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            <Badge className={itemClassColors[item.itemClass] || 'bg-slate-100'}>
+                              {item.itemClass}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{item.unitOfMeasure}</TableCell>
+                          <TableCell className="text-center hidden sm:table-cell">
+                            <span className={item.availableStock === 0 ? 'text-red-600 font-medium' : ''}>
+                              {item.availableStock}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-center hidden lg:table-cell">
+                            {item.reorderLevel ?? '-'}
+                          </TableCell>
+                          <TableCell className="hidden lg:table-cell">
+                            <div className="flex items-center gap-1">
+                              {item.isTool && (
+                                <Badge variant="outline" className="text-xs">Tool</Badge>
+                              )}
+                              {item.isCritical && (
+                                <Badge variant="outline" className="text-xs text-red-600 border-red-200">Critical</Badge>
+                              )}
+                              {!item.isTool && !item.isCritical && '-'}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
                     )}
                   </TableBody>
                 </Table>
@@ -1076,6 +1337,206 @@ export function InventoryView() {
             >
               {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Confirm {selectedIds.size} Item(s)
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Item Dialog */}
+      <Dialog open={addItemDialogOpen} onOpenChange={setAddItemDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Add New Item</DialogTitle>
+            <DialogDescription>Create a new item in the inventory master data</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Item Code *</Label>
+                <Input 
+                  placeholder="e.g., SP-001" 
+                  value={itemForm.itemCode} 
+                  onChange={(e) => setItemForm({ ...itemForm, itemCode: e.target.value })} 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Name *</Label>
+                <Input 
+                  placeholder="Item name" 
+                  value={itemForm.name} 
+                  onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })} 
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Textarea 
+                placeholder="Item description (optional)" 
+                value={itemForm.description} 
+                onChange={(e) => setItemForm({ ...itemForm, description: e.target.value })} 
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Item Class</Label>
+                <Select value={itemForm.itemClass} onValueChange={(v) => setItemForm({ ...itemForm, itemClass: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="SPARE_PART">Spare Part</SelectItem>
+                    <SelectItem value="CONSUMABLE">Consumable</SelectItem>
+                    <SelectItem value="LUBRICANT">Lubricant</SelectItem>
+                    <SelectItem value="TOOL">Tool</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Unit of Measure *</Label>
+                <Select value={itemForm.unitOfMeasure} onValueChange={(v) => setItemForm({ ...itemForm, unitOfMeasure: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="PCS">Pieces (PCS)</SelectItem>
+                    <SelectItem value="KG">Kilograms (KG)</SelectItem>
+                    <SelectItem value="L">Liters (L)</SelectItem>
+                    <SelectItem value="M">Meters (M)</SelectItem>
+                    <SelectItem value="BOX">Box</SelectItem>
+                    <SelectItem value="ROLL">Roll</SelectItem>
+                    <SelectItem value="SET">Set</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Reorder Level</Label>
+                <Input 
+                  type="number" 
+                  placeholder="0" 
+                  value={itemForm.reorderLevel} 
+                  onChange={(e) => setItemForm({ ...itemForm, reorderLevel: parseInt(e.target.value) || 0 })} 
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Minimum Stock</Label>
+                <Input 
+                  type="number" 
+                  placeholder="0" 
+                  value={itemForm.minimumStock} 
+                  onChange={(e) => setItemForm({ ...itemForm, minimumStock: parseInt(e.target.value) || 0 })} 
+                />
+              </div>
+              <div className="flex items-end gap-4 pt-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="isTool" 
+                    checked={itemForm.isTool} 
+                    onCheckedChange={(checked) => setItemForm({ ...itemForm, isTool: checked as boolean })} 
+                  />
+                  <Label htmlFor="isTool" className="cursor-pointer">Is Tool</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="isCritical" 
+                    checked={itemForm.isCritical} 
+                    onCheckedChange={(checked) => setItemForm({ ...itemForm, isCritical: checked as boolean })} 
+                  />
+                  <Label htmlFor="isCritical" className="cursor-pointer">Critical Item</Label>
+                </div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddItemDialogOpen(false)}>Cancel</Button>
+            <Button 
+              className="bg-emerald-600 hover:bg-emerald-700"
+              onClick={handleAddItem}
+              disabled={submitting || !itemForm.itemCode || !itemForm.name}
+            >
+              {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Add Item
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Receive Stock Dialog */}
+      <Dialog open={receiveDialogOpen} onOpenChange={setReceiveDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ArrowDownToLine className="h-5 w-5 text-blue-500" />
+              Receive Stock
+            </DialogTitle>
+            <DialogDescription>Add stock to inventory</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Store *</Label>
+              <Select value={receiveForm.storeId} onValueChange={(v) => setReceiveForm({ ...receiveForm, storeId: v })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select store" />
+                </SelectTrigger>
+                <SelectContent>
+                  {stores.map((store) => (
+                    <SelectItem key={store.id} value={store.id}>
+                      {store.name} ({store.code})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Item *</Label>
+              <Select value={receiveForm.itemId} onValueChange={(v) => setReceiveForm({ ...receiveForm, itemId: v })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select item" />
+                </SelectTrigger>
+                <SelectContent className="max-h-64">
+                  {items.map((item) => (
+                    <SelectItem key={item.id} value={item.id}>
+                      {item.itemCode} - {item.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Quantity *</Label>
+                <Input 
+                  type="number" 
+                  placeholder="0" 
+                  value={receiveForm.quantity} 
+                  onChange={(e) => setReceiveForm({ ...receiveForm, quantity: parseFloat(e.target.value) || 0 })} 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Unit Cost (LKR)</Label>
+                <Input 
+                  type="number" 
+                  placeholder="0.00" 
+                  value={receiveForm.unitCost} 
+                  onChange={(e) => setReceiveForm({ ...receiveForm, unitCost: parseFloat(e.target.value) || 0 })} 
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Notes</Label>
+              <Textarea 
+                placeholder="Reference number, supplier, etc." 
+                value={receiveForm.notes} 
+                onChange={(e) => setReceiveForm({ ...receiveForm, notes: e.target.value })} 
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReceiveDialogOpen(false)}>Cancel</Button>
+            <Button 
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={handleReceiveStock}
+              disabled={submitting || !receiveForm.itemId || !receiveForm.storeId || receiveForm.quantity <= 0}
+            >
+              {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Receive Stock
             </Button>
           </DialogFooter>
         </DialogContent>

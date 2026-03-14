@@ -108,7 +108,7 @@ export async function GET(request: Request) {
       db.materialRequest.count({ where }),
     ]);
 
-    // Transform data
+    // Transform data - ensure lines are properly formatted
     const data = materialRequests.map(mr => ({
       id: mr.id,
       mrNumber: mr.mrNumber,
@@ -124,7 +124,16 @@ export async function GET(request: Request) {
       approvedBy: mr.approvedBy,
       rejectionReason: mr.rejectionReason,
       createdAt: mr.createdAt,
-      lines: mr.lines,
+      lines: mr.lines?.map(line => ({
+        id: line.id,
+        lineNumber: line.lineNumber,
+        item: line.item,
+        requestedQty: line.requestedQty,
+        approvedQty: line.approvedQty,
+        issuedQty: line.issuedQty,
+        status: line.status,
+        notes: line.notes,
+      })) || [],
       lineCount: mr._count.lines,
     }));
 

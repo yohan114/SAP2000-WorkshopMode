@@ -72,13 +72,16 @@ export async function POST(
         }
       } else {
         // Auto-approve all lines with full requested quantity
-        await db.mrLine.updateMany({
-          where: { mrId: id },
-          data: {
-            approvedQty: db.mrLine.fields.requestedQty,
-            status: 'APPROVED',
-          },
-        });
+        // Need to update each line individually since SQLite doesn't support field-to-field updates
+        for (const line of mr.lines) {
+          await db.mrLine.update({
+            where: { id: line.id },
+            data: {
+              approvedQty: line.requestedQty.toNumber(),
+              status: 'APPROVED',
+            },
+          });
+        }
       }
 
       // Update MR and create transition
