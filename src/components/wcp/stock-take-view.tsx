@@ -1,0 +1,416 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle 
+} from '@/components/ui/dialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { 
+  ClipboardCheck, 
+  Plus, 
+  Search, 
+  Loader2, 
+  Play
+} from 'lucide-react';
+import { toast } from 'sonner';
+
+interface StockTake {
+  id: string;
+  stockTakeNumber: string;
+  storeId: string;
+  status: string;
+  scheduledDate: string;
+  startedAt: string | null;
+  completedAt: string | null;
+  notes: string | null;
+  createdAt: string;
+  store?: { id: string; name: string; code: string };
+  lines?: StockTakeLine[];
+}
+
+interface StockTakeLine {
+  id: string;
+  stockTakeId: string;
+  itemId: string;
+  systemQty: number;
+  countedQty: number | null;
+  variance: number | null;
+  unitCost: number;
+  remarks: string | null;
+  item?: { id: string; itemCode: string; name: string; unitOfMeasure: string };
+}
+
+interface Store {
+  id: string;
+  name: string;
+  code: string;
+}
+
+const statusColors: Record<string, string> = {
+  'SCHEDULED': 'bg-blue-100 text-blue-700',
+  'IN_PROGRESS': 'bg-purple-100 text-purple-700',
+  'COMPLETED': 'bg-emerald-100 text-emerald-700',
+  'CANCELLED': 'bg-red-100 text-red-700',
+};
+
+export function StockTakeView() {
+  const [stockTakes, setStockTakes] = useState<StockTake[]>([]);
+  const [stores, setStores] = useState<Store[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showCountDialog, setShowCountDialog] = useState(false);
+  const [selectedStockTake, setSelectedStockTake] = useState<StockTake | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [countLines, setCountLines] = useState<StockTakeLine[]>([]);
+
+  const [formData, setFormData] = useState({
+    storeId: '',
+    scheduledDate: new Date().toISOString().split('T')[0],
+    notes: ''
+  });
+
+  useEffect(() => {
+    fetchStockTakes();
+    fetchStores();
+  }, [statusFilter]);
+
+  const fetchStockTakes = async () => {
+    try {
+      setLoading(true);
+      let url = '/api/stock-take?page=1&limit=50';
+      if (statusFilter !== 'all') url += `&status=${statusFilter}`;
+      
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        setStockTakes(data.data || data.stockTakes || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch stock takes:', error);
+      toast.error('Failed to load stock takes');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchStores = async () => {
+    try {
+      const response = await fetch('/api/inventory/stores');
+      if (response.ok) {
+        const data = await response.json();
+        setStores(data.data || data.stores || data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch stores:', error);
+    }
+  };
+
+  const handleCreateStockTake = async () => {
+    if (!formData.storeId) {
+      toast.error('Please select a store');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const response = await fetch('/api/stock-take', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      if (response.ok) {
+        toast.success('Stock take created successfully');
+        setShowCreateDialog(false);
+        setFormData({ storeId: '', scheduledDate: new Date().toISOString().split('T')[0], notes: '' });
+        fetchStockTakes();
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to create stock take');
+      }
+    } catch (error) {
+      console.error('Failed to create stock take:', error);
+      toast.error('Failed to create stock take');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleStartCount = async (stockTake: StockTake) => {
+    try {
+      const response = await fetch(`/api/stock-take/${stockTake.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'start' })
+      });
+
+      if (response.ok) {
+        toast.success('Stock take started');
+        fetchStockTakes();
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to start stock take');
+      }
+    } catch (error) {
+      console.error('Failed to start stock take:', error);
+      toast.error('Failed to start stock take');
+    }
+  };
+
+  const handleOpenCount = async (stockTake: StockTake) => {
+    try {
+      const response = await fetch(`/api/stock-take/${stockTake.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        const st = data.data || data;
+        setSelectedStockTake(st);
+        setCountLines(st.lines || []);
+        setShowCountDialog(true);
+      }
+    } catch (error) {
+      console.error('Failed to fetch stock take details:', error);
+      toast.error('Failed to load stock take details');
+    }
+  };
+
+  const handleSaveCount = async () => {
+    if (!selectedStockTake) return;
+
+    try {
+      setSubmitting(true);
+      const response = await fetch(`/api/stock-take/${selectedStockTake.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'count',
+          lines: countLines.map(l => ({ id: l.id, countedQty: l.countedQty, remarks: l.remarks }))
+        })
+      });
+
+      if (response.ok) {
+        toast.success('Count saved successfully');
+        setShowCountDialog(false);
+        fetchStockTakes();
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to save count');
+      }
+    } catch (error) {
+      console.error('Failed to save count:', error);
+      toast.error('Failed to save count');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleComplete = async (stockTake: StockTake) => {
+    if (!confirm('Are you sure you want to complete this stock take?')) return;
+
+    try {
+      const response = await fetch(`/api/stock-take/${stockTake.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'complete' })
+      });
+
+      if (response.ok) {
+        toast.success('Stock take completed successfully');
+        fetchStockTakes();
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to complete stock take');
+      }
+    } catch (error) {
+      console.error('Failed to complete stock take:', error);
+      toast.error('Failed to complete stock take');
+    }
+  };
+
+  const updateCountLine = (index: number, field: string, value: any) => {
+    setCountLines(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      if (field === 'countedQty') {
+        updated[index].variance = value - updated[index].systemQty;
+      }
+      return updated;
+    });
+  };
+
+  const filteredStockTakes = stockTakes.filter(st =>
+    st.stockTakeNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    st.store?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const getCompletionPercentage = (st: StockTake): number => {
+    if (!st.lines || st.lines.length === 0) return 0;
+    const counted = st.lines.filter(l => l.countedQty !== null).length;
+    return Math.round((counted / st.lines.length) * 100);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Stock Take</h1>
+          <p className="text-slate-500 text-sm">Manage inventory stock counts</p>
+        </div>
+        <Button onClick={() => setShowCreateDialog(true)} className="bg-emerald-600 hover:bg-emerald-700">
+          <Plus className="h-4 w-4 mr-2" />New Stock Take
+        </Button>
+      </div>
+
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input placeholder="Search stock takes..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-40"><SelectValue placeholder="Status" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="SCHEDULED">Scheduled</SelectItem>
+                <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                <SelectItem value="COMPLETED">Completed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-0">
+          {loading ? (
+            <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-emerald-600" /></div>
+          ) : filteredStockTakes.length === 0 ? (
+            <div className="text-center py-12"><ClipboardCheck className="h-12 w-12 text-slate-300 mx-auto mb-4" /><p className="text-slate-500">No stock takes found</p></div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Stock Take #</TableHead>
+                  <TableHead>Store</TableHead>
+                  <TableHead>Scheduled Date</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Progress</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredStockTakes.map((st) => (
+                  <TableRow key={st.id}>
+                    <TableCell className="font-medium">{st.stockTakeNumber}</TableCell>
+                    <TableCell>{st.store?.name || '-'}</TableCell>
+                    <TableCell>{new Date(st.scheduledDate).toLocaleDateString()}</TableCell>
+                    <TableCell><Badge className={statusColors[st.status] || 'bg-slate-100'}>{st.status}</Badge></TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2 w-32">
+                        <Progress value={getCompletionPercentage(st)} className="h-2" />
+                        <span className="text-xs text-slate-500">{getCompletionPercentage(st)}%</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        {st.status === 'SCHEDULED' && <Button variant="outline" size="sm" onClick={() => handleStartCount(st)}><Play className="h-4 w-4 mr-1" />Start</Button>}
+                        {st.status === 'IN_PROGRESS' && (
+                          <>
+                            <Button variant="outline" size="sm" onClick={() => handleOpenCount(st)}>Count</Button>
+                            <Button variant="outline" size="sm" onClick={() => handleComplete(st)} className="text-emerald-600">Complete</Button>
+                          </>
+                        )}
+                        {st.status === 'COMPLETED' && <Button variant="ghost" size="sm" onClick={() => handleOpenCount(st)}>View</Button>}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Create New Stock Take</DialogTitle><DialogDescription>Schedule a new stock take count</DialogDescription></DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Store *</label>
+              <Select value={formData.storeId} onValueChange={(v) => setFormData(prev => ({ ...prev, storeId: v }))}>
+                <SelectTrigger><SelectValue placeholder="Select store" /></SelectTrigger>
+                <SelectContent>{stores.map((s) => (<SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>))}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Scheduled Date *</label>
+              <Input type="date" value={formData.scheduledDate} onChange={(e) => setFormData(prev => ({ ...prev, scheduledDate: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Notes</label>
+              <Textarea value={formData.notes} onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))} placeholder="Enter any notes..." rows={2} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Cancel</Button>
+            <Button onClick={handleCreateStockTake} disabled={submitting}>{submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Create</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCountDialog} onOpenChange={setShowCountDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Stock Take: {selectedStockTake?.stockTakeNumber}</DialogTitle></DialogHeader>
+          <div className="py-4">
+            <Table>
+              <TableHeader>
+                <TableRow><TableHead>Item</TableHead><TableHead className="text-right">System Qty</TableHead><TableHead className="text-right">Counted Qty</TableHead><TableHead className="text-right">Variance</TableHead></TableRow>
+              </TableHeader>
+              <TableBody>
+                {countLines.map((line, index) => (
+                  <TableRow key={line.id}>
+                    <TableCell><div><p className="font-medium">{line.item?.itemCode}</p><p className="text-xs text-slate-500">{line.item?.name}</p></div></TableCell>
+                    <TableCell className="text-right">{line.systemQty}</TableCell>
+                    <TableCell className="text-right"><Input type="number" min="0" value={line.countedQty ?? ''} onChange={(e) => updateCountLine(index, 'countedQty', e.target.value ? parseFloat(e.target.value) : null)} className="w-24 ml-auto" disabled={selectedStockTake?.status === 'COMPLETED'} /></TableCell>
+                    <TableCell className="text-right"><span className={line.variance !== null && line.variance !== 0 ? (line.variance! > 0 ? 'text-emerald-600' : 'text-red-600') : ''}>{line.variance !== null ? line.variance : '-'}</span></TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCountDialog(false)}>Close</Button>
+            {selectedStockTake?.status === 'IN_PROGRESS' && <Button onClick={handleSaveCount} disabled={submitting}>{submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Save Count</Button>}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

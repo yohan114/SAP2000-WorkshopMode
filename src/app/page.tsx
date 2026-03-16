@@ -40,7 +40,14 @@ import {
   Users,
   ChevronLeft,
   ChevronRight,
-  X
+  X,
+  PackageCheck,
+  ClipboardCheck,
+  Scale,
+  FileCheck,
+  FolderOpen,
+  ShieldCheck,
+  BellRing
 } from 'lucide-react';
 import { DashboardView } from '@/components/wcp/dashboard-view';
 import { AssetsView } from '@/components/wcp/assets-view';
@@ -57,6 +64,14 @@ import { LabourTrainingView } from '@/components/wcp/labour-training-view';
 import { KpiSlaView } from '@/components/wcp/kpi-sla-view';
 import { PmView } from '@/components/wcp/pm-view';
 import { EmployeesView } from '@/components/wcp/employees-view';
+import { GrnView } from '@/components/wcp/grn-view';
+import { StockTakeView } from '@/components/wcp/stock-take-view';
+import { QuotationComparisonView } from '@/components/wcp/quotation-comparison-view';
+import { InvoiceMatchingView } from '@/components/wcp/invoice-matching-view';
+import { DocumentsView } from '@/components/wcp/documents-view';
+import { QualityView } from '@/components/wcp/quality-view';
+import { NotificationsView } from '@/components/wcp/notifications-view';
+import { AuditView } from '@/components/wcp/audit-view';
 import { NotificationBell } from '@/components/wcp/notification-bell';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -71,11 +86,19 @@ const navigationItems = [
   { id: 'requests', label: 'Requests', icon: FileText },
   { id: 'issues', label: 'Issues', icon: ClipboardList },
   { id: 'purchase', label: 'Purchase', icon: ShoppingCart },
+  { id: 'grn', label: 'GRN', icon: PackageCheck },
+  { id: 'quotations', label: 'Quotations', icon: Scale },
+  { id: 'invoices', label: 'Invoices', icon: FileCheck },
+  { id: 'stocktake', label: 'Stock Take', icon: ClipboardCheck },
+  { id: 'documents', label: 'Documents', icon: FolderOpen },
   { id: 'fuel', label: 'Fuel', icon: Fuel },
   { id: 'external', label: 'External', icon: ExternalLink },
   { id: 'labour', label: 'Training', icon: GraduationCap },
   { id: 'pm', label: 'PM', icon: CalendarCheck },
+  { id: 'quality', label: 'Quality', icon: ShieldCheck },
+  { id: 'notifications', label: 'Notifications', icon: BellRing },
   { id: 'kpi', label: 'KPIs', icon: Gauge },
+  { id: 'audit', label: 'Audit', icon: Shield },
   { id: 'reports', label: 'Reports', icon: BarChart3 },
 ];
 
@@ -223,11 +246,19 @@ export default function Home() {
       case 'requests': return <MaterialRequestsView />;
       case 'issues': return <MaterialIssuesView />;
       case 'purchase': return <PurchaseOrdersView />;
+      case 'grn': return <GrnView />;
+      case 'quotations': return <QuotationComparisonView />;
+      case 'invoices': return <InvoiceMatchingView />;
+      case 'stocktake': return <StockTakeView />;
+      case 'documents': return <DocumentsView />;
       case 'fuel': return <FuelControlView />;
       case 'external': return <ExternalRepairsView />;
       case 'labour': return <LabourTrainingView />;
       case 'pm': return <PmView />;
+      case 'quality': return <QualityView />;
+      case 'notifications': return <NotificationsView />;
       case 'kpi': return <KpiSlaView />;
+      case 'audit': return <AuditView />;
       case 'reports': return <ReportsView />;
       default: return <DashboardView />;
     }

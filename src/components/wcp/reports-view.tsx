@@ -1,454 +1,742 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogHeader, 
+  DialogTitle 
+} from '@/components/ui/dialog';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { 
-  BarChart3, 
-  TrendingUp, 
-  TrendingDown, 
-  Truck, 
-  Wrench, 
-  Package, 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { 
+  FileText, 
+  Download, 
+  Eye, 
+  Loader2, 
+  Calendar,
+  Wrench,
+  Package,
+  Truck,
   DollarSign,
+  Users,
+  Fuel,
+  ClipboardCheck,
+  CalendarCheck,
+  TrendingUp,
+  Building2,
   Clock,
-  AlertTriangle,
-  CheckCircle,
-  Loader2
+  Receipt,
+  Calculator,
+  Star,
+  Sparkles,
+  ArrowRight
 } from 'lucide-react';
+import { toast } from 'sonner';
 
-interface DashboardStats {
-  summary: {
-    assets: {
-      total: number;
-      operational: number;
-      underRepair: number;
-      availability: string;
-    };
-    jobCards: {
-      total: number;
-      open: number;
-      completed: number;
-      emergency: number;
-      completionRate: string;
-      avgCompletionHours: number | null;
-    };
-    materialRequests: {
-      total: number;
-      pending: number;
-      approved: number;
-    };
-    inventory: {
-      totalItems: number;
-      lowStockItems: number;
-      totalValue: string;
-    };
-    suppliers: {
-      total: number;
-      active: number;
-    };
-    stockMovements: number;
-  };
-  charts: {
-    jobCardsByStatus: Array<{ status: string; count: number }>;
-    jobCardsByPriority: Array<{ priority: string; count: number }>;
-  };
+// Report categories
+const REPORT_CATEGORIES = {
+  FINANCIAL: 'Financial',
+  OPERATIONAL: 'Operational',
+  MAINTENANCE: 'Maintenance',
+  INVENTORY: 'Inventory',
+};
+
+// Report types configuration with categories
+const REPORT_TYPES = [
+  // RECOMMENDED REPORTS (Most used)
+  {
+    id: 'job-card-cost',
+    name: 'Job Card Cost Report',
+    description: 'Complete JC cost: Material + Labour + External + 10% Sundry',
+    icon: Receipt,
+    color: 'text-emerald-600',
+    bgColor: 'bg-emerald-100',
+    category: REPORT_CATEGORIES.FINANCIAL,
+    recommended: true,
+    featured: true,
+  },
+  {
+    id: 'monthly-closed-jobs',
+    name: 'Monthly Closed Job Cards',
+    description: 'Summary of closed JCs with costs by period',
+    icon: Wrench,
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-100',
+    category: REPORT_CATEGORIES.MAINTENANCE,
+    recommended: true,
+  },
+  {
+    id: 'fleet-availability',
+    name: 'Fleet Availability Report',
+    description: 'Current fleet status and availability rate',
+    icon: Truck,
+    color: 'text-teal-600',
+    bgColor: 'bg-teal-100',
+    category: REPORT_CATEGORIES.OPERATIONAL,
+    recommended: true,
+  },
+  {
+    id: 'pm-compliance',
+    name: 'PM Compliance Report',
+    description: 'PM schedule compliance tracking',
+    icon: CalendarCheck,
+    color: 'text-cyan-600',
+    bgColor: 'bg-cyan-100',
+    category: REPORT_CATEGORIES.MAINTENANCE,
+    recommended: true,
+  },
+  
+  // FINANCIAL REPORTS
+  {
+    id: 'external-costs',
+    name: 'External Costs Report',
+    description: 'Subcontractor/external job costs',
+    icon: DollarSign,
+    color: 'text-amber-600',
+    bgColor: 'bg-amber-100',
+    category: REPORT_CATEGORIES.FINANCIAL,
+  },
+  {
+    id: 'procurement-spend',
+    name: 'Procurement Spend Analysis',
+    description: 'PO spend by supplier and category',
+    icon: TrendingUp,
+    color: 'text-rose-600',
+    bgColor: 'bg-rose-100',
+    category: REPORT_CATEGORIES.FINANCIAL,
+  },
+  
+  // OPERATIONAL REPORTS
+  {
+    id: 'technician-utilisation',
+    name: 'Technician Utilisation',
+    description: 'Labour hours and productivity',
+    icon: Users,
+    color: 'text-indigo-600',
+    bgColor: 'bg-indigo-100',
+    category: REPORT_CATEGORIES.OPERATIONAL,
+  },
+  {
+    id: 'fuel-consumption',
+    name: 'Fuel Consumption Report',
+    description: 'Fuel issues and consumption trends',
+    icon: Fuel,
+    color: 'text-orange-600',
+    bgColor: 'bg-orange-100',
+    category: REPORT_CATEGORIES.OPERATIONAL,
+  },
+  
+  // INVENTORY REPORTS
+  {
+    id: 'material-usage',
+    name: 'Material Usage Report',
+    description: 'Items issued with costs by store',
+    icon: Package,
+    color: 'text-purple-600',
+    bgColor: 'bg-purple-100',
+    category: REPORT_CATEGORIES.INVENTORY,
+  },
+  {
+    id: 'stock-valuation',
+    name: 'Stock Valuation Report',
+    description: 'Current stock value by category',
+    icon: Calculator,
+    color: 'text-pink-600',
+    bgColor: 'bg-pink-100',
+    category: REPORT_CATEGORIES.INVENTORY,
+  },
+];
+
+interface ReportData {
+  title: string;
+  generatedAt: string;
+  period: { start: string; end: string };
+  summary: Record<string, any>;
+  data: any[];
+  columns: { key: string; label: string; align?: 'left' | 'right' }[];
+  totals?: Record<string, number>;
 }
 
 export function ReportsView() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [period, setPeriod] = useState('month');
-  const [loading, setLoading] = useState(true);
+  const [selectedReport, setSelectedReport] = useState<string | null>(null);
+  const [dateFrom, setDateFrom] = useState(() => {
+    const d = new Date();
+    d.setDate(1);
+    return d.toISOString().split('T')[0];
+  });
+  const [dateTo, setDateTo] = useState(() => {
+    return new Date().toISOString().split('T')[0];
+  });
+  const [loading, setLoading] = useState(false);
+  const [previewData, setPreviewData] = useState<ReportData | null>(null);
+  const [showPreviewDialog, setShowPreviewDialog] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<string>('all');
 
-  useEffect(() => {
-    fetchStats();
-  }, [period]);
+  // Quick date range handlers
+  const setThisMonth = () => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    setDateFrom(start.toISOString().split('T')[0]);
+    setDateTo(now.toISOString().split('T')[0]);
+  };
 
-  const fetchStats = async () => {
+  const setLastMonth = () => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const end = new Date(now.getFullYear(), now.getMonth(), 0);
+    setDateFrom(start.toISOString().split('T')[0]);
+    setDateTo(end.toISOString().split('T')[0]);
+  };
+
+  const setLastQuarter = () => {
+    const now = new Date();
+    const quarter = Math.floor(now.getMonth() / 3);
+    const start = new Date(now.getFullYear(), (quarter - 1) * 3, 1);
+    const end = new Date(now.getFullYear(), quarter * 3, 0);
+    setDateFrom(start.toISOString().split('T')[0]);
+    setDateTo(end.toISOString().split('T')[0]);
+  };
+
+  const setThisYear = () => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 1);
+    setDateFrom(start.toISOString().split('T')[0]);
+    setDateTo(now.toISOString().split('T')[0]);
+  };
+
+  // Fetch report data
+  const fetchReportData = async (reportId: string): Promise<ReportData | null> => {
     try {
-      setLoading(true);
-      const res = await fetch(`/api/dashboard?period=${period}`);
-      const data = await res.json();
-      if (data.success) {
-        setStats(data.data);
+      const response = await fetch(
+        `/api/reports/${reportId}?from=${dateFrom}&to=${dateTo}`
+      );
+      if (response.ok) {
+        return await response.json();
       }
+      return null;
     } catch (error) {
-      console.error('Failed to fetch stats:', error);
-    } finally {
-      setLoading(false);
+      console.error('Failed to fetch report:', error);
+      return null;
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
-      </div>
-    );
-  }
+  // Handle preview
+  const handlePreview = async (reportId: string) => {
+    setLoading(true);
+    setSelectedReport(reportId);
+    
+    const data = await fetchReportData(reportId);
+    if (data) {
+      setPreviewData(data);
+      setShowPreviewDialog(true);
+    } else {
+      toast.error('Failed to load report data');
+    }
+    
+    setLoading(false);
+  };
 
-  if (!stats) {
-    return (
-      <div className="text-center py-12 text-slate-500">
-        <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-        <p>Failed to load reports</p>
-      </div>
-    );
-  }
+  // Handle PDF export
+  const handleExportPDF = async (reportId: string) => {
+    setExporting(true);
+    setSelectedReport(reportId);
 
-  const { summary, charts } = stats;
+    try {
+      const data = await fetchReportData(reportId);
+      if (!data) {
+        toast.error('Failed to generate report');
+        setExporting(false);
+        return;
+      }
+
+      await generateClientPDF(data);
+    } catch (error) {
+      console.error('Failed to export PDF:', error);
+      toast.error('Failed to generate PDF');
+    }
+
+    setExporting(false);
+  };
+
+  // Client-side PDF generation
+  const generateClientPDF = async (data: ReportData) => {
+    const { jsPDF } = await import('jspdf');
+    await import('jspdf-autotable');
+
+    const doc = new jsPDF();
+    
+    // Company header
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('WCP - Workshop Control Platform', 14, 20);
+    
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text(data.title, 14, 30);
+    
+    // Date info
+    doc.setFontSize(10);
+    doc.text(`Period: ${data.period.start} to ${data.period.end}`, 14, 38);
+    doc.text(`Generated: ${data.generatedAt}`, 14, 44);
+
+    // Summary section
+    let yPos = 55;
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Summary', 14, yPos);
+    yPos += 7;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    Object.entries(data.summary).forEach(([key, value]) => {
+      doc.text(`${key}: ${value}`, 14, yPos);
+      yPos += 5;
+    });
+
+    // Data table
+    yPos += 10;
+    
+    const tableColumns = data.columns.map(col => col.label);
+    const tableRows = data.data.map(row => 
+      data.columns.map(col => String(row[col.key] ?? ''))
+    );
+
+    (doc as any).autoTable({
+      head: [tableColumns],
+      body: tableRows,
+      startY: yPos,
+      styles: { fontSize: 9, cellPadding: 3 },
+      headStyles: { fillColor: [16, 185, 129] },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+    });
+
+    // Totals section if exists
+    if (data.totals) {
+      const finalY = (doc as any).lastAutoTable.finalY || yPos + 50;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('TOTALS:', 14, finalY + 10);
+      Object.entries(data.totals).forEach(([key, value], idx) => {
+        doc.text(`${key}: $${(value as number).toLocaleString()}`, 14, finalY + 16 + (idx * 5));
+      });
+    }
+
+    // Page numbers
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.text(
+        `Page ${i} of ${pageCount}`,
+        doc.internal.pageSize.getWidth() / 2,
+        doc.internal.pageSize.getHeight() - 10,
+        { align: 'center' }
+      );
+    }
+
+    // Save
+    doc.save(`${data.title.toLowerCase().replace(/\s+/g, '-')}-${dateFrom}-to-${dateTo}.pdf`);
+    toast.success('Report downloaded successfully');
+  };
+
+  // Filter reports by category
+  const filteredReports = activeCategory === 'all' 
+    ? REPORT_TYPES 
+    : REPORT_TYPES.filter(r => r.category === activeCategory);
+
+  // Get recommended reports
+  const recommendedReports = REPORT_TYPES.filter(r => r.recommended);
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Reports & Analytics</h2>
-          <p className="text-slate-500">Performance metrics and analysis</p>
+          <h1 className="text-2xl font-bold text-slate-900">Reports</h1>
+          <p className="text-slate-500 text-sm">Generate and export workshop reports</p>
         </div>
-        <Select value={period} onValueChange={setPeriod}>
-          <SelectTrigger className="w-40">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="day">Last 24 Hours</SelectItem>
-            <SelectItem value="week">Last 7 Days</SelectItem>
-            <SelectItem value="month">Last 30 Days</SelectItem>
-            <SelectItem value="year">Last Year</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-emerald-600 font-medium">Asset Availability</p>
-                <p className="text-3xl font-bold text-emerald-700">{summary.assets.availability}%</p>
-                <p className="text-xs text-emerald-600 mt-1">
-                  {summary.assets.operational} of {summary.assets.total} operational
-                </p>
+      {/* Date Range Selector */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
+            <div className="grid grid-cols-2 gap-4 flex-1">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-600">From Date</label>
+                <Input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                />
               </div>
-              <div className="p-3 bg-emerald-200 rounded-full">
-                <Truck className="h-6 w-6 text-emerald-700" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-blue-600 font-medium">Job Completion</p>
-                <p className="text-3xl font-bold text-blue-700">{summary.jobCards.completionRate}%</p>
-                <p className="text-xs text-blue-600 mt-1">
-                  {summary.jobCards.completed} completed
-                </p>
-              </div>
-              <div className="p-3 bg-blue-200 rounded-full">
-                <Wrench className="h-6 w-6 text-blue-700" />
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-600">To Date</label>
+                <Input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                />
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-amber-600 font-medium">Avg Completion Time</p>
-                <p className="text-3xl font-bold text-amber-700">
-                  {summary.jobCards.avgCompletionHours || 0}h
-                </p>
-                <p className="text-xs text-amber-600 mt-1">
-                  Average job duration
-                </p>
-              </div>
-              <div className="p-3 bg-amber-200 rounded-full">
-                <Clock className="h-6 w-6 text-amber-700" />
-              </div>
+            <div className="flex gap-2 flex-wrap">
+              <Button variant="outline" size="sm" onClick={setThisMonth}>
+                This Month
+              </Button>
+              <Button variant="outline" size="sm" onClick={setLastMonth}>
+                Last Month
+              </Button>
+              <Button variant="outline" size="sm" onClick={setLastQuarter}>
+                Last Quarter
+              </Button>
+              <Button variant="outline" size="sm" onClick={setThisYear}>
+                This Year
+              </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </CardContent>
+      </Card>
 
-        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-purple-600 font-medium">Inventory Value</p>
-                <p className="text-3xl font-bold text-purple-700">
-                  ${(parseFloat(summary.inventory.totalValue) / 1000).toFixed(0)}K
-                </p>
-                <p className="text-xs text-purple-600 mt-1">
-                  {summary.inventory.totalItems} items
-                </p>
-              </div>
-              <div className="p-3 bg-purple-200 rounded-full">
-                <DollarSign className="h-6 w-6 text-purple-700" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Recommended Reports Section */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Star className="h-5 w-5 text-amber-500" />
+          <h2 className="text-lg font-semibold text-slate-900">Recommended Reports</h2>
+        </div>
+        
+        {/* Featured Job Card Cost Report */}
+        {REPORT_TYPES.filter(r => r.featured).map((report) => {
+          const Icon = report.icon;
+          const isLoading = loading && selectedReport === report.id;
+          const isExporting = exporting && selectedReport === report.id;
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Job Cards by Status */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-slate-500" />
-              Job Cards by Status
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {charts.jobCardsByStatus.map((item) => {
-                const percentage = summary.jobCards.total > 0 
-                  ? ((item.count / summary.jobCards.total) * 100).toFixed(0)
-                  : 0;
-                return (
-                  <div key={item.status} className="space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span className="font-medium">{item.status.replace(/_/g, ' ')}</span>
-                      <span className="text-slate-500">{item.count} ({percentage}%)</span>
+          return (
+            <Card key={report.id} className="border-2 border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50">
+              <CardContent className="p-6">
+                <div className="flex flex-col md:flex-row gap-6">
+                  <div className="flex items-start gap-4 flex-1">
+                    <div className={`p-3 rounded-xl ${report.bgColor}`}>
+                      <Icon className={`h-8 w-8 ${report.color}`} />
                     </div>
-                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-emerald-500 rounded-full transition-all"
-                        style={{ width: `${percentage}%` }}
-                      />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-xl font-bold text-slate-900">{report.name}</h3>
+                        <Badge className="bg-emerald-500 text-white">Most Popular</Badge>
+                      </div>
+                      <p className="text-slate-600 mt-1">{report.description}</p>
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        <Badge variant="outline" className="text-xs">
+                          Material Costs
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          Labour Costs
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          External Costs
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          + 10% Sundry
+                        </Badge>
+                      </div>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Job Cards by Priority */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-slate-500" />
-              Job Cards by Priority
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {charts.jobCardsByPriority.map((item) => {
-                const percentage = summary.jobCards.total > 0 
-                  ? ((item.count / summary.jobCards.total) * 100).toFixed(0)
-                  : 0;
-                const colors: Record<string, string> = {
-                  EMERGENCY: 'bg-red-500',
-                  CRITICAL: 'bg-orange-500',
-                  HIGH: 'bg-amber-500',
-                  NORMAL: 'bg-blue-500',
-                  LOW: 'bg-slate-400',
-                };
-                return (
-                  <div key={item.priority} className="space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span className="font-medium">{item.priority}</span>
-                      <span className="text-slate-500">{item.count} ({percentage}%)</span>
-                    </div>
-                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full rounded-full transition-all ${colors[item.priority] || 'bg-slate-400'}`}
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Summary Tables */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Assets Summary */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Asset Summary</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableBody>
-                <TableRow>
-                  <TableCell className="font-medium">Total Assets</TableCell>
-                  <TableCell className="text-right">{summary.assets.total}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">Operational</TableCell>
-                  <TableCell className="text-right text-emerald-600">{summary.assets.operational}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">Under Repair</TableCell>
-                  <TableCell className="text-right text-amber-600">{summary.assets.underRepair}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">Availability Rate</TableCell>
-                  <TableCell className="text-right font-bold">{summary.assets.availability}%</TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-
-        {/* Inventory Summary */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Inventory Summary</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableBody>
-                <TableRow>
-                  <TableCell className="font-medium">Total Items</TableCell>
-                  <TableCell className="text-right">{summary.inventory.totalItems}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">Low Stock Items</TableCell>
-                  <TableCell className="text-right text-amber-600">{summary.inventory.lowStockItems}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">Total Stock Value</TableCell>
-                  <TableCell className="text-right font-bold">${summary.inventory.totalValue}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">Stock Movements</TableCell>
-                  <TableCell className="text-right">{summary.stockMovements}</TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-
-        {/* Job Cards Summary */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Job Cards Summary</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableBody>
-                <TableRow>
-                  <TableCell className="font-medium">Total Job Cards</TableCell>
-                  <TableCell className="text-right">{summary.jobCards.total}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">Open Jobs</TableCell>
-                  <TableCell className="text-right text-blue-600">{summary.jobCards.open}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">Completed</TableCell>
-                  <TableCell className="text-right text-emerald-600">{summary.jobCards.completed}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">Emergency/Critical</TableCell>
-                  <TableCell className="text-right text-red-600">{summary.jobCards.emergency}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">Avg Completion Time</TableCell>
-                  <TableCell className="text-right font-bold">{summary.jobCards.avgCompletionHours || 0} hours</TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-
-        {/* Procurement Summary */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Procurement Summary</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableBody>
-                <TableRow>
-                  <TableCell className="font-medium">Material Requests</TableCell>
-                  <TableCell className="text-right">{summary.materialRequests.total}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">Pending Approval</TableCell>
-                  <TableCell className="text-right text-amber-600">{summary.materialRequests.pending}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">Approved</TableCell>
-                  <TableCell className="text-right text-emerald-600">{summary.materialRequests.approved}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">Active Suppliers</TableCell>
-                  <TableCell className="text-right">{summary.suppliers.active} / {summary.suppliers.total}</TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Alert Cards */}
-      {(summary.jobCards.emergency > 0 || summary.inventory.lowStockItems > 0) && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {summary.jobCards.emergency > 0 && (
-            <Card className="border-red-200 bg-red-50">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-red-100 rounded-lg">
-                    <AlertTriangle className="h-5 w-5 text-red-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-red-800">Emergency Jobs</p>
-                    <p className="text-sm text-red-600">
-                      {summary.jobCards.emergency} emergency/critical job(s) require immediate attention
-                    </p>
+                  <div className="flex gap-3">
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      onClick={() => handlePreview(report.id)}
+                      disabled={isLoading || isExporting}
+                      className="min-w-[120px]"
+                    >
+                      {isLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <Eye className="h-4 w-4 mr-2" />
+                      )}
+                      Preview
+                    </Button>
+                    <Button
+                      size="lg"
+                      onClick={() => handleExportPDF(report.id)}
+                      disabled={isLoading || isExporting}
+                      className="bg-emerald-600 hover:bg-emerald-700 min-w-[140px]"
+                    >
+                      {isExporting ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <Download className="h-4 w-4 mr-2" />
+                      )}
+                      Export PDF
+                    </Button>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          )}
-          
-          {summary.inventory.lowStockItems > 0 && (
-            <Card className="border-amber-200 bg-amber-50">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-amber-100 rounded-lg">
-                    <Package className="h-5 w-5 text-amber-600" />
+          );
+        })}
+
+        {/* Other Recommended Reports */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {recommendedReports.filter(r => !r.featured).map((report) => {
+            const Icon = report.icon;
+            const isLoading = loading && selectedReport === report.id;
+            const isExporting = exporting && selectedReport === report.id;
+
+            return (
+              <Card key={report.id} className="hover:shadow-md transition-shadow">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className={`p-2 rounded-lg ${report.bgColor}`}>
+                      <Icon className={`h-5 w-5 ${report.color}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-slate-900 truncate">{report.name}</h3>
+                      <p className="text-xs text-slate-500 mt-1 line-clamp-2">
+                        {report.description}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-amber-800">Low Stock Alert</p>
-                    <p className="text-sm text-amber-600">
-                      {summary.inventory.lowStockItems} item(s) below reorder level
-                    </p>
+                  <div className="flex gap-2 mt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handlePreview(report.id)}
+                      disabled={isLoading || isExporting}
+                    >
+                      {isLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                      ) : (
+                        <Eye className="h-4 w-4 mr-1" />
+                      )}
+                      Preview
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                      onClick={() => handleExportPDF(report.id)}
+                      disabled={isLoading || isExporting}
+                    >
+                      {isExporting ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                      ) : (
+                        <Download className="h-4 w-4 mr-1" />
+                      )}
+                      PDF
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* All Reports Section */}
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h2 className="text-lg font-semibold text-slate-900">All Reports</h2>
+          <Select value={activeCategory} onValueChange={setActiveCategory}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Filter by category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              <SelectItem value={REPORT_CATEGORIES.FINANCIAL}>Financial</SelectItem>
+              <SelectItem value={REPORT_CATEGORIES.OPERATIONAL}>Operational</SelectItem>
+              <SelectItem value={REPORT_CATEGORIES.MAINTENANCE}>Maintenance</SelectItem>
+              <SelectItem value={REPORT_CATEGORIES.INVENTORY}>Inventory</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Report Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {filteredReports.map((report) => {
+            const Icon = report.icon;
+            const isLoading = loading && selectedReport === report.id;
+            const isExporting = exporting && selectedReport === report.id;
+
+            return (
+              <Card key={report.id} className="hover:shadow-md transition-shadow">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className={`p-2 rounded-lg ${report.bgColor}`}>
+                      <Icon className={`h-5 w-5 ${report.color}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-slate-900 truncate">{report.name}</h3>
+                      <p className="text-xs text-slate-500 mt-1 line-clamp-2">
+                        {report.description}
+                      </p>
+                      <Badge variant="outline" className="text-xs mt-2">
+                        {report.category}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handlePreview(report.id)}
+                      disabled={isLoading || isExporting}
+                    >
+                      {isLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                      ) : (
+                        <Eye className="h-4 w-4 mr-1" />
+                      )}
+                      Preview
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                      onClick={() => handleExportPDF(report.id)}
+                      disabled={isLoading || isExporting}
+                    >
+                      {isExporting ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                      ) : (
+                        <Download className="h-4 w-4 mr-1" />
+                      )}
+                      PDF
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Preview Dialog */}
+      <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
+        <DialogContent className="max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>{previewData?.title || 'Report Preview'}</DialogTitle>
+            <DialogDescription>
+              Period: {previewData?.period.start} to {previewData?.period.end}
+            </DialogDescription>
+          </DialogHeader>
+
+          {previewData && (
+            <div className="flex-1 overflow-hidden flex flex-col">
+              {/* Summary Section */}
+              <div className="bg-slate-50 rounded-lg p-4 mb-4">
+                <h4 className="font-medium text-sm text-slate-600 mb-2">Summary</h4>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  {Object.entries(previewData.summary).slice(0, 8).map(([key, value]) => (
+                    <div key={key}>
+                      <p className="text-xs text-slate-500">{key}</p>
+                      <p className="font-semibold text-slate-900">{String(value)}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Data Table */}
+              <div className="flex-1 overflow-auto">
+                {previewData.data.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        {previewData.columns.map((col) => (
+                          <TableHead 
+                            key={col.key}
+                            className={col.align === 'right' ? 'text-right' : ''}
+                          >
+                            {col.label}
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {previewData.data.slice(0, 100).map((row, index) => (
+                        <TableRow key={index}>
+                          {previewData.columns.map((col) => (
+                            <TableCell 
+                              key={col.key}
+                              className={`${col.align === 'right' ? 'text-right' : ''} ${
+                                col.key.toLowerCase().includes('total') || 
+                                col.key.toLowerCase().includes('cost') ? 'font-medium' : ''
+                              }`}
+                            >
+                              {String(row[col.key] ?? '-')}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <div className="text-center py-8 text-slate-500">
+                    No data available for the selected period
+                  </div>
+                )}
+              </div>
+
+              {/* Totals Section */}
+              {previewData.totals && Object.keys(previewData.totals).length > 0 && (
+                <div className="bg-emerald-50 rounded-lg p-4 mt-4 border border-emerald-200">
+                  <h4 className="font-medium text-emerald-800 mb-2">Totals</h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {Object.entries(previewData.totals).map(([key, value]) => (
+                      <div key={key}>
+                        <p className="text-xs text-emerald-600">{key}</p>
+                        <p className="font-bold text-emerald-900 text-lg">
+                          ${(value as number).toLocaleString()}
+                        </p>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              )}
+
+              {/* Footer */}
+              <div className="flex items-center justify-between pt-4 border-t mt-4">
+                <span className="text-xs text-slate-400">
+                  Generated: {previewData.generatedAt} • {previewData.data.length} records
+                </span>
+                <Button
+                  onClick={() => {
+                    setShowPreviewDialog(false);
+                    if (selectedReport) handleExportPDF(selectedReport);
+                  }}
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Export PDF
+                </Button>
+              </div>
+            </div>
           )}
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

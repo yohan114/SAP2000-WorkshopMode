@@ -1,0 +1,530 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle 
+} from '@/components/ui/dialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { 
+  PackageCheck, 
+  Plus, 
+  Search, 
+  Loader2, 
+  Eye
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { SearchableItemSelect } from './searchable-item-select';
+
+interface GrnHeader {
+  id: string;
+  grnNumber: string;
+  poId: string | null;
+  supplierId: string | null;
+  storeId: string;
+  status: string;
+  grnDate: string;
+  receivedBy: string | null;
+  notes: string | null;
+  createdAt: string;
+  supplier?: { id: string; name: string; supplierCode: string };
+  store?: { id: string; name: string; code: string };
+  lines?: GrnLine[];
+}
+
+interface GrnLine {
+  id: string;
+  grnId: string;
+  itemId: string;
+  qtyOrdered: number;
+  qtyReceived: number;
+  qtyAccepted: number;
+  qtyRejected: number;
+  unitCost: number;
+  remarks: string | null;
+  item?: { id: string; itemCode: string; name: string; unitOfMeasure: string };
+}
+
+interface Supplier {
+  id: string;
+  name: string;
+  supplierCode: string;
+}
+
+interface Store {
+  id: string;
+  name: string;
+  code: string;
+}
+
+const statusColors: Record<string, string> = {
+  'DRAFT': 'bg-slate-100 text-slate-700',
+  'SUBMITTED': 'bg-blue-100 text-blue-700',
+  'VERIFIED': 'bg-purple-100 text-purple-700',
+  'POSTED': 'bg-emerald-100 text-emerald-700',
+  'CANCELLED': 'bg-red-100 text-red-700',
+};
+
+export function GrnView() {
+  const [grns, setGrns] = useState<GrnHeader[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [stores, setStores] = useState<Store[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showViewDialog, setShowViewDialog] = useState(false);
+  const [selectedGrn, setSelectedGrn] = useState<GrnHeader | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const [formData, setFormData] = useState({
+    supplierId: '',
+    storeId: '',
+    grnDate: new Date().toISOString().split('T')[0],
+    notes: '',
+    lines: [] as {
+      itemId: string;
+      itemCode: string;
+      itemName: string;
+      unit: string;
+      qtyOrdered: number;
+      qtyReceived: number;
+      qtyAccepted: number;
+      qtyRejected: number;
+      unitCost: number;
+      remarks: string;
+    }[]
+  });
+
+  useEffect(() => {
+    fetchGrns();
+    fetchSuppliers();
+    fetchStores();
+  }, [statusFilter]);
+
+  const fetchGrns = async () => {
+    try {
+      setLoading(true);
+      let url = '/api/grn?page=1&limit=50';
+      if (statusFilter !== 'all') url += `&status=${statusFilter}`;
+      
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        setGrns(data.data || data.grns || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch GRNs:', error);
+      toast.error('Failed to load GRNs');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchSuppliers = async () => {
+    try {
+      const response = await fetch('/api/suppliers?limit=100');
+      if (response.ok) {
+        const data = await response.json();
+        setSuppliers(data.data || data.suppliers || data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch suppliers:', error);
+    }
+  };
+
+  const fetchStores = async () => {
+    try {
+      const response = await fetch('/api/inventory/stores');
+      if (response.ok) {
+        const data = await response.json();
+        setStores(data.data || data.stores || data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch stores:', error);
+    }
+  };
+
+  const handleCreateGrn = async () => {
+    if (!formData.storeId) {
+      toast.error('Please select a store');
+      return;
+    }
+    if (formData.lines.length === 0) {
+      toast.error('Please add at least one line item');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const response = await fetch('/api/grn', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          supplierId: formData.supplierId || null,
+          storeId: formData.storeId,
+          grnDate: formData.grnDate,
+          notes: formData.notes,
+          lines: formData.lines.map(l => ({
+            itemId: l.itemId,
+            qtyOrdered: l.qtyOrdered,
+            qtyReceived: l.qtyReceived,
+            qtyAccepted: l.qtyAccepted,
+            qtyRejected: l.qtyRejected,
+            unitCost: l.unitCost,
+            remarks: l.remarks
+          }))
+        })
+      });
+
+      if (response.ok) {
+        toast.success('GRN created successfully');
+        setShowCreateDialog(false);
+        resetForm();
+        fetchGrns();
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to create GRN');
+      }
+    } catch (error) {
+      console.error('Failed to create GRN:', error);
+      toast.error('Failed to create GRN');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleViewGrn = async (grn: GrnHeader) => {
+    try {
+      const response = await fetch(`/api/grn/${grn.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setSelectedGrn(data.data || data);
+        setShowViewDialog(true);
+      }
+    } catch (error) {
+      console.error('Failed to fetch GRN details:', error);
+      toast.error('Failed to load GRN details');
+    }
+  };
+
+  const handleStatusChange = async (grnId: string, newStatus: string) => {
+    try {
+      const response = await fetch(`/api/grn/${grnId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (response.ok) {
+        toast.success(`GRN ${newStatus.toLowerCase()} successfully`);
+        fetchGrns();
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to update GRN');
+      }
+    } catch (error) {
+      console.error('Failed to update GRN:', error);
+      toast.error('Failed to update GRN');
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      supplierId: '',
+      storeId: '',
+      grnDate: new Date().toISOString().split('T')[0],
+      notes: '',
+      lines: []
+    });
+  };
+
+  const addLineItem = () => {
+    setFormData(prev => ({
+      ...prev,
+      lines: [...prev.lines, {
+        itemId: '',
+        itemCode: '',
+        itemName: '',
+        unit: '',
+        qtyOrdered: 0,
+        qtyReceived: 0,
+        qtyAccepted: 0,
+        qtyRejected: 0,
+        unitCost: 0,
+        remarks: ''
+      }]
+    }));
+  };
+
+  const updateLineItem = (index: number, field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      lines: prev.lines.map((line, i) => 
+        i === index ? { ...line, [field]: value } : line
+      )
+    }));
+  };
+
+  const removeLineItem = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      lines: prev.lines.filter((_, i) => i !== index)
+    }));
+  };
+
+  const filteredGrns = grns.filter(grn =>
+    grn.grnNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    grn.supplier?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Goods Received Notes</h1>
+          <p className="text-slate-500 text-sm">Manage goods received from suppliers</p>
+        </div>
+        <Button onClick={() => setShowCreateDialog(true)} className="bg-emerald-600 hover:bg-emerald-700">
+          <Plus className="h-4 w-4 mr-2" />
+          New GRN
+        </Button>
+      </div>
+
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder="Search GRNs..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="DRAFT">Draft</SelectItem>
+                <SelectItem value="SUBMITTED">Submitted</SelectItem>
+                <SelectItem value="VERIFIED">Verified</SelectItem>
+                <SelectItem value="POSTED">Posted</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-0">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+            </div>
+          ) : filteredGrns.length === 0 ? (
+            <div className="text-center py-12">
+              <PackageCheck className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+              <p className="text-slate-500">No GRNs found</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>GRN Number</TableHead>
+                  <TableHead>Supplier</TableHead>
+                  <TableHead>Store</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredGrns.map((grn) => (
+                  <TableRow key={grn.id}>
+                    <TableCell className="font-medium">{grn.grnNumber}</TableCell>
+                    <TableCell>{grn.supplier?.name || '-'}</TableCell>
+                    <TableCell>{grn.store?.name || '-'}</TableCell>
+                    <TableCell>{new Date(grn.grnDate).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <Badge className={statusColors[grn.status] || 'bg-slate-100'}>
+                        {grn.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => handleViewGrn(grn)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        {grn.status === 'DRAFT' && (
+                          <Button variant="ghost" size="sm" onClick={() => handleStatusChange(grn.id, 'SUBMITTED')}>
+                            Submit
+                          </Button>
+                        )}
+                        {grn.status === 'SUBMITTED' && (
+                          <Button variant="ghost" size="sm" onClick={() => handleStatusChange(grn.id, 'VERIFIED')} className="text-emerald-600">
+                            Verify
+                          </Button>
+                        )}
+                        {grn.status === 'VERIFIED' && (
+                          <Button variant="ghost" size="sm" onClick={() => handleStatusChange(grn.id, 'POSTED')} className="text-emerald-600">
+                            Post
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create New GRN</DialogTitle>
+            <DialogDescription>Create a new Goods Received Note</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Supplier</label>
+                <Select value={formData.supplierId} onValueChange={(v) => setFormData(prev => ({ ...prev, supplierId: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Select supplier" /></SelectTrigger>
+                  <SelectContent>
+                    {suppliers.map((s) => (<SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Store *</label>
+                <Select value={formData.storeId} onValueChange={(v) => setFormData(prev => ({ ...prev, storeId: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Select store" /></SelectTrigger>
+                  <SelectContent>
+                    {stores.map((s) => (<SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">GRN Date *</label>
+                <Input type="date" value={formData.grnDate} onChange={(e) => setFormData(prev => ({ ...prev, grnDate: e.target.value }))} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Notes</label>
+              <Textarea value={formData.notes} onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))} placeholder="Enter any notes..." rows={2} />
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="font-medium">Line Items</h4>
+                <Button variant="outline" size="sm" onClick={addLineItem}><Plus className="h-4 w-4 mr-2" /> Add Item</Button>
+              </div>
+              {formData.lines.length > 0 && (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Item</TableHead>
+                      <TableHead className="w-24">Qty Received</TableHead>
+                      <TableHead className="w-24">Qty Accepted</TableHead>
+                      <TableHead className="w-28">Unit Cost</TableHead>
+                      <TableHead className="w-20"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {formData.lines.map((line, index) => (
+                      <TableRow key={index}>
+                        <TableCell>
+                          <SearchableItemSelect value={line.itemId} onChange={(val, item) => {
+                            if (item) {
+                              updateLineItem(index, 'itemId', val);
+                              updateLineItem(index, 'itemCode', item.itemCode);
+                              updateLineItem(index, 'itemName', item.name);
+                              updateLineItem(index, 'unit', item.unitOfMeasure || '');
+                            }
+                          }} storeId={formData.storeId} showStock placeholder="Select item" />
+                        </TableCell>
+                        <TableCell><Input type="number" min="0" value={line.qtyReceived} onChange={(e) => updateLineItem(index, 'qtyReceived', parseFloat(e.target.value) || 0)} /></TableCell>
+                        <TableCell><Input type="number" min="0" value={line.qtyAccepted} onChange={(e) => updateLineItem(index, 'qtyAccepted', parseFloat(e.target.value) || 0)} /></TableCell>
+                        <TableCell><Input type="number" min="0" step="0.01" value={line.unitCost} onChange={(e) => updateLineItem(index, 'unitCost', parseFloat(e.target.value) || 0)} /></TableCell>
+                        <TableCell><Button variant="ghost" size="icon" onClick={() => removeLineItem(index)} className="text-red-500">X</Button></TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Cancel</Button>
+            <Button onClick={handleCreateGrn} disabled={submitting}>{submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Create GRN</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>GRN Details</DialogTitle></DialogHeader>
+          {selectedGrn && (
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div><p className="text-sm text-slate-500">GRN Number</p><p className="font-medium">{selectedGrn.grnNumber}</p></div>
+                <div><p className="text-sm text-slate-500">Status</p><Badge className={statusColors[selectedGrn.status]}>{selectedGrn.status}</Badge></div>
+                <div><p className="text-sm text-slate-500">Supplier</p><p className="font-medium">{selectedGrn.supplier?.name || '-'}</p></div>
+                <div><p className="text-sm text-slate-500">Store</p><p className="font-medium">{selectedGrn.store?.name || '-'}</p></div>
+              </div>
+              {selectedGrn.lines && selectedGrn.lines.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="font-medium mb-2">Line Items</h4>
+                  <Table>
+                    <TableHeader>
+                      <TableRow><TableHead>Item</TableHead><TableHead className="text-right">Received</TableHead><TableHead className="text-right">Accepted</TableHead><TableHead className="text-right">Rejected</TableHead></TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {selectedGrn.lines.map((line) => (
+                        <TableRow key={line.id}>
+                          <TableCell>{line.item?.itemCode} - {line.item?.name}</TableCell>
+                          <TableCell className="text-right">{line.qtyReceived}</TableCell>
+                          <TableCell className="text-right">{line.qtyAccepted}</TableCell>
+                          <TableCell className="text-right">{line.qtyRejected}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter><Button variant="outline" onClick={() => setShowViewDialog(false)}>Close</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

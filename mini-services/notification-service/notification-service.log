@@ -2,3 +2,16 @@ $ bun run index.ts
 Notification service running on port 3003
 WebSocket endpoint: ws://localhost:3003
 Use Socket.io to connect: io("/?XTransformPort=3003")
+$ bun run index.ts
+46 |     }
+47 |   }
+48 |   let er;
+49 |   if (args.length > 0)
+50 |     er = args[0];
+51 |     throw er;
+                 ^
+error: Failed to start server. Is port 3003 in use?
+      at emitError (node:events:51:13)
+
+Bun v1.3.10 (Linux x64 baseline)
+error: script "dev" exited with code 1
