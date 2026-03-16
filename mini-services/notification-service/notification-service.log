@@ -1,0 +1,4 @@
+$ bun run index.ts
+Notification service running on port 3003
+WebSocket endpoint: ws://localhost:3003
+Use Socket.io to connect: io("/?XTransformPort=3003")
