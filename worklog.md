@@ -493,3 +493,276 @@ Updated `/src/app/page.tsx`:
 - Auto-reconnection with 10 attempts, 1s delay
 - All code passes ESLint validation
 - Notification service started in background with `bun run dev`
+
+---
+## Task ID: 2 - Reports Export Excel/CSV Enhancement
+### Work Task
+Add Excel/CSV export capabilities to the WCP Reports module with support for multiple export formats (PDF, Excel, CSV), multi-sheet Excel exports, and proper formatting for currency and dates.
+
+### Work Summary
+Created 1 new utility file and enhanced the reports-view component:
+
+1. **`/src/lib/export-utils.ts`** - Export Utilities Library
+   - **`exportToExcel(data, filename, options)`** - Export data to Excel file
+     - Support for multi-sheet exports via `ExcelSheet[]` interface
+     - Auto-sizing columns based on content
+     - Optional summary sheet inclusion
+     - Currency and date column formatting
+   - **`exportToCSV(data, filename, options)`** - Export data to CSV file
+     - Currency and date formatting support
+     - Proper blob handling for file download
+   - **`exportReportToExcel(report, filename)`** - Report-specific Excel export
+     - Main data sheet with all report data
+     - Summary sheet with report metadata, summary values, and totals
+     - Proper handling of report structure (title, period, columns, data, totals)
+   - **`exportReportToCSV(report, filename)`** - Report-specific CSV export
+     - Flattened report data with header info
+   - **`formatForSpreadsheet(data)`** - Helper for data formatting
+     - Converts Decimal values to numbers
+     - Handles nulls and boolean values
+   - **`createMultiSheetWorkbook(sheets)`** - Create workbook from multiple sheets
+   - **`downloadWorkbook(wb, filename)`** - Trigger workbook download
+
+2. **Enhanced `reports-view.tsx`** - Export Dropdown UI
+   - **Added imports**:
+     - DropdownMenu components from shadcn/ui
+     - FileSpreadsheet, ChevronDown icons from lucide-react
+     - Export utility functions from export-utils.ts
+   - **Export handlers**:
+     - `handleExportPDF(reportId)` - PDF export (existing)
+     - `handleExportExcel(reportId)` - Excel export using exportReportToExcel
+     - `handleExportCSV(reportId)` - CSV export using exportReportToCSV
+   - **ExportDropdown component**:
+     - Dropdown menu with PDF, Excel, CSV options
+     - Color-coded icons (red for PDF, emerald for Excel, blue for CSV)
+     - Loading state with spinner
+     - Support for different button sizes (sm, default, lg)
+   - **Updated UI locations**:
+     - Featured Job Card Cost Report card - Export dropdown (lg size)
+     - Other Recommended Reports cards - Export dropdown (sm size)
+     - All Reports grid cards - Export dropdown (sm size)
+     - Preview Dialog footer - Separate CSV, Excel, PDF buttons
+
+### Export Formats Supported
+| Format | Extension | Features |
+|--------|-----------|----------|
+| PDF | .pdf | Company header, summary section, data table, totals, page numbers |
+| Excel | .xlsx | Multi-sheet (Data + Summary), auto-sized columns, formatted values |
+| CSV | .csv | Flat file with header info, compatible with any spreadsheet app |
+
+### Report Types Covered
+All report types in the WCP Reports module can now be exported:
+- Job Card Cost Report
+- Monthly Closed Job Cards
+- Fleet Availability Report
+- PM Compliance Report
+- External Costs Report
+- Procurement Spend Analysis
+- Technician Utilisation
+- Fuel Consumption Report
+- Material Usage Report
+- Stock Valuation Report
+
+### Technical Details
+- Uses `xlsx` library (already installed in project)
+- Client-side export generation (no server round-trip)
+- Proper TypeScript interfaces for type safety
+- Toast notifications for success/error feedback
+- All code passes ESLint validation
+- Dev server running successfully
+
+---
+## Task ID: 3 - Reports Charts and Visualizations
+### Work Task
+Add charts and visualizations to the WCP Reports module, including pie charts for cost distribution, bar charts for job card costs, trend lines, sparkline mini-charts, and specialized charts for the Job Card Cost Report.
+
+### Work Summary
+Enhanced 2 files:
+
+1. **`/src/app/api/reports/[reportId]/route.ts`** - Enhanced Reports API with Chart Data
+   - **Job Card Cost Report** - Added comprehensive chart data:
+     - `costDistribution`: Pie chart data for Material/Labour/External/Sundry breakdown
+     - `topJobCards`: Top 10 job cards by total bill with stacked cost components
+     - `costsByAsset`: Aggregated costs by asset (top 15)
+     - `costTrend`: Monthly cost trends (only if date range > 1 month)
+     - `mleDistribution`: Material/Labour/External distribution with percentages
+     - `rawTotals`: Numeric values for chart rendering
+   
+   - **Monthly Closed Jobs Report** - Added chart data:
+     - `statusDistribution`: Completed vs Closed job cards
+     - `priorityDistribution`: Breakdown by priority level (Emergency/High/Medium/Low)
+     - `costsByCategory`: Actual costs grouped by asset category
+     - `costTrend`: Estimated vs Actual costs over time (monthly)
+     - `rawTotals`: Total estimated, actual, variance, and count
+
+2. **`/src/components/wcp/reports-view.tsx`** - Complete Rewrite with Charts Tab
+   - **New Imports**:
+     - Recharts components: PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, LineChart, Line, AreaChart, Area, ComposedChart
+     - ChartContainer, ChartTooltip, ChartTooltipContent from shadcn/ui
+     - Chart-related icons from lucide-react
+   
+   - **New Tab Structure in Preview Dialog**:
+     - **Data Tab**: Original data table view with summary and totals
+     - **Charts Tab**: Interactive visualizations
+   
+   - **Job Card Cost Report Charts**:
+     - Cost Distribution Pie Chart with donut style and legend
+     - Top 10 Job Cards Horizontal Bar Chart (stacked Material/Labour/External)
+     - Costs by Asset Bar Chart (top 15 assets)
+     - Cost Trend Area Chart (stacked, if date range > 1 month)
+     - MLE Summary Donut Chart with percentages
+   
+   - **Monthly Closed Jobs Charts**:
+     - Priority Distribution Pie Chart
+     - Costs by Asset Category Bar Chart
+     - Estimated vs Actual Composed Chart (bar + line)
+   
+   - **Sparkline Component**:
+     - Mini trend charts for report cards
+     - Trend indicator (up/down arrow)
+     - Fallback for insufficient data
+   
+   - **Color Indicator Component**:
+     - Traffic light indicators on report cards
+     - Configurable thresholds (green/amber/red)
+
+### Chart Types Implemented
+| Chart Type | Use Case | Features |
+|------------|----------|----------|
+| Pie Chart | Cost distribution, Priority breakdown | Donut style, Labels, Percentages |
+| Bar Chart | Top items, Asset costs | Horizontal/Vertical, Stacked support |
+| Area Chart | Trends over time | Stacked areas, Smooth curves |
+| Composed Chart | Estimated vs Actual | Bar + Line combination |
+| Sparkline | Mini trends on cards | SVG-based, Trend arrows |
+
+### Chart Color Palette
+```typescript
+const CHART_COLORS = {
+  material: '#10b981',  // Emerald
+  labour: '#3b82f6',    // Blue
+  external: '#f59e0b',  // Amber
+  sundry: '#8b5cf6',    // Purple
+  total: '#6366f1',     // Indigo
+  estimated: '#94a3b8', // Slate
+  actual: '#10b981',    // Emerald
+};
+```
+
+### Technical Details
+- Uses recharts library (already installed)
+- ChartContainer from shadcn/ui for consistent styling
+- Custom tooltips with ChartTooltipContent
+- Responsive charts with proper aspect ratios
+- Empty states for reports without chart data
+- All code passes ESLint validation
+- Dev server running successfully
+
+---
+## Task ID: 1 - Dashboard Additional Widgets and Analytics
+### Work Task
+Enhance the WCP Dashboard with additional widgets including Quick Action Cards, Technician Performance Widget, Fleet Status Overview, Alerts Widget, and Weekly Activity Chart.
+
+### Work Summary
+Created 1 new API endpoint and completely rewrote the dashboard-view component:
+
+1. **`/api/dashboard/widgets/route.ts`** - Dashboard Widgets API Endpoint
+   - **Quick Actions Data**:
+     - Today's completed jobs count
+     - Jobs due today count
+     - Overdue PM schedules count
+     - Pending approvals count (MR + Job Cards)
+   
+   - **Top Technicians**:
+     - Jobs completed this month per technician
+     - Average completion time calculation
+     - Limited to top 5 performers
+   
+   - **Fleet Status**:
+     - Asset count by status (OPERATIONAL, UNDER_REPAIR, STANDBY, OUT_OF_SERVICE, DISPOSED)
+     - Percentage calculation for each status
+   
+   - **Alerts**:
+     - Low stock items with details (item code, name, available qty, reorder level, store)
+     - Emergency job cards (priority = EMERGENCY, active status)
+     - Overdue job cards (past scheduled end date)
+     - Pending approvals breakdown (Material Requests + Job Cards)
+   
+   - **Weekly Activity**:
+     - Jobs created per day for current week (Sun-Sat)
+     - Jobs completed per day for current week
+
+2. **Enhanced `dashboard-view.tsx`** - Complete Rewrite with New Widgets
+   - **New Interfaces**:
+     - `WidgetsData` interface for all widget data types
+   
+   - **New State Management**:
+     - `widgets` state for widget data
+     - `widgetsLoading` state for loading indicator
+     - `fetchWidgets()` function for API calls
+   
+   - **Quick Action Cards Section** (new):
+     - 4 cards in a grid: Today's Completed, Due Today, Overdue PM, Pending Approvals
+     - Left border accent (emerald) for visual distinction
+     - Compact layout with icon and value
+   
+   - **Technician Performance Widget** (new):
+     - Horizontal bar chart showing top 5 technicians
+     - Jobs completed on X-axis, technician name on Y-axis
+     - Custom tooltip showing name, jobs completed, avg completion time
+     - Empty state for no data
+   
+   - **Fleet Status Overview** (new):
+     - Mini pie chart (donut style) showing asset distribution
+     - Color-coded by status (OPERATIONAL=green, UNDER_REPAIR=amber, etc.)
+     - Legend below chart with count and percentage
+     - Responsive layout
+   
+   - **Alerts Widget** (new):
+     - Categorized alerts with icons:
+       - Emergency Jobs (Zap icon, red)
+       - Low Stock (Package icon, amber)
+       - Overdue Jobs (Clock icon, red)
+       - Pending Approvals (ClipboardCheck icon, blue)
+     - Scrollable container for many alerts
+     - Empty state with checkmark icon
+   
+   - **Weekly Activity Chart** (new):
+     - Bar chart showing daily activity for current week
+     - Two bars per day: Created (blue) and Completed (emerald)
+     - X-axis: Day names (Sun-Sat)
+     - Y-axis: Job count
+     - Legend included
+
+### Widget Layout
+```
+┌─────────────────────────────────────────────────────────────┐
+│ KPI Cards (4 columns)                                       │
+├─────────────────────────────────────────────────────────────┤
+│ Quick Action Cards (4 columns) - NEW                        │
+├─────────────────────────────────────────────────────────────┤
+│ Analytics KPI Cards (4 columns)                             │
+├─────────────────────────────────────────────────────────────┤
+│ Technician Performance │ Fleet Status │ Alerts │ NEW        │
+│ (3 columns)                                                          │
+├─────────────────────────────────────────────────────────────┤
+│ Weekly Activity Chart - NEW                                 │
+├─────────────────────────────────────────────────────────────┤
+│ Advanced Analytics Tabs                                     │
+├─────────────────────────────────────────────────────────────┤
+│ Job Cards by Status │ Priority Distribution                 │
+├─────────────────────────────────────────────────────────────┤
+│ Recent Job Cards │ Top Assets                               │
+├─────────────────────────────────────────────────────────────┤
+│ Quick Actions                                               │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Technical Details
+- All queries run in parallel using Promise.all for performance
+- Uses existing recharts library for all charts
+- Responsive design with Tailwind CSS grid system
+- shadcn/ui Card, Badge, Progress components used
+- Custom tooltips for detailed chart information
+- Color-coded status indicators matching existing dashboard theme
+- All code passes ESLint validation
+- Dev server running successfully

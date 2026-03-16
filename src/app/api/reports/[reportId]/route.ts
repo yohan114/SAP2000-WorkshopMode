@@ -69,7 +69,7 @@ async function getMonthlyClosedJobs(startDate: Date, endDate: Date) {
       isActive: true,
     },
     include: {
-      asset: { select: { assetNumber: true, name: true } },
+      asset: { select: { assetNumber: true, name: true, category: true } },
     },
     orderBy: { closedAt: 'desc' },
     take: 100,
@@ -77,6 +77,58 @@ async function getMonthlyClosedJobs(startDate: Date, endDate: Date) {
 
   const totalEstimated = jobCards.reduce((sum, jc) => sum + (jc.estimatedCost || 0), 0);
   const totalActual = jobCards.reduce((sum, jc) => sum + (jc.actualCost || 0), 0);
+
+  // Chart data: Status distribution
+  const statusDistribution = [
+    { name: 'Completed', value: jobCards.filter(jc => jc.status === 'COMPLETED').length, color: '#10b981' },
+    { name: 'Closed', value: jobCards.filter(jc => jc.status === 'CLOSED').length, color: '#3b82f6' },
+  ];
+
+  // Chart data: Priority breakdown
+  const priorityDistribution = [
+    { name: 'Emergency', value: jobCards.filter(jc => jc.priority === 'EMERGENCY').length, color: '#ef4444' },
+    { name: 'High', value: jobCards.filter(jc => jc.priority === 'HIGH').length, color: '#f59e0b' },
+    { name: 'Medium', value: jobCards.filter(jc => jc.priority === 'MEDIUM').length, color: '#3b82f6' },
+    { name: 'Low', value: jobCards.filter(jc => jc.priority === 'LOW').length, color: '#10b981' },
+  ].filter(d => d.value > 0);
+
+  // Chart data: Costs by asset category
+  const costsByCategory = jobCards.reduce((acc, jc) => {
+    const category = jc.asset?.category || 'Uncategorized';
+    const existing = acc.find(a => a.category === category);
+    if (existing) {
+      existing.actualCost += jc.actualCost || 0;
+      existing.count += 1;
+    } else {
+      acc.push({ category, actualCost: jc.actualCost || 0, count: 1 });
+    }
+    return acc;
+  }, [] as { category: string; actualCost: number; count: number }[])
+    .sort((a, b) => b.actualCost - a.actualCost);
+
+  // Chart data: Monthly trend
+  const monthsDiff = (endDate.getFullYear() - startDate.getFullYear()) * 12 + (endDate.getMonth() - startDate.getMonth());
+  let costTrend: { month: string; estimated: number; actual: number; count: number }[] = [];
+  
+  if (monthsDiff >= 1 && jobCards.length > 0) {
+    const monthlyData: Record<string, { estimated: number; actual: number; count: number }> = {};
+    
+    jobCards.forEach(jc => {
+      if (jc.closedAt) {
+        const monthKey = `${jc.closedAt.getFullYear()}-${String(jc.closedAt.getMonth() + 1).padStart(2, '0')}`;
+        if (!monthlyData[monthKey]) {
+          monthlyData[monthKey] = { estimated: 0, actual: 0, count: 0 };
+        }
+        monthlyData[monthKey].estimated += jc.estimatedCost || 0;
+        monthlyData[monthKey].actual += jc.actualCost || 0;
+        monthlyData[monthKey].count += 1;
+      }
+    });
+    
+    costTrend = Object.entries(monthlyData)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([month, data]) => ({ month, ...data }));
+  }
 
   return {
     title: 'Monthly Closed Job Cards',
@@ -106,6 +158,19 @@ async function getMonthlyClosedJobs(startDate: Date, endDate: Date) {
       { key: 'actualCost', label: 'Actual Cost', align: 'right' },
       { key: 'closedAt', label: 'Closed Date' },
     ],
+    // Chart-friendly data
+    charts: {
+      statusDistribution,
+      priorityDistribution,
+      costsByCategory,
+      costTrend,
+      rawTotals: {
+        totalEstimated,
+        totalActual,
+        variance: totalActual - totalEstimated,
+        count: jobCards.length,
+      },
+    },
   };
 }
 
@@ -444,7 +509,7 @@ async function getJobCardCostReport(startDate: Date, endDate: Date) {
       isActive: true,
     },
     include: {
-      asset: { select: { assetNumber: true, name: true } },
+      asset: { select: { assetNumber: true, name: true, category: true } },
       assignedTo: { select: { name: true, hourlyRate: true } },
       timeLogs: true,
       materialIssues: {
@@ -492,6 +557,9 @@ async function getJobCardCostReport(startDate: Date, endDate: Date) {
       no: idx + 1,
       jobCardNumber: jc.jobCardNumber,
       asset: jc.asset ? `${jc.asset.assetNumber} - ${jc.asset.name}` : '-',
+      assetNumber: jc.asset?.assetNumber || 'Unknown',
+      assetName: jc.asset?.name || 'Unknown',
+      assetCategory: jc.asset?.category || 'Uncategorized',
       priority: jc.priority,
       materialCost: materialCost,
       labourHours: labourHours,
@@ -501,6 +569,7 @@ async function getJobCardCostReport(startDate: Date, endDate: Date) {
       sundry: sundry,
       totalBill: totalBill,
       closedAt: jc.closedAt ? new Date(jc.closedAt).toLocaleDateString() : '-',
+      closedAtDate: jc.closedAt,
     };
   });
 
@@ -524,6 +593,82 @@ async function getJobCardCostReport(startDate: Date, endDate: Date) {
     sundry: `$${r.sundry.toFixed(2)}`,
     totalBill: `$${r.totalBill.toLocaleString()}`,
   }));
+
+  // Chart data: Cost distribution pie chart
+  const costDistribution = [
+    { name: 'Material', value: totalMaterialCost, color: '#10b981' },
+    { name: 'Labour', value: totalLabourCost, color: '#3b82f6' },
+    { name: 'External', value: totalExternalCost, color: '#f59e0b' },
+    { name: 'Sundry', value: totalSundry, color: '#8b5cf6' },
+  ].filter(d => d.value > 0);
+
+  // Chart data: Top 10 job cards by total bill
+  const topJobCards = [...reportData]
+    .sort((a, b) => b.totalBill - a.totalBill)
+    .slice(0, 10)
+    .map(r => ({
+      name: r.jobCardNumber,
+      asset: r.assetNumber,
+      totalBill: r.totalBill,
+      material: r.materialCost,
+      labour: r.labourCost,
+      external: r.externalCost,
+    }));
+
+  // Chart data: Costs by asset
+  const costsByAsset = [...reportData]
+    .reduce((acc, r) => {
+      const existing = acc.find(a => a.assetNumber === r.assetNumber);
+      if (existing) {
+        existing.totalBill += r.totalBill;
+        existing.count += 1;
+      } else {
+        acc.push({
+          assetNumber: r.assetNumber,
+          assetName: r.assetName,
+          totalBill: r.totalBill,
+          count: 1,
+        });
+      }
+      return acc;
+    }, [] as { assetNumber: string; assetName: string; totalBill: number; count: number }[])
+    .sort((a, b) => b.totalBill - a.totalBill)
+    .slice(0, 15);
+
+  // Chart data: Monthly trend (if date range > 1 month)
+  const monthsDiff = (endDate.getFullYear() - startDate.getFullYear()) * 12 + (endDate.getMonth() - startDate.getMonth());
+  let costTrend: { month: string; material: number; labour: number; external: number; total: number }[] = [];
+  
+  if (monthsDiff >= 1) {
+    const monthlyData: Record<string, { material: number; labour: number; external: number; total: number }> = {};
+    
+    reportData.forEach(r => {
+      if (r.closedAtDate) {
+        const monthKey = `${r.closedAtDate.getFullYear()}-${String(r.closedAtDate.getMonth() + 1).padStart(2, '0')}`;
+        if (!monthlyData[monthKey]) {
+          monthlyData[monthKey] = { material: 0, labour: 0, external: 0, total: 0 };
+        }
+        monthlyData[monthKey].material += r.materialCost;
+        monthlyData[monthKey].labour += r.labourCost;
+        monthlyData[monthKey].external += r.externalCost;
+        monthlyData[monthKey].total += r.totalBill;
+      }
+    });
+    
+    costTrend = Object.entries(monthlyData)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([month, data]) => ({
+        month,
+        ...data,
+      }));
+  }
+
+  // Chart data: Summary donut for M/L/E distribution
+  const mleDistribution = [
+    { name: 'Material', value: totalMaterialCost, percentage: grandTotal > 0 ? (totalMaterialCost / grandTotal * 100).toFixed(1) : '0' },
+    { name: 'Labour', value: totalLabourCost, percentage: grandTotal > 0 ? (totalLabourCost / grandTotal * 100).toFixed(1) : '0' },
+    { name: 'External', value: totalExternalCost, percentage: grandTotal > 0 ? (totalExternalCost / grandTotal * 100).toFixed(1) : '0' },
+  ];
 
   return {
     title: 'Job Card Cost Report',
@@ -556,6 +701,22 @@ async function getJobCardCostReport(startDate: Date, endDate: Date) {
       'External Cost': totalExternalCost,
       'Sundry (10%)': totalSundry,
       'Grand Total': grandTotal,
+    },
+    // Chart-friendly data
+    charts: {
+      costDistribution,
+      topJobCards,
+      costsByAsset,
+      costTrend,
+      mleDistribution,
+      rawTotals: {
+        material: totalMaterialCost,
+        labour: totalLabourCost,
+        external: totalExternalCost,
+        sundry: totalSundry,
+        grandTotal,
+        jobCardCount: jobCards.length,
+      },
     },
   };
 }

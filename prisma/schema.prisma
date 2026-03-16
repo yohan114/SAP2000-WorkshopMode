@@ -52,6 +52,10 @@ model User {
   auditLogs           AuditLog[]
   approvalRequests    ApprovalRequest[]
   approvalSteps       ApprovalStep[]
+  qualityInspections  QualityInspection[] @relation("QualityInspector")
+  defectAssignees     QualityDefect[]     @relation("DefectAssignee")
+  correctiveActions   CorrectiveAction[]  @relation("CorrectiveActionAssignee")
+  correctiveVerifiers CorrectiveAction[]  @relation("CorrectiveActionVerifier")
 
   @@index([email])
   @@index([employeeId])
@@ -358,6 +362,7 @@ model JobCard {
   toolLoans         ToolLoanTracking[]
   externalJobs      ExternalJob[]
   timeLogs          TimeLog[]
+  correctiveActions CorrectiveAction[]
 
   @@index([assetId])
   @@index([jobCardNumber])
@@ -768,6 +773,8 @@ model Store {
   materialIssues  MaterialIssue[]
   grnHeaders      GrnHeader[]
   reservations    StockReservation[]
+  stockTakes      StockTakeHeader[]
+  stockAdjustments StockAdjustment[]
 
   @@index([code])
 }
@@ -802,6 +809,8 @@ model Item {
   reservations    StockReservation[]
   assetSpecificity AssetSpecificity[]
   toolLoans       ToolLoanTracking[]
+  stockTakeLines  StockTakeLine[]
+  adjustmentLines StockAdjustmentLine[]
 
   @@index([itemCode])
   @@index([itemClass])
@@ -897,31 +906,33 @@ model StockTransaction {
 // ============================================
 
 model GrnHeader {
-  id              String   @id @default(cuid())
-  grnNumber       String   @unique
-  poId            String?
-  supplierId      String
-  storeId         String
-  deliveryNoteNo  String?
-  deliveryDate    DateTime?
-  status          String   @default("DRAFT")
-  createdBy       String
-  verifiedBy      String?
-  verifiedAt      DateTime?
-  postedAt        DateTime?
-  postedBy        String?
-  totalValue      Decimal  @default(0)
-  notes           String?
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                String   @id @default(cuid())
+  grnNumber         String   @unique
+  poId              String?
+  supplierId        String
+  storeId           String
+  deliveryNoteNo    String?
+  deliveryDate      DateTime?
+  status            String   @default("DRAFT")
+  inspectionStatus  String?  // PENDING | REQUESTED | IN_PROGRESS | PASSED | FAILED | NOT_REQUIRED
+  inspectionId      String?  // Reference to QualityInspection (existing model)
+  createdBy         String
+  verifiedBy        String?
+  verifiedAt        DateTime?
+  postedAt          DateTime?
+  postedBy          String?
+  totalValue        Decimal  @default(0)
+  notes             String?
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
-  store           Store        @relation(fields: [storeId], references: [id])
-  supplier        Supplier     @relation(fields: [supplierId], references: [id])
-  purchaseOrder   PurchaseOrder? @relation(fields: [poId], references: [id])
-  creator         User         @relation("GrnCreator", fields: [createdBy], references: [id])
-  verifier        User?        @relation("GrnVerifier", fields: [verifiedBy], references: [id])
-  lines           GrnLine[]
+  store             Store        @relation(fields: [storeId], references: [id])
+  supplier          Supplier     @relation(fields: [supplierId], references: [id])
+  purchaseOrder     PurchaseOrder? @relation(fields: [poId], references: [id])
+  creator           User         @relation("GrnCreator", fields: [createdBy], references: [id])
+  verifier          User?        @relation("GrnVerifier", fields: [verifiedBy], references: [id])
+  lines             GrnLine[]
 
   @@index([grnNumber])
   @@index([poId])
@@ -933,15 +944,20 @@ model GrnLine {
   id              String   @id @default(cuid())
   grnId           String
   itemId          String
+  poLineId        String?  // Reference to PO line if created from PO
   receivedQty     Decimal
+  orderedQty      Decimal  @default(0) // Original ordered quantity from PO
   acceptedQty     Decimal
   rejectedQty     Decimal @default(0)
   rejectionReason String?
   unitCost        Decimal
   totalCost       Decimal
   batchNumber     String?
+  serialNumber    String?  // For serialized items
   expiryDate      DateTime?
+  manufacturingDate DateTime?
   notes           String?
+  itemImageUrl    String?  // URL to item image if available
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -949,6 +965,8 @@ model GrnLine {
 
   @@index([grnId])
   @@index([itemId])
+  @@index([batchNumber])
+  @@index([serialNumber])
 }
 
 // ============================================
@@ -2126,6 +2144,118 @@ model SystemConfig {
   @@index([category])
 }
 
+// ============================================
+// 19. STOCK TAKE DOMAIN
+// ============================================
+
+model StockTakeHeader {
+  id                String   @id @default(cuid())
+  stockTakeNumber   String   @unique
+  storeId           String
+  countMethod       String   @default("FULL") // FULL | CYCLE | SPOT_CHECK
+  status            String   @default("SCHEDULED") // SCHEDULED | IN_PROGRESS | COMPLETED | CANCELLED
+  scheduledDate     DateTime
+  startedAt         DateTime?
+  completedAt       DateTime?
+  blindCount        Boolean  @default(true) // Hide system quantities during count
+  totalItems        Int      @default(0)
+  countedItems      Int      @default(0)
+  varianceItems     Int      @default(0)
+  totalVarianceValue Decimal @default(0)
+  positiveVariance  Decimal  @default(0)
+  negativeVariance  Decimal  @default(0)
+  initiatedBy       String
+  completedBy       String?
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  deletedAt         DateTime?
+
+  store             Store           @relation(fields: [storeId], references: [id])
+  lines             StockTakeLine[]
+  adjustments       StockAdjustment[]
+
+  @@index([stockTakeNumber])
+  @@index([storeId])
+  @@index([status])
+  @@index([scheduledDate])
+}
+
+model StockTakeLine {
+  id                String   @id @default(cuid())
+  stockTakeId       String
+  itemId            String
+  location          String? // shelf/bin location
+  systemQty         Decimal
+  countedQty        Decimal?
+  variance          Decimal?
+  variancePercent   Decimal?
+  varianceValue     Decimal?
+  unitCost          Decimal
+  varianceReason    String? // Reason code
+  varianceNotes     String?
+  countedBy         String?
+  countedAt         DateTime?
+  isSignificant     Boolean  @default(false) // Flag for significant variance
+  adjustmentPosted  Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  stockTake         StockTakeHeader @relation(fields: [stockTakeId], references: [id], onDelete: Cascade)
+  item              Item            @relation(fields: [itemId], references: [id])
+
+  @@unique([stockTakeId, itemId])
+  @@index([stockTakeId])
+  @@index([itemId])
+  @@index([isSignificant])
+}
+
+model StockAdjustment {
+  id                String   @id @default(cuid())
+  adjustmentNumber  String   @unique
+  stockTakeId       String?
+  storeId           String
+  adjustmentType    String   @default("COUNT_VARIANCE") // COUNT_VARIANCE | DAMAGE | LOSS | THEFT | CORRECTION | TRANSFER
+  status            String   @default("DRAFT") // DRAFT | PENDING_APPROVAL | APPROVED | REJECTED | POSTED
+  totalValue        Decimal  @default(0)
+  requestedBy       String
+  approvedBy        String?
+  approvedAt        DateTime?
+  postedBy          String?
+  postedAt          DateTime?
+  rejectionReason   String?
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  stockTake         StockTakeHeader? @relation(fields: [stockTakeId], references: [id])
+  store             Store            @relation(fields: [storeId], references: [id])
+  lines             StockAdjustmentLine[]
+
+  @@index([adjustmentNumber])
+  @@index([stockTakeId])
+  @@index([storeId])
+  @@index([status])
+}
+
+model StockAdjustmentLine {
+  id                String   @id @default(cuid())
+  adjustmentId      String
+  itemId            String
+  adjustmentQty     Decimal
+  unitCost          Decimal
+  totalValue        Decimal
+  varianceReason    String?
+  notes             String?
+  createdAt         DateTime @default(now())
+
+  adjustment        StockAdjustment @relation(fields: [adjustmentId], references: [id], onDelete: Cascade)
+  item              Item            @relation(fields: [itemId], references: [id])
+
+  @@index([adjustmentId])
+  @@index([itemId])
+}
+
 model BudgetLine {
   id              String   @id @default(cuid())
   code            String   @unique
@@ -2143,4 +2273,170 @@ model BudgetLine {
   @@unique([code, fiscalYear])
   @@index([department])
   @@index([fiscalYear])
+}
+
+// ============================================
+// 20. QUALITY MANAGEMENT DOMAIN
+// ============================================
+
+model QualityInspection {
+  id                String   @id @default(cuid())
+  inspectionNumber  String   @unique
+  entityType        String   // JOB_CARD | GRN | ASSET
+  entityId          String?
+  inspectionType    String   // PRE_USE | POST_REPAIR | INCOMING | ROUTINE | FINAL
+  templateId        String?
+  status            String   @default("SCHEDULED") // SCHEDULED | IN_PROGRESS | COMPLETED | FAILED | CANCELLED
+  result            String?  // PASS | FAIL | CONDITIONAL
+  scheduledDate     DateTime?
+  startedAt         DateTime?
+  completedAt       DateTime?
+  inspectorId       String?
+  notes             String?
+  overallScore      Decimal?
+  passCount         Int      @default(0)
+  failCount         Int      @default(0)
+  naCount           Int      @default(0)
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  createdBy         String?
+  deletedAt         DateTime?
+
+  template          QualityTemplate?      @relation(fields: [templateId], references: [id])
+  inspector         User?                 @relation("QualityInspector", fields: [inspectorId], references: [id])
+  checklistItems    QualityChecklistItem[]
+  defects           QualityDefect[]
+
+  @@index([inspectionNumber])
+  @@index([entityType, entityId])
+  @@index([inspectionType])
+  @@index([status])
+  @@index([scheduledDate])
+  @@index([inspectorId])
+}
+
+model QualityChecklistItem {
+  id              String   @id @default(cuid())
+  inspectionId    String
+  templateItemId  String?
+  sequence        Int      @default(1)
+  criterion       String
+  expectedResult  String?
+  actualResult    String?
+  status          String   @default("PENDING") // PENDING | PASS | FAIL | NA
+  isMandatory     Boolean  @default(true)
+  remarks         String?
+  checkedAt       DateTime?
+  checkedBy       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  inspection      QualityInspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+
+  @@unique([inspectionId, sequence])
+  @@index([inspectionId])
+  @@index([status])
+}
+
+model QualityDefect {
+  id                String   @id @default(cuid())
+  inspectionId      String
+  severity          String   // CRITICAL | MAJOR | MINOR | OBSERVATION
+  defectCode        String?
+  description       String
+  location          String?
+  detectedBy        String?
+  status            String   @default("OPEN") // OPEN | IN_PROGRESS | RESOLVED | VERIFIED | CLOSED
+  assignedToId      String?
+  resolutionNotes   String?
+  resolvedAt        DateTime?
+  resolvedById      String?
+  verifiedAt        DateTime?
+  verifiedById      String?
+  verificationNotes String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  inspection        QualityInspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  assignee          User?             @relation("DefectAssignee", fields: [assignedToId], references: [id])
+  correctiveActions CorrectiveAction[]
+
+  @@index([inspectionId])
+  @@index([severity])
+  @@index([status])
+  @@index([assignedToId])
+}
+
+model QualityTemplate {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  name            String
+  entityType      String   // JOB_CARD | GRN | ASSET
+  inspectionType  String   // PRE_USE | POST_REPAIR | INCOMING | ROUTINE | FINAL
+  description     String?
+  version         Int      @default(1)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdBy       String?
+
+  items           QualityTemplateItem[]
+  inspections     QualityInspection[]
+
+  @@index([code])
+  @@index([entityType])
+  @@index([inspectionType])
+}
+
+model QualityTemplateItem {
+  id              String   @id @default(cuid())
+  templateId      String
+  sequence        Int      @default(1)
+  criterion       String
+  expectedResult  String?
+  isMandatory     Boolean  @default(true)
+  scoringMethod   String   @default("PASS_FAIL") // PASS_FAIL | SCORE | YES_NO
+  maxScore        Decimal?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  template        QualityTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, sequence])
+  @@index([templateId])
+}
+
+model CorrectiveAction {
+  id                String   @id @default(cuid())
+  defectId          String
+  jobCardId         String?
+  actionNumber      String   @unique
+  actionType        String   @default("REPAIR") // REPAIR | REPLACE | ADJUSTMENT | REWORK | OTHER
+  description       String
+  assignedToId      String?
+  status            String   @default("PENDING") // PENDING | IN_PROGRESS | COMPLETED | VERIFIED | CANCELLED
+  dueDate           DateTime?
+  startedAt         DateTime?
+  completedAt       DateTime?
+  verifiedAt        DateTime?
+  verifiedById      String?
+  verificationNotes String?
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  createdBy         String?
+
+  defect            QualityDefect @relation(fields: [defectId], references: [id], onDelete: Cascade)
+  jobCard           JobCard?      @relation(fields: [jobCardId], references: [id])
+  assignee          User?         @relation("CorrectiveActionAssignee", fields: [assignedToId], references: [id])
+  verifier          User?         @relation("CorrectiveActionVerifier", fields: [verifiedById], references: [id])
+
+  @@index([actionNumber])
+  @@index([defectId])
+  @@index([jobCardId])
+  @@index([status])
+  @@index([assignedToId])
+  @@index([dueDate])
 }

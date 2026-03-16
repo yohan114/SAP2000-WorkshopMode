@@ -24,7 +24,11 @@ import {
   PieChart as PieChartIcon,
   RefreshCw,
   Timer,
-  Gauge
+  Gauge,
+  Users,
+  AlertCircle,
+  ClipboardCheck,
+  Zap
 } from 'lucide-react';
 import {
   ChartConfig,
@@ -207,6 +211,67 @@ interface AnalyticsData {
   generatedAt: string;
 }
 
+interface WidgetsData {
+  quickActions: {
+    todaysCompletedJobs: number;
+    jobsDueToday: number;
+    overduePmSchedules: number;
+    pendingApprovals: number;
+  };
+  topTechnicians: Array<{
+    id: string;
+    name: string;
+    employeeId: string | null;
+    jobsCompleted: number;
+    avgCompletionTime: number;
+  }>;
+  fleetStatus: Array<{
+    status: string;
+    count: number;
+    percentage: number;
+  }>;
+  alerts: {
+    lowStock: Array<{
+      id: string;
+      itemCode: string;
+      name: string;
+      availableQty: number;
+      reorderLevel: number;
+      storeName: string;
+      type: 'LOW_STOCK';
+    }>;
+    emergencyJobs: Array<{
+      id: string;
+      jobCardNumber: string;
+      assetName: string;
+      description: string;
+      status: string;
+      createdAt: string;
+      type: 'EMERGENCY_JOB';
+    }>;
+    overdueJobs: Array<{
+      id: string;
+      jobCardNumber: string;
+      assetName: string;
+      status: string;
+      scheduledEnd: string | null;
+      type: 'OVERDUE_JOB';
+    }>;
+    pendingApprovals: {
+      materialRequests: number;
+      jobCards: number;
+      total: number;
+    };
+  };
+  weeklyActivity: Array<{
+    day: string;
+    date: string;
+    created: number;
+    completed: number;
+  }>;
+  generatedAt: string;
+}
+
 const COLORS = ['#10b981', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6', '#6b7280', '#06b6d4', '#ec4899'];
 const STATUS_COLORS: Record<string, string> = {
   'OPERATIONAL': '#10b981',
@@ -249,6 +314,10 @@ const chartConfig = {
     label: "MTBF (hrs)",
     color: "#10b981",
   },
+  jobsCompleted: {
+    label: "Jobs Completed",
+    color: "#10b981",
+  },
 } satisfies ChartConfig;
 
 const statusColors: Record<string, string> = {
@@ -272,13 +341,16 @@ const priorityColors: Record<string, string> = {
 export function DashboardView() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [widgets, setWidgets] = useState<WidgetsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
+  const [widgetsLoading, setWidgetsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDashboardStats();
     fetchAnalytics();
+    fetchWidgets();
   }, []);
 
   const fetchDashboardStats = async () => {
@@ -312,6 +384,21 @@ export function DashboardView() {
       console.error('Failed to fetch analytics:', err);
     } finally {
       setAnalyticsLoading(false);
+    }
+  };
+
+  const fetchWidgets = async () => {
+    try {
+      setWidgetsLoading(true);
+      const response = await fetch('/api/dashboard/widgets');
+      if (response.ok) {
+        const data = await response.json();
+        setWidgets(data.data || data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch widgets:', err);
+    } finally {
+      setWidgetsLoading(false);
     }
   };
 
@@ -398,7 +485,6 @@ export function DashboardView() {
     },
   ];
 
-  // Additional KPI cards from analytics
   const analyticsKpiCards = analytics ? [
     {
       title: 'MTTR (Avg Repair Time)',
@@ -436,6 +522,42 @@ export function DashboardView() {
     },
   ] : [];
 
+  // Quick action cards data
+  const quickActionCards = widgets ? [
+    {
+      title: "Today's Completed",
+      value: widgets.quickActions.todaysCompletedJobs,
+      subtitle: 'Jobs completed today',
+      icon: CheckCircle,
+      color: 'text-emerald-600',
+      bgColor: 'bg-emerald-50',
+    },
+    {
+      title: 'Due Today',
+      value: widgets.quickActions.jobsDueToday,
+      subtitle: 'Jobs scheduled for today',
+      icon: Calendar,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50',
+    },
+    {
+      title: 'Overdue PM',
+      value: widgets.quickActions.overduePmSchedules,
+      subtitle: 'PM schedules overdue',
+      icon: AlertCircle,
+      color: 'text-red-600',
+      bgColor: 'bg-red-50',
+    },
+    {
+      title: 'Pending Approvals',
+      value: widgets.quickActions.pendingApprovals,
+      subtitle: 'Awaiting approval',
+      icon: ClipboardCheck,
+      color: 'text-amber-600',
+      bgColor: 'bg-amber-50',
+    },
+  ] : [];
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* KPI Cards */}
@@ -465,6 +587,28 @@ export function DashboardView() {
         ))}
       </div>
 
+      {/* Quick Action Cards */}
+      {widgets && !widgetsLoading && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {quickActionCards.map((card, index) => (
+            <Card key={index} className="hover:shadow-md transition-shadow border-l-4 border-l-emerald-500">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-500">{card.title}</p>
+                    <p className="text-2xl font-bold text-slate-900 mt-1">{card.value}</p>
+                    <p className="text-xs text-slate-400 mt-1">{card.subtitle}</p>
+                  </div>
+                  <div className={`p-2 rounded-lg ${card.bgColor}`}>
+                    <card.icon className={`h-5 w-5 ${card.color}`} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
       {/* Analytics KPI Cards */}
       {analytics && !analyticsLoading && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -493,6 +637,228 @@ export function DashboardView() {
           ))}
         </div>
       )}
+
+      {/* New Widgets Row: Technician Performance + Fleet Status + Alerts */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Technician Performance Widget */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Users className="h-5 w-5 text-emerald-600" />
+              Top Technicians
+            </CardTitle>
+            <CardDescription>Jobs completed this month</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {widgets && widgets.topTechnicians.length > 0 ? (
+              <div className="h-[250px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={widgets.topTechnicians} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis type="number" stroke="#6b7280" fontSize={12} />
+                    <YAxis dataKey="name" type="category" stroke="#6b7280" fontSize={11} width={80} tickFormatter={(value) => value.length > 10 ? `${value.slice(0, 10)}...` : value} />
+                    <Tooltip 
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload;
+                          return (
+                            <div className="bg-white p-2 border rounded shadow-sm">
+                              <p className="font-medium">{data.name}</p>
+                              <p className="text-sm text-slate-600">Jobs: {data.jobsCompleted}</p>
+                              <p className="text-sm text-slate-500">Avg Time: {data.avgCompletionTime}h</p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Bar dataKey="jobsCompleted" fill="#10b981" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="h-[250px] flex items-center justify-center text-slate-500">
+                No technician data available
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Fleet Status Overview */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Truck className="h-5 w-5 text-emerald-600" />
+              Fleet Status
+            </CardTitle>
+            <CardDescription>Asset status distribution</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {widgets && widgets.fleetStatus.length > 0 ? (
+              <div className="flex flex-col items-center">
+                <div className="w-[150px] h-[150px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={widgets.fleetStatus}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={40}
+                        outerRadius={65}
+                        paddingAngle={2}
+                        dataKey="count"
+                        nameKey="status"
+                      >
+                        {widgets.fleetStatus.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={STATUS_COLORS[entry.status] || COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="w-full mt-4 space-y-2 max-h-[100px] overflow-y-auto">
+                  {widgets.fleetStatus.map((item, index) => (
+                    <div key={item.status} className="flex items-center gap-2 text-sm">
+                      <div 
+                        className="w-3 h-3 rounded" 
+                        style={{ backgroundColor: STATUS_COLORS[item.status] || COLORS[index % COLORS.length] }}
+                      />
+                      <span className="text-slate-600 flex-1">{item.status}</span>
+                      <span className="font-medium">{item.count}</span>
+                      <span className="text-slate-400 text-xs">({item.percentage}%)</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="h-[250px] flex items-center justify-center text-slate-500">
+                No fleet data available
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Alerts Widget */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Critical Alerts
+            </CardTitle>
+            <CardDescription>Items requiring attention</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {widgets ? (
+              <div className="space-y-3 max-h-[250px] overflow-y-auto">
+                {/* Emergency Jobs */}
+                {widgets.alerts.emergencyJobs.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Zap className="h-4 w-4 text-red-500" />
+                      <span className="text-sm font-medium text-red-600">Emergency Jobs ({widgets.alerts.emergencyJobs.length})</span>
+                    </div>
+                    {widgets.alerts.emergencyJobs.slice(0, 2).map((job) => (
+                      <div key={job.id} className="pl-6 text-xs text-slate-600">
+                        <span className="font-medium">{job.jobCardNumber}</span> - {job.assetName}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Low Stock */}
+                {widgets.alerts.lowStock.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Package className="h-4 w-4 text-amber-500" />
+                      <span className="text-sm font-medium text-amber-600">Low Stock ({widgets.alerts.lowStock.length})</span>
+                    </div>
+                    {widgets.alerts.lowStock.slice(0, 2).map((item) => (
+                      <div key={item.id} className="pl-6 text-xs text-slate-600">
+                        <span className="font-medium">{item.itemCode}</span> - {item.availableQty}/{item.reorderLevel} units
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Overdue Jobs */}
+                {widgets.alerts.overdueJobs.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-red-500" />
+                      <span className="text-sm font-medium text-red-600">Overdue Jobs ({widgets.alerts.overdueJobs.length})</span>
+                    </div>
+                    {widgets.alerts.overdueJobs.slice(0, 2).map((job) => (
+                      <div key={job.id} className="pl-6 text-xs text-slate-600">
+                        <span className="font-medium">{job.jobCardNumber}</span> - {job.assetName}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Pending Approvals */}
+                {widgets.alerts.pendingApprovals.total > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <ClipboardCheck className="h-4 w-4 text-blue-500" />
+                      <span className="text-sm font-medium text-blue-600">Pending Approvals ({widgets.alerts.pendingApprovals.total})</span>
+                    </div>
+                    <div className="pl-6 text-xs text-slate-600">
+                      MR: {widgets.alerts.pendingApprovals.materialRequests} | Job Cards: {widgets.alerts.pendingApprovals.jobCards}
+                    </div>
+                  </div>
+                )}
+
+                {widgets.alerts.emergencyJobs.length === 0 && 
+                 widgets.alerts.lowStock.length === 0 && 
+                 widgets.alerts.overdueJobs.length === 0 && 
+                 widgets.alerts.pendingApprovals.total === 0 && (
+                  <div className="text-center text-slate-500 py-8">
+                    <CheckCircle className="h-8 w-8 text-emerald-500 mx-auto mb-2" />
+                    No critical alerts
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="h-[250px] flex items-center justify-center text-slate-500">
+                Loading alerts...
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Weekly Activity Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <BarChart3 className="h-5 w-5 text-emerald-600" />
+            Weekly Activity
+          </CardTitle>
+          <CardDescription>Jobs created vs completed this week</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {widgets && widgets.weeklyActivity.length > 0 ? (
+            <ChartContainer config={chartConfig} className="h-[250px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={widgets.weeklyActivity}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="day" stroke="#6b7280" fontSize={12} />
+                  <YAxis stroke="#6b7280" fontSize={12} />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Legend />
+                  <Bar dataKey="created" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Created" />
+                  <Bar dataKey="completed" fill="#10b981" radius={[4, 4, 0, 0]} name="Completed" />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+          ) : (
+            <div className="h-[250px] flex items-center justify-center text-slate-500">
+              No weekly activity data available
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Advanced Analytics Tabs */}
       {analytics && !analyticsLoading && (
@@ -529,11 +895,11 @@ export function DashboardView() {
                         <ResponsiveContainer width="100%" height="100%">
                           <AreaChart data={analytics.monthlyTrends.jobCards}>
                             <defs>
-                              <linearGradient id="colorCreated" x1="0" y1="0" x2="0" y2="1">
+                              <linearGradient id="colorCreatedTrend" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
                                 <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
                               </linearGradient>
-                              <linearGradient id="colorCompleted" x1="0" y1="0" x2="0" y2="1">
+                              <linearGradient id="colorCompletedTrend" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
                                 <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
                               </linearGradient>
@@ -548,7 +914,7 @@ export function DashboardView() {
                               dataKey="created" 
                               stroke="#3b82f6" 
                               fillOpacity={1} 
-                              fill="url(#colorCreated)"
+                              fill="url(#colorCreatedTrend)"
                               strokeWidth={2}
                             />
                             <Area 
@@ -556,7 +922,7 @@ export function DashboardView() {
                               dataKey="completed" 
                               stroke="#10b981" 
                               fillOpacity={1} 
-                              fill="url(#colorCompleted)"
+                              fill="url(#colorCompletedTrend)"
                               strokeWidth={2}
                             />
                           </AreaChart>
@@ -609,7 +975,7 @@ export function DashboardView() {
                               <XAxis dataKey="code" stroke="#6b7280" fontSize={12} />
                               <YAxis stroke="#6b7280" fontSize={12} label={{ value: 'Hours', angle: -90, position: 'insideLeft' }} />
                               <ChartTooltip 
-                                content={({ active, payload, label }) => {
+                                content={({ active, payload }) => {
                                   if (active && payload && payload.length) {
                                     const data = payload[0].payload;
                                     return (
@@ -653,7 +1019,7 @@ export function DashboardView() {
                               <XAxis dataKey="code" stroke="#6b7280" fontSize={12} />
                               <YAxis stroke="#6b7280" fontSize={12} label={{ value: 'Hours', angle: -90, position: 'insideLeft' }} />
                               <ChartTooltip 
-                                content={({ active, payload, label }) => {
+                                content={({ active, payload }) => {
                                   if (active && payload && payload.length) {
                                     const data = payload[0].payload;
                                     return (
@@ -861,7 +1227,7 @@ export function DashboardView() {
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={analytics.inventory.turnover}>
                           <defs>
-                            <linearGradient id="colorReceipts" x1="0" y1="0" x2="0" y2="1">
+                            <linearGradient id="colorReceiptsInv" x1="0" y1="0" x2="0" y2="1">
                               <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
                               <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
                             </linearGradient>
@@ -880,7 +1246,7 @@ export function DashboardView() {
                             dataKey="receipts" 
                             stroke="#10b981" 
                             fillOpacity={1} 
-                            fill="url(#colorReceipts)"
+                            fill="url(#colorReceiptsInv)"
                             strokeWidth={2}
                             name="Receipts"
                           />
