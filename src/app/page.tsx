@@ -48,7 +48,9 @@ import {
   FolderOpen,
   ShieldCheck,
   BellRing,
-  Webhook
+  Webhook,
+  KeyRound,
+  UserCog
 } from 'lucide-react';
 import { DashboardView } from '@/components/wcp/dashboard-view';
 import { AssetsView } from '@/components/wcp/assets-view';
@@ -75,6 +77,8 @@ import { NotificationsView } from '@/components/wcp/notifications-view';
 import { AuditView } from '@/components/wcp/audit-view';
 import { WebhooksView } from '@/components/wcp/webhooks-view';
 import { NotificationBell } from '@/components/wcp/notification-bell';
+import { UserManagementView } from '@/components/wcp/user-management-view';
+import { RoleManagementView } from '@/components/wcp/role-management-view';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
@@ -103,6 +107,8 @@ const navigationItems = [
   { id: 'audit', label: 'Audit', icon: Shield },
   { id: 'webhooks', label: 'Webhooks', icon: Webhook },
   { id: 'reports', label: 'Reports', icon: BarChart3 },
+  { id: 'users', label: 'Users', icon: UserCog, adminOnly: true },
+  { id: 'roles', label: 'Roles', icon: KeyRound, adminOnly: true },
 ];
 
 // Sidebar component defined outside to avoid React hooks warning
@@ -114,9 +120,10 @@ interface SidebarContentProps {
   setMobileSidebarOpen: (open: boolean) => void;
   user: {
     name: string;
-    roles?: Array<{ name: string; code: string }>;
+    roles?: Array<{ name: string; code: string; level?: number }>;
   };
   userInitials: string;
+  isAdminUser: boolean;
 }
 
 function SidebarContent({ 
@@ -126,7 +133,8 @@ function SidebarContent({
   mobileSidebarOpen, 
   setMobileSidebarOpen,
   user,
-  userInitials 
+  userInitials,
+  isAdminUser
 }: SidebarContentProps) {
   return (
     <div className="flex flex-col h-full">
@@ -148,6 +156,10 @@ function SidebarContent({
       {/* Navigation Items */}
       <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
         {navigationItems.map((item) => {
+          // Skip admin-only items for non-admin users
+          if (item.adminOnly && !isAdminUser) {
+            return null;
+          }
           const Icon = item.icon;
           const isActive = activeTab === item.id;
           return (
@@ -264,6 +276,8 @@ export default function Home() {
       case 'audit': return <AuditView />;
       case 'webhooks': return <WebhooksView />;
       case 'reports': return <ReportsView />;
+      case 'users': return <UserManagementView />;
+      case 'roles': return <RoleManagementView />;
       default: return <DashboardView />;
     }
   };
@@ -285,6 +299,7 @@ export default function Home() {
           setMobileSidebarOpen={setMobileSidebarOpen}
           user={user}
           userInitials={userInitials}
+          isAdminUser={isAdmin()}
         />
         
         {/* Collapse Toggle Button */}
@@ -323,6 +338,7 @@ export default function Home() {
           setMobileSidebarOpen={setMobileSidebarOpen}
           user={user}
           userInitials={userInitials}
+          isAdminUser={isAdmin()}
         />
       </aside>
 

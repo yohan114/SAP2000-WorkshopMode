@@ -1026,3 +1026,346 @@ Created 4 new files:
 - Prisma integration for database operations
 - Toast notifications for user feedback
 - Responsive design for mobile compatibility
+
+---
+Task ID: GitHub Push
+Agent: Main Agent
+Task: Push code to GitHub repository
+
+Work Log:
+- Checked current git status (on master branch with one commit)
+- Added GitHub remote with authentication token
+- Created new branch: wcp-auth-rbac-audit
+- Pushed to origin/wcp-auth-rbac-audit successfully
+
+Stage Summary:
+- Branch created: wcp-auth-rbac-audit
+- Repository: https://github.com/yohan114/SAP2000-WorkshopMode
+- Pull request URL: https://github.com/yohan114/SAP2000-WorkshopMode/pull/new/wcp-auth-rbac-audit
+- All code pushed successfully
+
+---
+## Task ID: 2-b - Role and Permission Management API Routes
+### Work Task
+Create comprehensive Role and Permission Management API routes for the Workshop Control Platform (WCP), including enhanced roles CRUD, role privilege management, and privilege definitions management.
+
+### Work Summary
+Created 4 new API route files and enhanced 2 existing ones:
+
+1. **Enhanced `/api/roles/route.ts`** - Roles List/Create with Enhanced Features
+   - **GET: List roles with filters**
+     - Search filter (code, name, description)
+     - Status filter (active, inactive)
+     - Includes user count and privilege count per role
+     - Includes granted privileges with category info
+     - Returns metadata (total, active count, inactive count)
+   - **POST: Create role**
+     - Validates unique role code
+     - Returns created role with counts
+     - Uses Zod for validation
+
+2. **`/api/roles/[id]/route.ts`** - Single Role Operations
+   - **GET: Role details with all privileges**
+     - Returns role with full privilege list
+     - Groups privileges by category
+     - Calculates granted privilege count
+   - **PUT: Update role**
+     - Update name, description, level, isActive
+     - Prevents modification of system roles (ADMIN, SUPER_ADMIN, MANAGER)
+     - Returns updated role with privileges
+   - **DELETE: Delete role**
+     - Checks if users are assigned (prevents deletion)
+     - Prevents deletion of system roles
+     - Cascades deletion to role privileges
+     - Returns detailed error if users are assigned
+
+3. **`/api/roles/[id]/privileges/route.ts`** - Role Privilege Management
+   - **GET: Get all privileges for a role**
+     - Returns all privilege definitions with role-specific settings
+     - Groups by category with summary statistics
+     - Shows isAssigned, isGranted, maxAmount, workshopScope per privilege
+   - **POST: Add privilege to role**
+     - Validates privilege exists
+     - Prevents duplicate assignment
+     - Supports maxAmount and workshopScope settings
+   - **PUT: Update privilege settings**
+     - Update isGranted, maxAmount, workshopScope
+     - Validates privilege is assigned to role
+   - **DELETE: Remove privilege from role**
+     - Accepts privilegeId as query parameter
+     - Returns removed privilege details
+
+4. **Enhanced `/api/privileges/route.ts`** - Privilege Definitions List/Create
+   - **GET: List privileges with filters**
+     - Category filter
+     - Search filter (code, name, description)
+     - Optional includeUsage flag to show role count
+     - Groups privileges by category
+     - Returns available categories with counts
+   - **POST: Create privilege definition**
+     - Validates unique privilege code
+     - Creates new privilege definition
+     - For admin use only
+
+5. **`/api/privileges/[id]/route.ts`** - Single Privilege Operations
+   - **GET: Privilege details**
+     - Returns privilege with role usage count
+     - Lists roles using this privilege
+     - Shows related privileges in same category
+     - Summary of granted/active roles
+   - **PUT: Update privilege definition**
+     - Update name, category, description, isActive
+     - Prevents deactivation of system privileges
+   - **DELETE: Delete privilege**
+     - Checks if used in roles (prevents deletion)
+     - Returns roles using the privilege if deletion blocked
+     - Prevents deletion of system privileges
+
+### Validation & Error Handling
+- Zod schemas for all request bodies
+- Unique constraint validation (role code, privilege code)
+- Foreign key validation (role exists, privilege exists)
+- System role/privilege protection
+- Proper HTTP status codes (200, 201, 400, 404, 500)
+- Detailed error messages with actionable information
+
+### Database Schema Used
+```prisma
+model Role {
+  id, code, name, description, level, isActive
+  users: UserRole[]
+  privileges: RolePrivilegeSet[]
+}
+
+model PrivilegeDefinition {
+  id, code, name, category, description, isActive
+  rolePrivileges: RolePrivilegeSet[]
+}
+
+model RolePrivilegeSet {
+  id, roleId, privilegeId, isGranted, maxAmount, workshopScope
+}
+```
+
+### Technical Details
+- All routes use Zod for request validation
+- Proper Prisma relations included in queries
+- Decimal values converted to numbers for JSON serialization
+- Comprehensive error handling with appropriate HTTP status codes
+- All code passes ESLint validation
+- Dev server running successfully
+
+---
+Task ID: 2-a
+Agent: User Management API Developer
+Task: Create User Management RBAC API
+
+Work Log:
+- Created `/api/users/[id]/route.ts` - Single user operations
+  - GET: Get user details with roles and computed effective privileges
+  - PUT: Update user (name, email, department, phone, isActive)
+  - DELETE: Soft delete user (set isActive = false, deactivate role assignments)
+  
+- Enhanced `/api/users/[id]/roles/route.ts` - User role assignment
+  - GET: Get user's assigned roles with privilege details
+  - POST: Assign single role to user (with validation)
+  - PUT: Bulk replace user roles
+  - DELETE: Remove specific role from user
+  
+- Created `/api/users/[id]/password/route.ts` - Password management
+  - PUT: Change password (requires current password verification)
+  - POST: Reset password (admin only, generates 12-char temporary password)
+  
+- Created `/api/users/[id]/privileges/route.ts` - User privilege overrides
+  - GET: Get user's effective privileges (from roles + overrides)
+  - POST: Add/update privilege override
+  - DELETE: Remove privilege override
+  
+- Enhanced `/api/users/route.ts` - User list and creation
+  - GET: Added department filter, status filter (active/inactive/all), role filter
+  - GET: Include roles in response, show unique departments for dropdown
+  - POST: Create new user with password hashing (bcryptjs, 12 rounds)
+  - POST: Optional role assignment during creation
+
+Stage Summary:
+- 4 new API route files created
+- 2 existing API routes enhanced
+- Zod validation for all request bodies
+- bcryptjs for secure password hashing (12 salt rounds)
+- Password strength validation (8+ chars, uppercase, lowercase, number, special char)
+- Audit logging for all CRUD operations
+- Effective privilege computation (role privileges + overrides - revocations)
+- All code passes ESLint validation
+- Dev server running successfully
+
+---
+Task ID: 3-b
+Agent: Role Management UI Developer
+Task: Create Role Management UI View
+
+Work Log:
+- Created `/src/components/wcp/role-management-view.tsx` - Comprehensive Role Management UI
+  - **Role List View**:
+    - Table showing roles with code, name, level, user count, privilege count
+    - Status filter (all/active/inactive) with search functionality
+    - Summary cards displaying total roles, active, inactive, and total users
+    - Color-coded level badges (1-10 levels with labels like Basic, Standard, Manager, Admin)
+  
+  - **Create/Edit Role Dialog**:
+    - Form fields: Code, Name, Description, Access Level (1-10)
+    - Active/Inactive toggle switch
+    - Code field disabled during edit (immutable)
+    - Validation for required fields
+    - Toast notifications for success/error
+  
+  - **Role Privileges Management Dialog**:
+    - Collapsible category sections (expand/collapse all buttons)
+    - Each category shows granted/total count badge
+    - Per-privilege toggle for grant/revoke
+    - Max Amount input for financial limits
+    - Workshop Scope toggle for location-based permissions
+    - Privilege code and description display
+    - Real-time updates without page refresh
+  
+  - **Privilege Matrix View**:
+    - Grid showing all roles vs all privileges
+    - Grouped by privilege category
+    - Checkmark indicators for granted privileges
+    - Role level badges in column headers
+    - Scrollable horizontally and vertically
+    - Quick visual overview of permission distribution
+  
+  - **Delete Role Dialog**:
+    - Confirmation with role details
+    - Warning if users are assigned (prevents deletion)
+    - Red styling for destructive action
+
+Stage Summary:
+- 1 new comprehensive UI component created
+- Role CRUD operations with full validation
+- Privilege management with category grouping
+- Privilege matrix for visual overview
+- Responsive design with proper scroll areas
+- Toast notifications for user feedback
+- Loading states with spinner animations
+- Empty states for no data scenarios
+- All code passes ESLint validation
+- Dev server running successfully
+
+---
+Task ID: 3-a
+Agent: UI Developer Agent
+Task: Create User Management UI View
+
+Work Log:
+- Read worklog.md to understand previous work (RBAC view, role management APIs, user APIs)
+- Reviewed existing employees-view.tsx for styling patterns
+- Reviewed existing rbac-view.tsx for RBAC-related components
+- Analyzed existing user API routes (users/route.ts, users/[id]/route.ts, users/[id]/roles/route.ts, users/[id]/password/route.ts)
+- Created comprehensive User Management UI component at `/src/components/wcp/user-management-view.tsx`
+
+Features Implemented:
+
+1. **User List Table**:
+   - Columns: Name (with avatar initials), Email, Department, Roles (with badges), Status, Actions
+   - Search by name, email, or employee ID
+   - Filter by status (All, Active, Inactive)
+   - Filter by department (dynamic from data)
+   - Filter by role (from available roles)
+   - Pagination with page info and navigation
+   - Avatar initials display for users
+   - Role count indicator (+N for overflow)
+
+2. **Create User Dialog**:
+   - Full Name, Email, Employee ID, Phone, Department fields
+   - Password and Confirm Password fields with validation
+   - Role assignment with multi-select checkboxes
+   - Level badges for each role
+   - Password requirements hint
+
+3. **Edit User Dialog**:
+   - Edit Name, Email, Phone, Department
+   - Active/Inactive toggle switch
+   - Excludes Admin level 10 roles from assignment
+
+4. **User Details Panel** (Tabs):
+   - **User Info Tab**: Basic info (Employee ID, Email, Phone, Department), Status badges, Risk level, Activity (Last login, Created, Updated)
+   - **Roles Tab**: List of assigned roles with level badges, validity dates, privilege counts, "Edit Roles" quick action
+   - **Privileges Tab**: Effective privileges grouped by category with category color badges
+
+5. **Password Reset Dialog**:
+   - Warning about session invalidation
+   - Reason textarea (required)
+   - After reset: Shows temporary password in monospace font
+   - Copy to clipboard button with checkmark feedback
+   - Security notice about providing password to user
+
+6. **Role Assignment Dialog**:
+   - Scrollable list of available roles
+   - Checkbox selection with role name and description
+   - Level badge for each role
+   - Selection count indicator
+
+7. **Additional Features**:
+   - Dropdown menu for quick actions (Manage Roles, Reset Password, Activate/Deactivate)
+   - Summary cards (Total Users, Active Users, With Roles, Available Roles)
+   - Toast notifications for all operations
+   - Loading states with spinner animations
+   - Responsive design for mobile/tablet/desktop
+
+UI Components Used:
+- Card, CardContent for sections
+- Table, TableHeader, TableBody, TableRow, TableCell for data display
+- Dialog, DialogHeader, DialogContent, DialogFooter for modals
+- Button, Input, Label, Textarea for form elements
+- Select, SelectTrigger, SelectContent, SelectItem for dropdowns
+- Badge for status and role indicators
+- Checkbox for multi-select
+- Switch for toggle
+- Tabs, TabsList, TabsTrigger, TabsContent for details panel
+- ScrollArea for scrollable content
+- DropdownMenu for action menus
+
+Styling Consistency:
+- Follows employees-view.tsx patterns
+- emerald-600 for primary actions
+- slate-* for neutral elements
+- amber-* for warnings
+- red-* for destructive actions
+- Consistent padding (p-4, p-6)
+- Gap-4 for spacing
+
+Stage Summary:
+- 1 new comprehensive UI component created (user-management-view.tsx)
+- User CRUD operations with full validation
+- Role assignment with multi-select interface
+- Password reset with temporary password display
+- User details panel with tabs (Info, Roles, Privileges)
+- Responsive design with proper scroll areas
+- Toast notifications for user feedback
+- Loading states with spinner animations
+- Empty states for no data scenarios
+- All code passes ESLint validation
+- Dev server running successfully
+
+---
+Task ID: 4
+Agent: Main Agent
+Task: Integrate User Authentication Flow and RBAC UI
+
+Work Log:
+- Added KeyRound and UserCog icons from lucide-react
+- Added Users and Roles navigation items with adminOnly flag
+- Updated SidebarContentProps interface to include isAdminUser
+- Updated SidebarContent to filter admin-only navigation items
+- Added UserManagementView and RoleManagementView to renderContent
+- Updated all SidebarContent usages to pass isAdminUser prop
+- Ran lint check - all passed
+- Verified dev server running with 200 responses
+
+Stage Summary:
+- User Management view integrated into main application
+- Role Management view integrated into main application
+- Admin-only navigation items hidden for non-admin users
+- All changes pass lint validation
+- Dev server running successfully
