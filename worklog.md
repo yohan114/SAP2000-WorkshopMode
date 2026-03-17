@@ -1369,3 +1369,359 @@ Stage Summary:
 - Admin-only navigation items hidden for non-admin users
 - All changes pass lint validation
 - Dev server running successfully
+
+---
+## Task ID: 1 - Advanced Privilege System Implementation
+### Work Task
+Create comprehensive privilege seed script with all privileges defined in the master plan for the Workshop Control Platform (WCP), covering 14 privilege categories with 80+ individual privileges.
+
+### Work Summary
+Created 2 new seed files and updated package.json:
+
+1. **`/prisma/seed-privileges.ts`** - Comprehensive Privilege Definitions
+   - **14 Privilege Categories** implemented:
+     - JOB_CARD (10 privileges): JC_CREATE, JC_VIEW, JC_EDIT, JC_DELETE, JC_APPROVE, JC_REJECT, JC_REOPEN, JC_MULTI_OPEN, JC_CLOSE, JC_ASSIGN
+     - MATERIAL_REQUEST (7 privileges): MR_CREATE, MR_VIEW, MR_EDIT, MR_DELETE, MR_APPROVE, MR_REJECT, MR_EMERGENCY
+     - MATERIAL_ISSUE (5 privileges): MI_CREATE, MI_VIEW, MI_VERIFY, MI_EMERGENCY_ISSUE, MI_RETURN_PROCESS
+     - INVENTORY (5 privileges): INV_VIEW, INV_MANAGE, INV_ADJUST, INV_TRANSFER, INV_STOCK_TAKE
+     - PROCUREMENT (12 privileges): PR_CREATE, PR_VIEW, PR_APPROVE, RFQ_CREATE, RFQ_MANAGE, PO_CREATE, PO_APPROVE, PO_DISPATCH, GRN_CREATE, GRN_VERIFY, INVOICE_MATCH, PAYMENT_APPROVE
+     - PURCHASE_AUTHORITY (8 privileges): LP_APPROVE_L1, LP_APPROVE_L2, LP_APPROVE_L3, LP_CHANNEL_OVERRIDE, HO_PROCUREMENT_ACCESS, SYS_LPA_OVERRIDE, EMERGENCY_PURCHASE, EMERGENCY_RATIFICATION
+     - ASSET (5 privileges): ASSET_CREATE, ASSET_VIEW, ASSET_EDIT, ASSET_DELETE, ASSET_QR_MANAGE
+     - FUEL (3 privileges): FUEL_ISSUE, FUEL_VIEW, FUEL_OVERRIDE_METER
+     - EXTERNAL_REPAIR (3 privileges): EXT_REPAIR_CREATE, EXT_REPAIR_APPROVE, EXT_REPAIR_MANAGE
+     - PM (4 privileges): PM_CREATE, PM_VIEW, PM_MANAGE, PM_SCHEDULE_EDIT
+     - LABOUR (3 privileges): LABOUR_ASSIGN, LABOUR_VIEW, TRAINING_MANAGE
+     - REPORT (3 privileges): REPORT_VIEW, REPORT_EXPORT, KPI_DASHBOARD
+     - ADMIN (6 privileges): USER_MANAGE, ROLE_MANAGE, PRIVILEGE_ASSIGN, AUDIT_VIEW, AUDIT_EXPORT, SYSTEM_CONFIG
+     - QUALITY (3 privileges): QA_INSPECT, QA_APPROVE, QA_DEFECT_MANAGE
+   - Each privilege includes: code, name, category, description
+   - Uses upsert logic for idempotent seeding (run multiple times without duplicates)
+   - Prints summary by category after seeding
+
+2. **`/prisma/seed-roles.ts`** - Role Definitions and Privilege Assignments
+   - **10 Roles** defined with privilege assignments:
+     - TECHNICIAN (11 privileges): Basic create/view for JC, MR, and view-only for Inventory, Assets
+     - SUPERVISOR (32 privileges): Approval authority, technician management, PM control
+     - STOREKEEPER (18 privileges): Full inventory control, material issues, GRN operations
+     - PROCUREMENT_OFFICER (17 privileges): PR/PO/RFQ management, LPA Level 1-2 approval
+     - WORKSHOP_MANAGER (73 privileges): Full operational control except SYSTEM_CONFIG
+     - HO_PROCUREMENT (16 privileges): HO procurement channel access, payment approval
+     - HO_FINANCE (11 privileges): Payment verification, audit access
+     - HO_MANAGER (12 privileges): Procurement approval, user management
+     - CONTROL_MANAGER (12 privileges): SYS_LPA_OVERRIDE, full admin access
+     - ADMIN (78 privileges): All system privileges
+   - Each role includes: code, name, description, level
+   - Privilege assignments use upsert for idempotent operation
+   - Prints summary showing privilege count per role
+
+3. **Updated `/package.json`** - New Seed Scripts
+   - `npm run seed:privileges` - Seeds privilege definitions only
+   - `npm run seed:roles` - Seeds roles and privilege assignments only
+   - `npm run seed:all` - Runs both seeds in sequence
+
+### Technical Details
+- TypeScript with proper typing throughout
+- Prisma upsert operations for idempotency
+- Organized constants for privilege codes with category grouping
+- Comprehensive role-to-privilege mapping
+- All code passes ESLint validation
+- Compatible with existing seed.ts main seed process
+
+### How to Run
+```bash
+# Seed privileges only
+npm run seed:privileges
+
+# Seed roles and assignments only
+npm run seed:roles
+
+# Seed both privileges and roles
+npm run seed:all
+
+# Full database seed (includes privileges and roles)
+npm run db:seed
+```
+
+---
+## Task ID: 2 - Privilege Checking System Implementation
+### Work Task
+Create a comprehensive privilege checking system for the Workshop Control Platform, including backend utility functions, API endpoints, and frontend React hooks.
+
+### Work Summary
+Created 3 new files:
+
+1. **`/src/lib/privileges.ts`** - Core Privilege Checking Utility
+   - **Core Functions**:
+     - `getUserPrivileges(userId, options?)` - Get all effective privileges for a user (from roles + overrides)
+     - `hasPrivilege(userId, privilegeCode, options?)` - Check if user has a specific privilege
+     - `hasAnyPrivilege(userId, privilegeCodes, options?)` - Check if user has any of the privileges
+     - `hasAllPrivileges(userId, privilegeCodes, options?)` - Check if user has all privileges
+     - `getUsersWithPrivilege(privilegeCode, options?)` - Get all users who have a specific privilege
+   - **Additional Utilities**:
+     - `checkPrivilege()` - Detailed privilege check with source information
+     - `batchCheckPrivileges()` - Batch check multiple privileges at once
+     - `getUserPrivilegeSummary()` - Get user's privilege summary grouped by category
+     - `grantPrivilegeOverride()` - Grant a privilege override to a user
+     - `revokePrivilegeOverride()` - Revoke a privilege from a user
+     - `getAllPrivilegesByCategory()` - Get all privilege definitions grouped by category
+   - **Features**:
+     - Handles role validity periods (validFrom, validTo)
+     - Supports workshop-scoped privileges (workshopId filter)
+     - Processes user-specific privilege overrides (grants/revokes)
+     - Supports maxAmount checking for financial privileges
+     - Returns privilege source information (ROLE vs OVERRIDE)
+
+2. **`/src/app/api/privileges/check/route.ts`** - Privilege Check API
+   - **GET Endpoint**: Get user's effective privileges
+     - Query params: userId (required), workshopId (optional), summary (optional)
+     - Returns privileges grouped by category with metadata
+   - **POST Endpoint**: Check if user has specific privilege(s)
+     - Single privilege check: `{ userId, privilegeCode, workshopId?, checkAmount? }`
+     - Multiple privilege check: `{ userId, privilegeCodes, workshopId?, mode: 'any' | 'all' | 'batch' }`
+     - Returns detailed check result with source information
+
+3. **`/src/hooks/use-privileges.tsx`** - React Hook for Frontend
+   - **Main Hook: `usePrivileges(options?)`**
+     - State: `privileges`, `isLoading`, `error`
+     - Computed: `privilegeCodes`, `privilegeCategories`
+     - Helper functions: `can()`, `canAny()`, `canAll()`
+     - Async checks: `checkPrivilege()`, `checkMultiple()`
+     - Utilities: `refresh()`, `clearCache()`
+   - **Convenience Hooks**:
+     - `useCan(privilegeCode)` - Simple single privilege check
+     - `useCanAny(privilegeCodes)` - Check if has any privilege
+     - `useCanAll(privilegeCodes)` - Check if has all privileges
+     - `useIsAdmin()` - Check admin-level access
+     - `usePrivilegeCategories()` - Get privilege categories
+   - **Guard Components**:
+     - `usePrivilegeGuard()` - Returns Guard components for conditional rendering
+     - `Guard`, `GuardAny`, `GuardAll` - Wrapper components for permission-based rendering
+   - **Features**:
+     - Session storage caching (5-minute TTL)
+     - Auto-fetch on authentication
+     - Clear cache on logout
+     - TypeScript support with proper interfaces
+
+### Technical Implementation
+- Uses Prisma client for database queries
+- Handles `UserRole` with validity periods
+- Processes `UserPrivilegeOverride` for user-specific grants/revokes
+- Supports `RolePrivilegeSet` with maxAmount and workshopScope
+- Zod validation for API request bodies
+- Session storage caching for frontend performance
+- All code passes ESLint validation
+
+### Usage Examples
+
+**Backend Usage:**
+```typescript
+import { hasPrivilege, getUserPrivileges } from '@/lib/privileges';
+
+// Check single privilege
+const canApprove = await hasPrivilege(userId, 'JC_APPROVE');
+
+// Get all user privileges
+const privileges = await getUserPrivileges(userId);
+
+// Check with amount limit
+const canApprove = await hasPrivilege(userId, 'PO_APPROVE', { checkAmount: 5000 });
+```
+
+**Frontend Usage:**
+```typescript
+import { usePrivileges, useCan } from '@/hooks/use-privileges';
+
+// Full hook
+const { can, canAny, privileges } = usePrivileges();
+if (can('JC_CREATE')) { /* show create button */ }
+
+// Simple check
+const canCreate = useCan('JC_CREATE');
+```
+
+---
+## Task ID: 4 - Privilege Assignment UI
+### Work Task
+Create a comprehensive Privilege Management UI for the Workshop Control Platform with role privileges management and user-specific privilege overrides.
+
+### Work Summary
+Created 3 new files and modified 1 file:
+
+1. **`/src/components/wcp/privilege-management-view.tsx`** - Main View Component
+   - **Tab-based Interface**:
+     - **Role Privileges Tab** - Manage privileges assigned to roles
+     - **User Overrides Tab** - Manage user-specific privilege overrides
+   
+   - **Role Privileges Tab Features**:
+     - Role list (left side) with name, code, level, and privilege count
+     - Privileges grouped by category (expandable/collapsible)
+     - Each privilege shows: name, code, checkbox for grant/revoke
+     - Search/filter by category or privilege name
+     - "Save Changes" button for modifications with pending changes tracking
+     - Visual indicator for pending modifications (amber highlight)
+     - "New" badge for newly assigned privileges
+     - Revert changes functionality
+     - Summary cards showing total roles, active roles, granted privileges
+   
+   - **User Overrides Tab Features**:
+     - User search/selection (by name, email, employee ID)
+     - Current roles display with badges
+     - Effective privileges by category (read-only section)
+     - Override management section:
+       - Add new override dialog with privilege, grant/revoke, valid to, reason
+       - Active overrides list with edit/delete capability
+       - Override details: privilege, grant/revoke, valid to, reason
+     - Summary cards showing effective, revoked, override counts
+   
+   - **Access Control**:
+     - Only visible to users with `PRIVILEGE_ASSIGN`, `SYSTEM_ADMIN`, or `ADMIN` privilege
+     - Uses `usePrivileges` hook for access control
+     - Shows access restricted message for unauthorized users
+
+2. **`/src/app/api/privileges/roles/[id]/route.ts`** - Role Privileges API
+   - **GET**: Get all privileges for a role with details
+     - Returns role info, privileges list, byCategory grouping, summary stats
+     - Shows which privileges are assigned and granted
+   - **PUT**: Update privilege settings for a role
+     - Single privilege update with isGranted, maxAmount, workshopScope
+     - Batch update support for multiple privileges
+     - Transaction support for atomic operations
+     - Automatic create for new privilege assignments
+
+3. **`/src/app/api/privileges/users/[id]/overrides/route.ts`** - User Overrides API
+   - **GET**: Get all privilege overrides for a user
+     - Returns user info with roles, overrides list, available privileges
+     - Grantor names resolved for display
+     - Summary stats (grants, revokes, expired)
+   - **POST**: Create new privilege override
+     - Validates user, privilege, and grantor existence
+     - Supports privilegeCode or privilegeId
+     - Handles update if override already exists
+     - Audit logging for create/update actions
+   - **PUT**: Update existing override
+     - Update isGranted, reason, validTo fields
+     - Audit logging included
+   - **DELETE**: Remove privilege override
+     - Supports overrideId or privilegeId parameter
+     - Audit logging included
+
+4. **Modified `/src/app/page.tsx`** - Navigation Integration
+   - Added `PrivilegeManagementView` import
+   - Added `Lock` icon import from lucide-react
+   - Added 'privileges' navigation item with adminOnly flag
+   - Added case for 'privileges' in renderContent switch
+
+### UI Components Used
+- Tabs, Card, Table, Badge, Button, Input, Label
+- Dialog, Select, Checkbox, Switch, Textarea
+- ScrollArea, Separator, Popover, Calendar
+- Icons: Shield, Key, UserCog, Lock, Search, Plus, Edit, Trash2, Clock, etc.
+
+### Technical Details
+- Uses shadcn/ui components for consistent styling
+- Responsive design with grid layouts
+- Loading states with Loader2 spinner
+- Toast notifications for success/error feedback
+- Date formatting with date-fns
+- TypeScript strict typing throughout
+- All code passes ESLint validation
+- Dev server running successfully
+
+---
+## Task ID: 3 - LPA Management Module
+### Work Task
+Create comprehensive LPA (Limited Purchase Authority) Management module for the Workshop Control Platform, including seed script, API routes, utility functions, and UI component.
+
+### Work Summary
+Created 6 new files:
+
+1. **`/prisma/seed-lpa.ts`** - LPA Seed Script
+   - Default LPA configurations based on master plan limits:
+     - Workshop Supervisor: LPA 25,000, Emergency 37,500, Monthly 150,000
+     - Procurement Officer: LPA 100,000, Emergency 150,000, Monthly 500,000
+     - Workshop Manager: LPA 250,000, Emergency 375,000, Monthly 1,000,000
+   - Upsert logic (create new or update existing)
+   - Displays current LPA status in table format
+   - Shows usage percentage for each configuration
+
+2. **`/api/lpa/route.ts`** - LPA List/Create API
+   - **GET**: List all workshop LPA configurations
+     - Pagination support with search by workshop ID/name
+     - Calculates usage percentage for each config
+     - Returns summary statistics (total workshops, monthly spend/cap)
+     - Permission check: SYS_LPA_OVERRIDE, LP_APPROVE_L1-3, USER_MANAGE
+   - **POST**: Create new workshop LPA config
+     - Validates workshop ID uniqueness
+     - Validates emergency limit > standard limit
+     - Creates initial change history record
+     - Permission check: SYS_LPA_OVERRIDE, USER_MANAGE, SYSTEM_CONFIG
+
+3. **`/api/lpa/[workshopId]/route.ts`** - Single Workshop LPA API
+   - **GET**: Get workshop LPA details with current usage
+     - Calculates monthly usage from approved POs
+     - Returns recent change history (last 5 entries)
+     - Shows remaining budget calculation
+   - **PUT**: Update LPA limits with audit log
+     - Requires change reason for all updates
+     - Records changes in LpaChangeHistory
+     - Validates emergency limit vs standard limit
+   - **DELETE**: Deactivate workshop LPA (soft delete)
+     - Sets isActive = false
+     - Records deactivation in history
+
+4. **`/api/lpa/[workshopId]/history/route.ts`** - LPA Change History API
+   - **GET**: Get change history for a workshop
+     - Pagination support
+     - Enriches with user details (name, email)
+     - Calculates limit change (increase/decrease)
+     - Returns statistics (total changes, total increase/decrease, average limit)
+
+5. **`/src/lib/lpa.ts`** - LPA Utility Functions
+   - `getUserLpaLevel(userId)` - Get user's approval limit based on privileges
+   - `checkLpaLimit(workshopId, userId, amount, isEmergency)` - Check if amount is within LPA
+   - `recordLpaSpend(workshopId, amount)` - Record spend against monthly cap
+   - `getLpaBalance(workshopId)` - Get remaining LPA balance for the month
+   - `canApproveLocally(userId, amount, isEmergency)` - Check if user can approve at amount level
+   - `determineProcurementChannel(workshopId, amount)` - Determine LOCAL vs HO channel
+   - `canOverrideChannel(userId)` - Check if user can override procurement channel
+   - `getWorkshopSpendAnalytics(workshopId, months)` - Get spend analytics with recommendations
+
+6. **`/src/components/wcp/lpa-management-view.tsx`** - LPA Management UI
+   - **Summary Cards**: Total workshops, monthly cap total, monthly spend, current month
+   - **Search**: Filter by workshop ID or name
+   - **LPA Configuration Table**:
+     - Workshop name and ID
+     - Standard LPA, Emergency LPA, Monthly Cap
+     - Usage progress bar with color coding (green/amber/red)
+     - Remaining budget display
+     - Actions: View History, Edit
+   - **Edit Dialog**:
+     - Update workshop name, limits, monthly cap
+     - Required change reason field
+   - **History Dialog**:
+     - Shows all historical LPA changes
+     - Date, previous/new limit, change amount, reason, changed by
+   - **Create Dialog**:
+     - Add new workshop LPA configuration
+     - Default LPA limits reference guide
+
+### Technical Details
+- All API routes use Zod for request validation
+- Proper permission checks using privilege codes
+- Decimal values converted to numbers for JSON serialization
+- Comprehensive error handling with appropriate HTTP status codes
+- Change history tracked for audit compliance
+- Monthly spend automatically resets on new month
+- UI uses shadcn/ui components (Card, Table, Dialog, Progress, Badge)
+- Currency formatting with Intl.NumberFormat
+- Responsive design with Tailwind CSS
+- All code passes ESLint validation
+- Dev server running successfully
+
+### Files Modified
+- `package.json`: Added `seed:lpa` and updated `seed:all` scripts
+
+### Permission Requirements
+- View LPA: SYS_LPA_OVERRIDE, LP_APPROVE_L1, LP_APPROVE_L2, LP_APPROVE_L3, USER_MANAGE
+- Create/Update/Delete: SYS_LPA_OVERRIDE, USER_MANAGE, SYSTEM_CONFIG
+- View History: SYS_LPA_OVERRIDE, LP_APPROVE_L1-3, USER_MANAGE, AUDIT_VIEW

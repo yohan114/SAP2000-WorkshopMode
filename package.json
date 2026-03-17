@@ -11,7 +11,11 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:reset": "prisma migrate reset",
-    "db:seed": "bun prisma/seed.ts"
+    "db:seed": "bun prisma/seed.ts",
+    "seed:privileges": "bun prisma/seed-privileges.ts",
+    "seed:roles": "bun prisma/seed-roles.ts",
+    "seed:lpa": "bun prisma/seed-lpa.ts",
+    "seed:all": "bun prisma/seed-privileges.ts && bun prisma/seed-roles.ts && bun prisma/seed-lpa.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

@@ -50,7 +50,9 @@ import {
   BellRing,
   Webhook,
   KeyRound,
-  UserCog
+  UserCog,
+  Lock,
+  DollarSign
 } from 'lucide-react';
 import { DashboardView } from '@/components/wcp/dashboard-view';
 import { AssetsView } from '@/components/wcp/assets-view';
@@ -79,6 +81,8 @@ import { WebhooksView } from '@/components/wcp/webhooks-view';
 import { NotificationBell } from '@/components/wcp/notification-bell';
 import { UserManagementView } from '@/components/wcp/user-management-view';
 import { RoleManagementView } from '@/components/wcp/role-management-view';
+import { PrivilegeManagementView } from '@/components/wcp/privilege-management-view';
+import { LpaManagementView } from '@/components/wcp/lpa-management-view';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
@@ -109,6 +113,8 @@ const navigationItems = [
   { id: 'reports', label: 'Reports', icon: BarChart3 },
   { id: 'users', label: 'Users', icon: UserCog, adminOnly: true },
   { id: 'roles', label: 'Roles', icon: KeyRound, adminOnly: true },
+  { id: 'privileges', label: 'Privileges', icon: Lock, adminOnly: true },
+  { id: 'lpa', label: 'LPA', icon: DollarSign, adminOnly: true },
 ];
 
 // Sidebar component defined outside to avoid React hooks warning
@@ -278,6 +284,8 @@ export default function Home() {
       case 'reports': return <ReportsView />;
       case 'users': return <UserManagementView />;
       case 'roles': return <RoleManagementView />;
+      case 'privileges': return <PrivilegeManagementView />;
+      case 'lpa': return <LpaManagementView />;
       default: return <DashboardView />;
     }
   };
