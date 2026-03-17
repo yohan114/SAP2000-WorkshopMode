@@ -1,72 +1,66 @@
+/**
+ * Job Card State Transition API Route
+ * 
+ * This endpoint handles all state transitions for job cards using the
+ * state machine module. It ensures:
+ * - Valid transitions only
+ * - Guard condition checks
+ * - Audit logging
+ * - Proper error handling
+ */
+
 import { db } from '@/lib/db';
-import { apiSuccess, apiError } from '@/lib/api-utils';
+import { apiSuccess, apiError, apiNotFound, apiForbidden } from '@/lib/api-utils';
+import { triggerWebhook } from '@/lib/webhook-service';
+import {
+  transitionJobCard,
+  TransitionType,
+  VALID_TRANSITIONS,
+  TRANSITION_TARGET_STATES,
+  JobCardStatus,
+} from '@/lib/job-card-state-machine';
 import { z } from 'zod';
 
-// Valid state transitions
-const validTransitions: Record<string, string[]> = {
-  'DRAFT': ['APPROVED', 'CANCELLED'],
-  'APPROVED': ['IN_PROGRESS', 'CANCELLED'],
-  'IN_PROGRESS': ['COMPLETED', 'ON_HOLD'],
-  'ON_HOLD': ['IN_PROGRESS', 'CANCELLED'],
-  'COMPLETED': ['CLOSED'],
-  'CLOSED': ['APPROVED'], // Reopen
-  'CANCELLED': [],
-};
-
-// Action to status mapping
-const actionToStatus: Record<string, Record<string, string>> = {
-  'SUBMIT': { 'DRAFT': 'APPROVED' },
-  'START': { 'APPROVED': 'IN_PROGRESS' },
-  'COMPLETE': { 'IN_PROGRESS': 'COMPLETED' },
-  'HOLD': { 'IN_PROGRESS': 'ON_HOLD' },
-  'RESUME': { 'ON_HOLD': 'IN_PROGRESS' },
-  'CLOSE': { 'COMPLETED': 'CLOSED' },
-  'REOPEN': { 'CLOSED': 'APPROVED' },
-  'CANCEL': { 
-    'DRAFT': 'CANCELLED', 
-    'APPROVED': 'CANCELLED', 
-    'ON_HOLD': 'CANCELLED' 
-  },
-};
-
-// Transition type mapping
-const transitionTypes: Record<string, Record<string, string>> = {
-  'DRAFT': { 'APPROVED': 'APPROVE', 'CANCELLED': 'CANCEL' },
-  'APPROVED': { 'IN_PROGRESS': 'START', 'CANCELLED': 'CANCEL' },
-  'IN_PROGRESS': { 'COMPLETED': 'COMPLETE', 'ON_HOLD': 'HOLD' },
-  'ON_HOLD': { 'IN_PROGRESS': 'RESUME', 'CANCELLED': 'CANCEL' },
-  'COMPLETED': { 'CLOSED': 'CLOSE' },
-  'CLOSED': { 'APPROVED': 'REOPEN' },
-};
-
-// Schema for transition - accepts either action OR toStatus
+// Schema for transition request
 const transitionSchema = z.object({
+  transition: z.enum([
+    'SUBMIT', 'APPROVE', 'REJECT', 'RETURN',
+    'START', 'HOLD', 'RESUME', 'COMPLETE',
+    'REOPEN', 'CLOSE', 'CANCEL'
+  ] as const),
+  actorId: z.string().min(1, 'Actor ID is required'),
+  reason: z.string().optional(),
+  meterReading: z.number().optional(),
+  comments: z.string().optional(),
+  workPerformed: z.string().optional(),
+});
+
+// Schema for legacy transition (supports both action and toStatus for backward compatibility)
+const legacyTransitionSchema = z.object({
   action: z.string().optional(),
   toStatus: z.string().optional(),
   actorId: z.string().optional(),
   reason: z.string().optional(),
-  notes: z.string().optional(),  // Frontend sends 'notes' instead of 'comments'
+  notes: z.string().optional(),
   comments: z.string().optional(),
   workPerformed: z.string().optional(),
-}).refine(data => data.action || data.toStatus, {
-  message: 'Either action or toStatus is required',
+  meterReading: z.number().optional(),
+}).refine(data => data.action || data.toStatus || data.transition, {
+  message: 'Either transition, action, or toStatus is required',
 });
 
-// Helper to validate if a user exists
-async function validateUser(userId: string | undefined): Promise<string | null> {
-  if (!userId) return null;
-  try {
-    const user = await db.user.findUnique({
-      where: { id: userId },
-      select: { id: true }
-    });
-    return user?.id || null;
-  } catch {
-    return null;
-  }
-}
-
-// POST - Transition job card to new status
+/**
+ * POST /api/job-cards/[id]/transition
+ * 
+ * Transition a job card to a new state using the state machine.
+ * 
+ * Request body:
+ * - transition: The type of transition (SUBMIT, APPROVE, REJECT, etc.)
+ * - actorId: The user performing the transition
+ * - reason: Optional reason for the transition
+ * - meterReading: Optional meter reading for START/COMPLETE transitions
+ * - comments: Optional additional comments
+ */
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -74,134 +68,179 @@ export async function POST(
   try {
     const { id } = await params;
     const body = await request.json();
-    
-    const result = transitionSchema.safeParse(body);
-    if (!result.success) {
-      return apiError('Validation failed', 400, result.error.issues[0]?.message);
+
+    // Check for new state machine format
+    let transitionType: TransitionType | undefined;
+    let actorId: string;
+    let reason: string | undefined;
+    let meterReading: number | undefined;
+    let comments: string | undefined;
+
+    if (body.transition) {
+      // New format using state machine
+      const result = transitionSchema.safeParse(body);
+      if (!result.success) {
+        return apiError('Validation failed', 400, result.error.issues[0]?.message);
+      }
+      
+      transitionType = result.data.transition;
+      actorId = result.data.actorId;
+      reason = result.data.reason;
+      meterReading = result.data.meterReading;
+      comments = result.data.comments;
+    } else {
+      // Legacy format - map to state machine format
+      const result = legacyTransitionSchema.safeParse(body);
+      if (!result.success) {
+        return apiError('Validation failed', 400, result.error.issues[0]?.message);
+      }
+
+      const data = result.data;
+      actorId = data.actorId || 'unknown';
+      reason = data.reason || data.notes;
+      comments = data.comments || data.notes;
+      meterReading = data.meterReading;
+
+      // Get current job card to determine transition type
+      const jobCard = await db.jobCard.findUnique({
+        where: { id },
+        select: { status: true },
+      });
+
+      if (!jobCard) {
+        return apiNotFound('Job card');
+      }
+
+      if (data.action) {
+        // Map action to transition type
+        const actionToTransition: Record<string, TransitionType> = {
+          'SUBMIT': 'SUBMIT',
+          'APPROVE': 'APPROVE',
+          'REJECT': 'REJECT',
+          'RETURN': 'RETURN',
+          'START': 'START',
+          'HOLD': 'HOLD',
+          'RESUME': 'RESUME',
+          'COMPLETE': 'COMPLETE',
+          'REOPEN': 'REOPEN',
+          'CLOSE': 'CLOSE',
+          'CANCEL': 'CANCEL',
+        };
+        transitionType = actionToTransition[data.action];
+      } else if (data.toStatus) {
+        // Infer transition type from target status
+        const currentStatus = jobCard.status as JobCardStatus;
+        const validTransitions = VALID_TRANSITIONS[currentStatus] || [];
+        
+        for (const t of validTransitions) {
+          if (TRANSITION_TARGET_STATES[t] === data.toStatus) {
+            transitionType = t;
+            break;
+          }
+        }
+
+        if (!transitionType) {
+          return apiError(
+            `Cannot transition from ${currentStatus} to ${data.toStatus}`,
+            400,
+            `Valid transitions from ${currentStatus}: ${validTransitions.map(t => TRANSITION_TARGET_STATES[t]).join(', ')}`
+          );
+        }
+      }
     }
 
-    const { action, toStatus, actorId, reason, notes, comments, workPerformed } = result.data;
+    if (!transitionType) {
+      return apiError('Could not determine transition type', 400);
+    }
 
-    // Get current job card
-    const jobCard = await db.jobCard.findUnique({
-      where: { id },
+    // Execute transition using state machine
+    const transitionResult = await transitionJobCard(id, transitionType, actorId, {
+      reason,
+      meterReading,
+      comments,
     });
 
-    if (!jobCard) {
-      return apiError('Job card not found', 404);
-    }
-
-    const fromStatus = jobCard.status;
-
-    // Determine target status
-    let targetStatus: string | undefined;
-    
-    if (toStatus) {
-      // Direct status provided
-      targetStatus = toStatus;
-    } else if (action) {
-      // Map action to status
-      targetStatus = actionToStatus[action]?.[fromStatus];
-      if (!targetStatus) {
-        return apiError(
-          `Invalid action '${action}' for status '${fromStatus}'`,
-          400,
-          `Cannot perform '${action}' on a job card in '${fromStatus}' status`
-        );
+    if (!transitionResult.success) {
+      // Determine appropriate error code
+      const errorMessage = transitionResult.error || 'Transition failed';
+      if (errorMessage.includes('permission') || errorMessage.includes('privilege')) {
+        return apiForbidden(errorMessage);
       }
-    }
-
-    if (!targetStatus) {
-      return apiError('Could not determine target status', 400);
-    }
-
-    // Validate transition
-    if (!validTransitions[fromStatus]?.includes(targetStatus)) {
-      return apiError(
-        `Invalid transition from ${fromStatus} to ${targetStatus}`,
-        400,
-        `Valid transitions from ${fromStatus}: ${validTransitions[fromStatus]?.join(', ') || 'none'}`
-      );
-    }
-
-    // Get transition type
-    const transitionType = transitionTypes[fromStatus]?.[targetStatus] || action || 'TRANSITION';
-
-    // Validate actorId exists if provided
-    const validActorId = await validateUser(actorId);
-
-    // Update job card and create transition record
-    const updateData: Record<string, unknown> = {
-      status: targetStatus,
-    };
-
-    // Add status-specific fields
-    if (targetStatus === 'IN_PROGRESS') {
-      updateData.actualStart = new Date();
-    }
-    
-    if (targetStatus === 'COMPLETED') {
-      updateData.actualEnd = new Date();
-      if (workPerformed) {
-        updateData.workPerformed = workPerformed;
+      if (errorMessage.includes('not found')) {
+        return apiNotFound('Job card');
       }
-    }
-    
-    if (targetStatus === 'CLOSED') {
-      updateData.closedAt = new Date();
-      // Only set closedBy if we have a valid user ID
-      if (validActorId) {
-        updateData.closedBy = validActorId;
-      }
-    }
-    
-    if (targetStatus === 'CANCELLED') {
-      updateData.cancelledAt = new Date();
-      // Only set cancelledBy if we have a valid user ID
-      if (validActorId) {
-        updateData.cancelledBy = validActorId;
-      }
-      updateData.cancellationReason = reason || notes;
-    }
-    
-    if (targetStatus === 'APPROVED' && fromStatus === 'CLOSED') {
-      // Reopen case
-      updateData.reopenedAt = new Date();
-      // Only set reopenedBy if we have a valid user ID
-      if (validActorId) {
-        updateData.reopenedBy = validActorId;
-      }
-      updateData.reopenReason = reason || notes;
-      updateData.closedAt = null;
-      updateData.closedBy = null;
+      return apiError(errorMessage, 400);
     }
 
-    const [updatedJobCard, transition] = await db.$transaction([
-      db.jobCard.update({
-        where: { id },
-        data: updateData,
-        include: {
-          asset: {
-            select: { id: true, assetNumber: true, name: true },
+    // Fetch updated job card with relations
+    const updatedJobCard = await db.jobCard.findUnique({
+      where: { id },
+      include: {
+        asset: {
+          select: {
+            id: true,
+            assetNumber: true,
+            name: true,
+            status: true,
           },
         },
-      }),
-      db.jcStateTransition.create({
-        data: {
-          jobCardId: id,
-          fromState: fromStatus,
-          toState: targetStatus,
-          transitionType: transitionType,
-          actorId: validActorId || 'unknown',
-          reason: reason || notes,
-          comments: comments || notes,
+        creator: {
+          select: { id: true, name: true, email: true },
         },
-      }),
-    ]);
+        technicianAssignments: {
+          where: { isActive: true },
+          include: {
+            technician: {
+              select: { id: true, name: true, employeeId: true },
+            },
+          },
+        },
+        stateTransitions: {
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+        },
+      },
+    });
+
+    // Trigger webhook for job card status change
+    const webhookEvents: Record<JobCardStatus, string> = {
+      'PENDING': 'JOB_CARD_SUBMITTED',
+      'APPROVED': 'JOB_CARD_APPROVED',
+      'IN_PROGRESS': 'JOB_CARD_STARTED',
+      'COMPLETED': 'JOB_CARD_COMPLETED',
+      'CLOSED': 'JOB_CARD_CLOSED',
+      'ON_HOLD': 'JOB_CARD_HOLD',
+      'CANCELLED': 'JOB_CARD_CANCELLED',
+      'REJECTED': 'JOB_CARD_REJECTED',
+      'DRAFT': 'JOB_CARD_RETURNED',
+    };
+
+    if (updatedJobCard && transitionResult.newState) {
+      const event = webhookEvents[transitionResult.newState];
+      if (event) {
+        await triggerWebhook(event as 'JOB_CARD_CREATED', {
+          id: updatedJobCard.id,
+          jobCardNumber: updatedJobCard.jobCardNumber,
+          status: updatedJobCard.status,
+          previousStatus: transitionResult,
+          assetId: updatedJobCard.assetId,
+          assetNumber: updatedJobCard.asset.assetNumber,
+          assetName: updatedJobCard.asset.name,
+          transitionType,
+          actorId,
+          reason,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    }
 
     return apiSuccess({
       jobCard: updatedJobCard,
-      transition,
+      transition: {
+        id: transitionResult.transitionId,
+        newState: transitionResult.newState,
+        transitionType,
+      },
     }, 'Job card status updated successfully');
   } catch (error) {
     console.error('Transition error:', error);
@@ -209,7 +248,11 @@ export async function POST(
   }
 }
 
-// GET - Get transition history for a job card
+/**
+ * GET /api/job-cards/[id]/transition
+ * 
+ * Get transition history for a job card.
+ */
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -217,18 +260,42 @@ export async function GET(
   try {
     const { id } = await params;
 
+    // Verify job card exists
+    const jobCard = await db.jobCard.findUnique({
+      where: { id },
+      select: { id: true, status: true },
+    });
+
+    if (!jobCard) {
+      return apiNotFound('Job card');
+    }
+
+    // Get all transitions
     const transitions = await db.jcStateTransition.findMany({
       where: { jobCardId: id },
       orderBy: { createdAt: 'desc' },
+      include: {
+        actor: {
+          select: { id: true, name: true, email: true, employeeId: true },
+        },
+      },
     });
 
+    // Get available transitions from current state
+    const availableTransitions = VALID_TRANSITIONS[jobCard.status as JobCardStatus] || [];
+
     return apiSuccess({
-      data: transitions.map(t => ({
+      currentStatus: jobCard.status,
+      availableTransitions: availableTransitions.map(t => ({
+        type: t,
+        targetState: TRANSITION_TARGET_STATES[t],
+      })),
+      history: transitions.map(t => ({
         id: t.id,
         fromState: t.fromState,
         toState: t.toState,
         transitionType: t.transitionType,
-        actorId: t.actorId,
+        actor: t.actor,
         reason: t.reason,
         comments: t.comments,
         createdAt: t.createdAt,

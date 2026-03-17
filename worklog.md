@@ -1725,3 +1725,271 @@ Created 6 new files:
 - View LPA: SYS_LPA_OVERRIDE, LP_APPROVE_L1, LP_APPROVE_L2, LP_APPROVE_L3, USER_MANAGE
 - Create/Update/Delete: SYS_LPA_OVERRIDE, USER_MANAGE, SYSTEM_CONFIG
 - View History: SYS_LPA_OVERRIDE, LP_APPROVE_L1-3, USER_MANAGE, AUDIT_VIEW
+
+---
+## Task ID: 1 - Job Card State Machine Enhancement
+### Work Task
+Create a comprehensive state machine implementation for Job Cards with state transitions, guard conditions, SLA tracking, and state transition logging.
+
+### Work Summary
+Created 1 new file: `/src/lib/job-card-state-machine.ts`
+
+**TypeScript Types Defined:**
+- `JobCardStatus`: 9 states (DRAFT, PENDING, APPROVED, IN_PROGRESS, ON_HOLD, COMPLETED, CLOSED, CANCELLED, REJECTED)
+- `JobCardPriority`: 5 levels (EMERGENCY, CRITICAL, HIGH, NORMAL, LOW)
+- `TransitionType`: 11 transition types (SUBMIT, APPROVE, REJECT, RETURN, START, HOLD, RESUME, COMPLETE, REOPEN, CLOSE, CANCEL)
+- `SlaStatus`: ON_TRACK, AT_RISK, BREACHED
+- `EscalationLevel`: NONE, SUPERVISOR, MANAGER, DIRECTOR
+
+**Guard Check Functions (10 functions):**
+1. `canSubmit(jobCard, userId)` - Checks: asset QR scanned, job type selected, fault description ≥ 20 chars, at least 1 task defined
+2. `canApprove(jobCard, userId, userPrivileges)` - Checks: JC_APPROVE privilege, approver ≠ originator, estimated cost within authority
+3. `canReject(jobCard, userId, userPrivileges, reason)` - Checks: JC_APPROVE privilege, rejection reason ≥ 10 chars
+4. `canReturn(jobCard, userId, reason)` - Checks: return reason mandatory
+5. `canStartWork(jobCard, userId)` - Checks: assigned technician exists, meter reading optional
+6. `canHold(jobCard, userId, userPrivileges, reason)` - Checks: JC_HOLD privilege, hold reason mandatory
+7. `canResume(jobCard, userId, userPrivileges)` - Checks: JC_HOLD privilege
+8. `canComplete(jobCard, userId)` - Checks: ALL tasks complete, ALL mandatory photos uploaded, NO open MRs, NO unreturned tools
+9. `canReopen(jobCard, userId, userPrivileges, reason)` - Checks: JC_REOPEN privilege, within 72-hour window, reopen reason mandatory
+10. `canClose(jobCard, userId, userPrivileges)` - Checks: JC_CLOSE privilege, supervisor sign-off, final meter reading, cost review
+
+**Transition Function:**
+- `transitionJobCard(jobCardId, transition, userId, options)` - Executes state transitions with:
+  - Validation against valid state transitions
+  - Guard condition checks
+  - Transaction-wrapped database updates
+  - Automatic state transition logging to `JcStateTransition` table
+  - Side effects (MR cancellation on CANCEL, timestamp updates, etc.)
+
+**SLA Functions:**
+- `calculateSlaTargets(jobCard)` - Returns SLA targets based on priority:
+  | Priority | First Response | Completion | Auto-Escalation |
+  |----------|----------------|------------|-----------------|
+  | EMERGENCY | 30 min | 4 hrs | 1hr→Manager, 2hr→Director |
+  | CRITICAL | 2 hrs | 8 hrs | 4hr→Manager, 8hr→Director |
+  | HIGH | 4 hrs | 24 hrs | 8hr→Manager |
+  | NORMAL | 8 hrs | 5 days | 3 days→Supervisor |
+  | LOW | 3 days | 10 days | 7 days→Supervisor |
+
+- `checkSlaStatus(jobCard)` - Returns ON_TRACK, AT_RISK (25% time remaining), or BREACHED
+- `getEscalationLevel(jobCard)` - Returns current escalation level based on elapsed time
+- `getSlaTimeRemaining(jobCard)` - Returns minutes remaining for first response and completion
+
+**Utility Functions:**
+- `getValidTransitions(status)` - Get allowed transitions for a status
+- `getTransitionTarget(transition)` - Get target state for a transition
+- `isValidTransition(fromStatus, toStatus)` - Validate direct state transition
+- `getStateTransitionHistory(jobCardId)` - Get all transitions for a job card
+- `getPreviousState(jobCardId)` - Get the previous status
+- `hasBeenReopened(jobCardId)` - Check if job card was reopened
+- `getReopenCount(jobCardId)` - Count reopen occurrences
+
+**Constants Defined:**
+- `SLA_TARGETS`: Configuration for all 5 priority levels
+- `VALID_TRANSITIONS`: State transition map (which transitions allowed from each state)
+- `TRANSITION_TARGET_STATES`: Maps transition types to target states
+- `REOPEN_WINDOW_HOURS`: 72 hours
+
+**Technical Implementation:**
+- All functions are async and return proper TypeScript types
+- Uses Prisma client from `@/lib/db`
+- Integrates with privilege checking from `@/lib/privileges`
+- Comprehensive JSDoc comments for all exported functions
+- Handles all edge cases with detailed error messages
+- Transaction support for atomic operations
+- All code passes ESLint validation
+
+---
+## Task ID: 2 - Job Card API Routes with State Machine Integration
+### Work Task
+Create/update API routes that use the job card state machine for transitions, guard checks, SLA tracking, and approvals.
+
+### Work Summary
+Created 5 new API route files and updated 1 existing file:
+
+1. **`/api/job-cards/[id]/transition/route.ts`** - State Transition Endpoint
+   - **POST**: Transition job card to new state using state machine
+     - Validates transition type (SUBMIT, APPROVE, REJECT, RETURN, START, HOLD, RESUME, COMPLETE, REOPEN, CLOSE, CANCEL)
+     - Executes guard conditions from state machine
+     - Creates state transition log for audit
+     - Triggers appropriate webhooks
+     - Supports legacy format for backward compatibility (action/toStatus)
+   - **GET**: Get transition history for a job card
+     - Returns all transitions with actor details
+     - Returns available transitions from current state
+
+2. **`/api/job-cards/[id]/guards/route.ts`** - Guard Conditions Endpoint
+   - **GET**: Check what transitions are available for current job card
+     - Requires `userId` query parameter
+     - Runs all guard check functions from state machine
+     - Returns:
+       - `can`: Quick lookup object (canSubmit, canApprove, etc.)
+       - `validTransitions`: Array with details for each allowed transition
+       - `context`: Additional context (hasAsset, hasTechnician, taskCounts, etc.)
+     - Checks user privileges for approval/hold/cancel operations
+     - Returns missing requirements for blocked transitions
+
+3. **`/api/job-cards/[id]/sla/route.ts`** - SLA Information Endpoint
+   - **GET**: Get SLA status for a job card
+     - Returns SLA targets based on priority (EMERGENCY, CRITICAL, HIGH, NORMAL, LOW)
+     - Current status: ON_TRACK, AT_RISK, BREACHED
+     - Escalation level: NONE, SUPERVISOR, MANAGER, DIRECTOR
+     - Time remaining for first response and completion
+     - Elapsed time since creation
+     - Milestones (created, firstResponse, completed)
+     - Percentage calculations for progress tracking
+     - All SLA targets reference for comparison
+
+4. **`/api/job-cards/approvals/route.ts`** - Approval Queue Endpoint
+   - **GET**: List job cards pending approval for current user
+     - Requires `userId` query parameter
+     - Filters by user's approval authority (max amount)
+     - Excludes job cards created by the user (cannot approve own)
+     - Query params: priority, department, slaStatus
+     - Returns:
+       - Job cards with SLA status and escalation level
+       - Summary statistics (by priority, by SLA status, escalated count)
+       - Average wait time in queue
+     - Pagination support
+
+5. **`/api/job-cards/[id]/approvals/route.ts`** - Specific Job Card Approvals
+   - **GET**: Get approval history for a job card
+     - All approval records with approver details
+     - Timeline combining submissions, approvals, and transitions
+     - List of eligible approvers
+     - Statistics (total, approved, rejected, pending counts)
+   - **POST**: Submit approval/rejection decision
+     - Decision types: APPROVE, REJECT, RETURN
+     - Validates using state machine guard checks:
+       - APPROVE: JC_APPROVE privilege, not originator, within authority
+       - REJECT: JC_APPROVE privilege, reason required (min 10 chars)
+       - RETURN: Job card in PENDING status, reason required
+     - Creates approval record and state transition
+     - Triggers webhook notifications
+
+6. **Updated `/api/job-cards/route.ts`** - Main Job Cards Endpoint
+   - Added import for state machine types
+   - Uses state machine types for status values
+   - Ensures initial state is 'DRAFT' as per state machine
+   - Creates initial state transition record on creation
+
+### Integration with State Machine
+All routes use functions from `@/lib/job-card-state-machine`:
+- `transitionJobCard()` - Execute state transitions
+- `canSubmit()`, `canApprove()`, etc. - Guard check functions
+- `checkSlaStatus()`, `getEscalationLevel()`, `getSlaTimeRemaining()` - SLA functions
+- `VALID_TRANSITIONS`, `TRANSITION_TARGET_STATES` - Constants
+
+### Error Handling
+- Proper HTTP status codes (400, 403, 404, 500)
+- Detailed error messages from state machine
+- Validation errors with Zod schemas
+- Graceful handling of privilege check failures
+
+### Webhook Integration
+Triggers webhooks for state changes:
+- JOB_CARD_SUBMITTED, JOB_CARD_APPROVED, JOB_CARD_REJECTED
+- JOB_CARD_STARTED, JOB_CARD_COMPLETED, JOB_CARD_CLOSED
+- JOB_CARD_HOLD, JOB_CARD_CANCELLED, JOB_CARD_RETURNED
+
+### Technical Details
+- All routes use Zod for request validation
+- Comprehensive JSDoc comments
+- TypeScript strict typing
+- Transaction support for atomic operations
+- All code passes ESLint validation
+- Dev server running successfully
+
+---
+## Task ID: 4 - Approval Workflow UI
+### Work Task
+Implement the Approval Workflow UI for the Workshop Control Platform, including SLA status indicators, approval action buttons, countdown timers, and transition dialogs.
+
+### Work Summary
+Completely rewrote `/src/components/wcp/job-cards-view.tsx` with comprehensive approval workflow features:
+
+1. **SLA Dashboard Statistics**
+   - Top summary cards showing: On Track, At Risk, Breached, Escalated counts
+   - SLA Compliance percentage display
+   - Real-time updates via polling every minute
+
+2. **SLA Status Indicators**
+   - Color-coded status badges:
+     - ON_TRACK = Green (bg-emerald-100 text-emerald-700)
+     - AT_RISK = Amber (bg-amber-100 text-amber-700)
+     - BREACHED = Red (bg-red-100 text-red-700)
+   - Escalation level indicators with icons
+   - Priority badges with SLA response time targets
+
+3. **SLA Countdown Timer Component**
+   - `SlaCountdownTimer` - Shows remaining time with format (Xd Xh Xm)
+   - Overdue indicator with pulsing animation for breached SLAs
+   - Displays both first response and completion timers
+
+4. **SLA Progress Bar Component**
+   - Visual progress indicator showing SLA timeline consumption
+   - Color-coded based on status (green/amber/red)
+
+5. **Escalation Badge Component**
+   - Displays escalation level (SUPERVISOR, MANAGER, DIRECTOR)
+   - Color-coded urgency (amber, orange, red)
+
+6. **Enhanced Job Cards Table**
+   - New SLA Status column with progress bar
+   - SLA Timer column showing response and completion countdowns
+   - Row styling based on SLA status (background colors)
+   - Quick action dropdown with context-aware options
+
+7. **Approval Action Buttons**
+   - Approve button (emerald, with authority check)
+   - Reject button (red, requires reason dialog)
+   - Return to Draft button (amber, requires reason)
+   - All actions check guard conditions before execution
+
+8. **Transition Dialogs**
+   - Context-aware dialog titles and icons
+   - Guard condition validation warnings
+   - Reason field for REJECT, RETURN, HOLD, CANCEL actions
+   - Notes field for all transitions
+   - Missing requirements display
+
+9. **Job Card Detail Dialog with Tabs**
+   - **Details Tab**: Status, priority, fault description, costs, technicians, dates
+   - **SLA Tab**: 
+     - SLA status overview cards
+     - Progress bars for first response and completion
+     - SLA milestones (first response, completion with within-SLA indicators)
+     - SLA targets reference table
+   - **Actions Tab**:
+     - Available action buttons grid
+     - Requirements check panel (asset, technician, MRs, tasks)
+     - Context information cards
+
+10. **Extended JobCard Interface**
+    - Added SLA fields: status, escalationLevel, firstResponseMinutes, completionMinutes, firstResponseRemaining, completionRemaining
+
+### SLA Targets Configuration
+| Priority | First Response | Completion |
+|----------|---------------|------------|
+| EMERGENCY | 30 minutes | 4 hours |
+| CRITICAL | 2 hours | 8 hours |
+| HIGH | 4 hours | 24 hours |
+| NORMAL | 8 hours | 48 hours |
+| LOW | 24 hours | 4 days |
+
+### New Components Created
+- `SlaCountdownTimer` - Displays formatted countdown with status colors
+- `SlaProgressBar` - Visual SLA timeline progress
+- `EscalationBadge` - Escalation level indicator
+- `JobCardDetailDialog` - Enhanced detail dialog with tabs and actions
+
+### Technical Details
+- Uses existing API endpoints:
+  - `/api/sla/dashboard` for SLA statistics
+  - `/api/job-cards/[id]/sla` for individual job card SLA info
+  - `/api/job-cards/[id]/guards` for guard condition checks
+  - `/api/job-cards/[id]/transition` for state transitions
+  - `/api/job-cards/[id]/approvals` for approval operations
+- Real-time polling every 60 seconds for SLA updates
+- All code passes ESLint validation
+- Dev server running successfully

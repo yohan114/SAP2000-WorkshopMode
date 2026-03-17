@@ -8,6 +8,7 @@ import {
   generateDocumentNumber 
 } from '@/lib/api-utils';
 import { triggerWebhook } from '@/lib/webhook-service';
+import { JobCardStatus, JobCardPriority } from '@/lib/job-card-state-machine';
 import { z } from 'zod';
 
 /**
@@ -129,16 +130,18 @@ import { z } from 'zod';
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 
-// Job Card status enum matching schema
-const JobCardStatus = {
-  DRAFT: 'DRAFT',
-  APPROVED: 'APPROVED',
-  IN_PROGRESS: 'IN_PROGRESS',
-  ON_HOLD: 'ON_HOLD',
-  COMPLETED: 'COMPLETED',
-  CLOSED: 'CLOSED',
-  CANCELLED: 'CANCELLED',
-} as const;
+// Job Card status values from state machine
+const JOB_CARD_STATUSES = [
+  'DRAFT',
+  'PENDING',
+  'APPROVED',
+  'IN_PROGRESS',
+  'ON_HOLD',
+  'COMPLETED',
+  'CLOSED',
+  'CANCELLED',
+  'REJECTED',
+] as const;
 
 const JobType = {
   PREVENTIVE: 'PREVENTIVE',
@@ -148,19 +151,19 @@ const JobType = {
   MODIFICATION: 'MODIFICATION',
 } as const;
 
-const Priority = {
-  LOW: 'LOW',
-  NORMAL: 'NORMAL',
-  HIGH: 'HIGH',
-  CRITICAL: 'CRITICAL',
-  EMERGENCY: 'EMERGENCY',
-} as const;
+const PRIORITY_LEVELS = [
+  'LOW',
+  'NORMAL',
+  'HIGH',
+  'CRITICAL',
+  'EMERGENCY',
+] as const;
 
 // Schema for creating job card
 const createJobCardSchema = z.object({
   assetId: z.string().min(1),
   jobType: z.enum(Object.keys(JobType) as [string, ...string[]]),
-  priority: z.enum(Object.keys(Priority) as [string, ...string[]]).default('NORMAL'),
+  priority: z.enum(PRIORITY_LEVELS).default('NORMAL'),
   faultDescription: z.string().min(1),
   diagnosisNotes: z.string().optional(),
   estimatedCost: z.number().optional(),
@@ -339,7 +342,7 @@ export async function POST(request: Request) {
         ecoNumber: data.ecoNumber,
         accidentReportRef: data.accidentReportRef,
         warrantyClaimRef: data.warrantyClaimRef,
-        status: JobCardStatus.DRAFT,
+        status: 'DRAFT' as JobCardStatus,
         actualCost: 0,
       },
       include: {
@@ -352,7 +355,7 @@ export async function POST(request: Request) {
       data: {
         jobCardId: jobCard.id,
         fromState: 'NEW',
-        toState: JobCardStatus.DRAFT,
+        toState: 'DRAFT',
         transitionType: 'CREATE',
         actorId: body.createdBy || 'system',
         reason: 'Job card created',
