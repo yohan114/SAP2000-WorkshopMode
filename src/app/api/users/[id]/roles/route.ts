@@ -8,7 +8,7 @@ import {
   apiValidationError,
   handleApiError,
 } from '@/lib/api-utils';
-import { auditLog, AuditAction } from '@/lib/audit';
+import { auditLog } from '@/lib/audit';
 
 // Validation schemas
 const updateRolesSchema = z.object({
@@ -192,11 +192,11 @@ export async function POST(
         });
 
         await auditLog({
-          action: AuditAction.ASSIGN,
-          entityType: 'UserRole',
+          action: 'ASSIGN',
+          entityType: 'USER',
           entityId: updated.id,
-          newData: { roleId: validatedData.roleId, roleName: role.name },
-          oldData: existingAssignment,
+          newValue: { roleId: validatedData.roleId, roleName: role.name },
+          oldValue: existingAssignment,
         });
 
         return apiSuccess(updated, 'Role re-activated successfully');
@@ -227,10 +227,10 @@ export async function POST(
     });
 
     await auditLog({
-      action: AuditAction.ASSIGN,
-      entityType: 'UserRole',
+      action: 'ASSIGN',
+      entityType: 'USER',
       entityId: userRole.id,
-      newData: { roleId: validatedData.roleId, roleName: role.name },
+      newValue: { roleId: validatedData.roleId, roleName: role.name },
     });
 
     return apiSuccess(userRole, 'Role assigned successfully');
@@ -316,11 +316,11 @@ export async function PUT(
     });
 
     await auditLog({
-      action: AuditAction.UPDATE,
-      entityType: 'UserRoles',
+      action: 'UPDATE',
+      entityType: 'USER',
       entityId: id,
-      newData: { roleIds, roles: roles.map(r => r.name) },
-      oldData: { roleIds: existingRoles.map(ur => ur.roleId) },
+      newValue: { roleIds, roles: roles.map(r => r.name) },
+      oldValue: { roleIds: existingRoles.map(ur => ur.roleId) },
     });
 
     return apiSuccess(updatedUser, 'User roles updated successfully');
@@ -381,11 +381,11 @@ export async function DELETE(
     });
 
     await auditLog({
-      action: AuditAction.DELETE,
-      entityType: 'UserRole',
+      action: 'DELETE',
+      entityType: 'USER',
       entityId: userRole.id,
-      newData: { removed: true },
-      oldData: { roleId, roleName: userRole.role.name },
+      newValue: { removed: true },
+      oldValue: { roleId, roleName: userRole.role.name },
     });
 
     return apiSuccess({ removed: true }, 'Role removed successfully');

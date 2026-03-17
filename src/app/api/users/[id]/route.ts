@@ -9,7 +9,7 @@ import {
   apiValidationError,
   handleApiError,
 } from '@/lib/api-utils';
-import { auditLog, AuditAction } from '@/lib/audit';
+import { auditLog } from '@/lib/audit';
 
 // Validation schema for user update
 const updateUserSchema = z.object({
@@ -198,11 +198,11 @@ export async function PUT(
 
     // Audit log
     await auditLog({
-      action: AuditAction.UPDATE,
-      entityType: 'User',
+      action: 'UPDATE',
+      entityType: 'USER',
       entityId: id,
-      newData: validatedData,
-      oldData: existingUser,
+      newValue: validatedData,
+      oldValue: existingUser,
     });
 
     return apiSuccess(updatedUser, 'User updated successfully');
@@ -261,11 +261,11 @@ export async function DELETE(
 
     // Audit log
     await auditLog({
-      action: AuditAction.DELETE,
-      entityType: 'User',
+      action: 'DELETE',
+      entityType: 'USER',
       entityId: id,
-      newData: { isActive: false, deletedAt: deletedUser.deletedAt },
-      oldData: existingUser,
+      newValue: { isActive: false, deletedAt: deletedUser.deletedAt },
+      oldValue: existingUser,
     });
 
     return apiSuccess(deletedUser, 'User deactivated successfully');

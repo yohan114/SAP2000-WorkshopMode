@@ -11,7 +11,7 @@ import {
   getSkip,
   handleApiError,
 } from '@/lib/api-utils';
-import { auditLog, AuditAction } from '@/lib/audit';
+import { auditLog } from '@/lib/audit';
 
 // Password strength regex
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
@@ -280,10 +280,10 @@ export async function POST(request: NextRequest) {
     });
 
     await auditLog({
-      action: AuditAction.CREATE,
-      entityType: 'User',
+      action: 'CREATE',
+      entityType: 'USER',
       entityId: user.id,
-      newData: {
+      newValue: {
         email: user.email,
         name: user.name,
         department: user.department,

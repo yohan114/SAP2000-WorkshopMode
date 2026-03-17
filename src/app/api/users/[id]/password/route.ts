@@ -9,7 +9,7 @@ import {
   apiValidationError,
   handleApiError,
 } from '@/lib/api-utils';
-import { auditLog, AuditAction } from '@/lib/audit';
+import { auditLog } from '@/lib/audit';
 
 // Password strength regex
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
@@ -123,10 +123,10 @@ export async function PUT(
     // This would require session management implementation
 
     await auditLog({
-      action: AuditAction.UPDATE,
-      entityType: 'UserPassword',
+      action: 'UPDATE',
+      entityType: 'USER',
       entityId: id,
-      newData: { passwordChanged: true },
+      newValue: { passwordChanged: true },
     });
 
     return apiSuccess({ success: true }, 'Password changed successfully');
@@ -226,10 +226,10 @@ export async function POST(
     });
 
     await auditLog({
-      action: AuditAction.UPDATE,
-      entityType: 'UserPassword',
+      action: 'UPDATE',
+      entityType: 'USER',
       entityId: id,
-      newData: {
+      newValue: {
         resetBy: validatedData.adminId,
         reason: validatedData.reason,
         temporaryPasswordGenerated: true,

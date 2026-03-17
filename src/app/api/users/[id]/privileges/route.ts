@@ -8,7 +8,7 @@ import {
   apiValidationError,
   handleApiError,
 } from '@/lib/api-utils';
-import { auditLog, AuditAction } from '@/lib/audit';
+import { auditLog } from '@/lib/audit';
 
 // Validation schemas
 const addPrivilegeOverrideSchema = z.object({
@@ -264,15 +264,15 @@ export async function POST(
       });
 
       await auditLog({
-        action: AuditAction.UPDATE,
-        entityType: 'UserPrivilegeOverride',
+        action: 'UPDATE',
+        entityType: 'USER',
         entityId: updated.id,
-        newData: {
+        newValue: {
           privilegeCode: privilege.code,
           isGranted: validatedData.isGranted,
           reason: validatedData.reason,
         },
-        oldData: existingOverride,
+        oldValue: existingOverride,
       });
 
       return apiSuccess(updated, 'Privilege override updated successfully');
@@ -294,10 +294,10 @@ export async function POST(
     });
 
     await auditLog({
-      action: AuditAction.CREATE,
-      entityType: 'UserPrivilegeOverride',
+      action: 'CREATE',
+      entityType: 'USER',
       entityId: override.id,
-      newData: {
+      newValue: {
         privilegeCode: privilege.code,
         privilegeName: privilege.name,
         isGranted: validatedData.isGranted,
@@ -363,11 +363,11 @@ export async function DELETE(
     });
 
     await auditLog({
-      action: AuditAction.DELETE,
-      entityType: 'UserPrivilegeOverride',
+      action: 'DELETE',
+      entityType: 'USER',
       entityId: override.id,
-      newData: { removed: true },
-      oldData: {
+      newValue: { removed: true },
+      oldValue: {
         privilegeCode: override.privilege.code,
         isGranted: override.isGranted,
       },
