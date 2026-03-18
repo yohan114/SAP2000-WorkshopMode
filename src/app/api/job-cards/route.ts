@@ -7,7 +7,7 @@ import {
   getSkip,
   generateDocumentNumber 
 } from '@/lib/api-utils';
-import { triggerWebhook } from '@/lib/webhook-service';
+import { triggerWebhooks } from '@/lib/webhook-service';
 import { JobCardStatus, JobCardPriority } from '@/lib/job-card-state-machine';
 import { z } from 'zod';
 
@@ -363,7 +363,7 @@ export async function POST(request: Request) {
     });
 
     // Trigger webhook for job card creation
-    await triggerWebhook('JOB_CARD_CREATED', {
+    await triggerWebhooks('JOB_CARD_CREATED', {
       id: jobCard.id,
       jobCardNumber: jobCard.jobCardNumber,
       assetId: jobCard.assetId,

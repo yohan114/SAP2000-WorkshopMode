@@ -160,3 +160,65 @@ export async function PUT(
     return apiError('Failed to update job card', 500);
   }
 }
+
+// DELETE /api/job-cards/[id] - Soft delete job card
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+
+    // Check if job card exists
+    const existing = await db.jobCard.findUnique({
+      where: { id },
+      include: {
+        _count: {
+          select: {
+            tasks: true,
+            materialRequests: true,
+            materialIssues: true,
+            timeLogs: true,
+          },
+        },
+      },
+    });
+
+    if (!existing || !existing.isActive) {
+      return apiNotFound('Job card');
+    }
+
+    // Only allow deletion if in DRAFT status
+    if (existing.status !== 'DRAFT') {
+      return apiError('Cannot delete job card that is not in DRAFT status', 400);
+    }
+
+    // Check for related records
+    const hasRelatedRecords = 
+      existing._count.tasks > 0 ||
+      existing._count.materialRequests > 0 ||
+      existing._count.materialIssues > 0 ||
+      existing._count.timeLogs > 0;
+
+    if (hasRelatedRecords) {
+      return apiError(
+        'Cannot delete job card with related records. Remove tasks, material requests, issues, and time logs first.',
+        400
+      );
+    }
+
+    // Soft delete by setting isActive to false
+    await db.jobCard.update({
+      where: { id },
+      data: {
+        isActive: false,
+        deletedAt: new Date(),
+      },
+    });
+
+    return apiSuccess({ id }, 'Job card deleted successfully');
+  } catch (error) {
+    console.error('Delete job card error:', error);
+    return apiError('Failed to delete job card', 500);
+  }
+}

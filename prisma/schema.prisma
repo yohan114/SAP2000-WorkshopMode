@@ -56,6 +56,7 @@ model User {
   defectAssignees     QualityDefect[]     @relation("DefectAssignee")
   correctiveActions   CorrectiveAction[]  @relation("CorrectiveActionAssignee")
   correctiveVerifiers CorrectiveAction[]  @relation("CorrectiveActionVerifier")
+  documents           Document[]
 
   @@index([email])
   @@index([employeeId])
@@ -397,6 +398,7 @@ model JcTask {
 model JcTaskPhoto {
   id            String   @id @default(cuid())
   taskId        String
+  categoryId    String?
   filePath      String
   fileName      String
   fileSize      Int?
@@ -407,9 +409,31 @@ model JcTaskPhoto {
   uploadedBy    String?
   createdAt     DateTime @default(now())
 
-  task          JcTask   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  task          JcTask            @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  category      JcPhotoCategory?  @relation(fields: [categoryId], references: [id])
 
   @@index([taskId])
+  @@index([categoryId])
+}
+
+model JcPhotoCategory {
+  id            String   @id @default(cuid())
+  code          String   @unique
+  name          String
+  description   String?
+  sequence      Int      @default(1)
+  minPhotos     Int      @default(0)
+  maxPhotos     Int      @default(10)
+  isRequired    Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  photos        JcTaskPhoto[]
+
+  @@index([code])
+  @@index([sequence])
+  @@index([isActive])
 }
 
 model JcStateTransition {
@@ -2480,5 +2504,34 @@ model WebhookDelivery {
   @@index([webhookId])
   @@index([status])
   @@index([event])
+  @@index([createdAt])
+}
+
+// ============================================
+// 22. DOCUMENTS DOMAIN
+// ============================================
+
+model Document {
+  id            String    @id @default(cuid())
+  name          String
+  fileName      String
+  filePath      String
+  fileSize      Int       @default(0)
+  mimeType      String?
+  category       String    @default("OTHER") // POLICY, PROCEDURE, MANUAL, CERTIFICATE, CONTRACT, REPORT, OTHER
+  entityType    String?   // Optional: JOB_CARD, ASSET, PURCHASE_ORDER, etc.
+  entityId      String?   // Optional: ID of the related entity
+  description   String?
+  tags          String?   // JSON array of tags
+  uploadedBy    String?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  uploader      User?     @relation(fields: [uploadedBy], references: [id])
+
+  @@index([category])
+  @@index([entityType])
+  @@index([entityId])
   @@index([createdAt])
 }

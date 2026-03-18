@@ -1,6 +1,7 @@
 'use client';
 
 // Workshop Control Platform - Main Application
+// Cache bust: 20240116-001
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth/hooks';
 import { Badge } from '@/components/ui/badge';
