@@ -11,7 +11,7 @@
 
 import { db } from '@/lib/db';
 import { apiSuccess, apiError, apiNotFound, apiForbidden } from '@/lib/api-utils';
-import { triggerWebhook } from '@/lib/webhook-service';
+import { triggerWebhooks } from '@/lib/webhook-service';
 import {
   transitionJobCard,
   TransitionType,
@@ -218,7 +218,7 @@ export async function POST(
     if (updatedJobCard && transitionResult.newState) {
       const event = webhookEvents[transitionResult.newState];
       if (event) {
-        await triggerWebhook(event as 'JOB_CARD_CREATED', {
+        await triggerWebhooks(event as 'JOB_CARD_CREATED', {
           id: updatedJobCard.id,
           jobCardNumber: updatedJobCard.jobCardNumber,
           status: updatedJobCard.status,

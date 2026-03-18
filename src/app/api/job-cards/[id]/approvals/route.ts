@@ -7,7 +7,7 @@
 
 import { db } from '@/lib/db';
 import { apiSuccess, apiError, apiNotFound, apiForbidden } from '@/lib/api-utils';
-import { triggerWebhook } from '@/lib/webhook-service';
+import { triggerWebhooks } from '@/lib/webhook-service';
 import {
   transitionJobCard,
   canApprove,
@@ -347,7 +347,7 @@ export async function POST(
       'RETURN': 'JOB_CARD_RETURNED',
     };
 
-    await triggerWebhook(eventMap[decision] || 'JOB_CARD_APPROVED', {
+    await triggerWebhooks(eventMap[decision] || 'JOB_CARD_APPROVED', {
       id: jobCard.id,
       jobCardNumber: jobCard.jobCardNumber,
       decision,

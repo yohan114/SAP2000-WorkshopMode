@@ -1,6 +1,6 @@
 import { db } from '@/lib/db';
 import { apiSuccess, apiError } from '@/lib/api-utils';
-import { triggerWebhook } from '@/lib/webhook-service';
+import { triggerWebhooks } from '@/lib/webhook-service';
 import { z } from 'zod';
 
 const approveSchema = z.object({
