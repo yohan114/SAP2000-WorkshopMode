@@ -1993,3 +1993,159 @@ Completely rewrote `/src/components/wcp/job-cards-view.tsx` with comprehensive a
 - Real-time polling every 60 seconds for SLA updates
 - All code passes ESLint validation
 - Dev server running successfully
+
+---
+## Task ID: 1 - UI/UX Improvements for JobCardPhotos
+### Work Task
+Enhance the JobCardPhotos component with loading skeletons, animations/transitions, mobile responsiveness improvements, and accessibility enhancements.
+
+### Work Summary
+Completely rewrote the `job-card-photos.tsx` component with the following enhancements:
+
+**1. Loading Skeletons**
+- Created `CategoryTabsSkeleton` component - Shows animated skeleton placeholders for category tabs
+- Created `PhotoGridSkeleton` component - Shows animated skeleton placeholders for photo grid (10 items)
+- Created `HeaderSkeleton` component - Shows skeleton for header section with stats and search
+- Replaced basic loading spinner with comprehensive skeleton UI
+- Skeletons use staggered animation delays for visual appeal
+
+**2. Animations/Transitions**
+- Added `animate-in fade-in` for main container fade-in effect
+- Added `slide-in-from-bottom-4` for dialog animations
+- Added `slide-in-from-top-2` for bulk operations bar and search results
+- Added `zoom-in-95` for photo card animations
+- Added `slide-in-from-left-2` for compression/watermark options panels
+- Added `transition-transform duration-200` for photo hover scale effects
+- Added `transition-all duration-200` for category tab selection
+- Added `transition-opacity duration-200` for overlay effects
+- Added staggered animation delays for photo grids (`${index * 30}ms`)
+
+**3. Mobile Responsiveness**
+- Photo grid: `grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5`
+- Upload dialog: `max-h-[90vh] overflow-y-auto` for scrollable on mobile
+- Preview grid: `grid-cols-4` with ScrollArea for mobile
+- Bulk operations bar: `flex-col sm:flex-row` for vertical stacking on mobile
+- Header actions: Truncated text with `hidden sm:inline` for labels
+- Download/Select buttons: `hidden sm:inline` for text, short text on mobile
+- All touch targets: `min-h-[44px]` for 44px minimum touch target
+- Search input: `w-48` for proper width on small screens
+- Category tabs: `flex-wrap` to wrap on small screens
+
+**4. Accessibility Improvements**
+- Added `aria-label` to all interactive elements (buttons, inputs, links)
+- Added `aria-hidden="true"` to decorative icons
+- Added `aria-busy` for loading states (upload, download, processing)
+- Added `aria-pressed` for toggle buttons (bulk mode)
+- Added `aria-live="polite"` for dynamic content (progress updates)
+- Added `role="status"` for loading states and progress
+- Added `role="list"` and `role="listitem"` for photo grids
+- Added `role="tablist"` and `role="tab"` for category tabs
+- Added `role="tabpanel"` for tab content
+- Added `role="button"` and `tabIndex={0}` for clickable divs
+- Added keyboard navigation for photo viewer (Arrow keys, Escape)
+- Added `onKeyDown` handlers for Enter/Space activation
+- Added alt text to all images (file name as fallback)
+- Added focus management for photo viewer dialog
+- Added screen reader announcements for upload progress (`announceProgress` function)
+- Added `id` and `htmlFor` associations for form labels
+- Added `aria-describedby` for form fields
+- Added `sr-only` class for screen reader only content
+
+### New Components Added
+- `CategoryTabsSkeleton` - Skeleton for category tabs during loading
+- `PhotoGridSkeleton` - Skeleton for photo grid during loading
+- `HeaderSkeleton` - Skeleton for header section during loading
+
+### Technical Details
+- Uses Tailwind CSS `animate-in`, `fade-in`, `zoom-in-95`, `slide-in-from-*` classes
+- Staggered animations via inline `style={{ animationDelay: ... }}`
+- Screen reader announcements via dynamically created `div[role="status"]`
+- Focus management via `useRef` and `.focus()` call in `useEffect`
+- All code passes ESLint validation
+- Dev server running successfully
+
+---
+## Task ID: 2 - Backend Enhancements for Photo System
+### Work Task
+Implement backend enhancements for the photo management system including API rate limiting, file cleanup for deleted photos, audit logging for photo operations, and image backup system.
+
+### Work Summary
+
+**1. API Rate Limiting (`/src/lib/rate-limit.ts`)**
+- Created in-memory rate limiting utility using sliding window algorithm
+- Predefined rate limit configurations:
+  - PHOTO_UPLOAD: 20 requests per minute
+  - PHOTO_DOWNLOAD: 50 requests per minute
+  - GENERAL_API: 100 requests per minute
+  - AUTH: 10 requests per minute
+  - EXPORT: 10 requests per minute
+  - BULK: 5 requests per minute
+- Applied rate limiting to photo upload API endpoint
+- Returns standard rate limit headers (X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, Retry-After)
+
+**2. File Cleanup Utility (`/src/lib/file-cleanup.ts`)**
+- `deleteFile(filePath)` - Delete a single file from filesystem
+- `deletePhotoFile(photo)` - Delete photo file with security path validation
+- `cleanupEmptyDirectories()` - Remove empty job card photo directories
+- `findOrphanedFiles()` - Find files without database records
+- `cleanupOrphanedFiles(options)` - Clean up orphaned files (with maxAgeDays and dryRun options)
+- `cleanupOldBackups(maxAgeDays)` - Clean up old backup files
+- `getStorageStats()` - Get storage statistics
+
+**3. Audit Logging for Photo Operations**
+- Added `PhotoAuditLog` model to Prisma schema with fields:
+  - id, photoId, jobCardId, action, entityType, entityId
+  - userId, details (JSON), ipAddress, userAgent
+  - oldValue, newValue (JSON), createdAt
+- Added `PhotoBackup` model to Prisma schema
+- Created `/src/lib/audit-log.ts` with comprehensive logging functions:
+  - `logPhotoAudit()` - Core logging function
+  - `PhotoAuditHelpers` - Helper functions for:
+    - `logUpload()` - Photo upload events
+    - `logUpdate()` - Photo update events
+    - `logSoftDelete()` - Soft delete events
+    - `logPermanentDelete()` - Permanent delete events
+    - `logRestore()` - Restore from backup events
+    - `logBackup()` - Backup creation events
+    - `logBulkMove()` - Bulk move operations
+    - `logBulkDelete()` - Bulk delete operations
+    - `logCategoryChange()` - Category change events
+    - `logDescriptionUpdate()` - Description update events
+
+**4. Audit Logs API Endpoint (`/api/audit-logs/route.ts`)**
+- GET endpoint with filtering support:
+  - Filter by jobCardId, photoId, userId, action, entityType
+  - Date range filtering (fromDate, toDate)
+  - Pagination support (page, limit)
+- Parses JSON fields (details, oldValue, newValue) for client consumption
+
+**5. Image Backup System (`/src/lib/backup.ts`)**
+- `backupPhoto(photoId, options)` - Create backup for a single photo
+- `restorePhotoFromBackup(backupId, options)` - Restore photo from backup
+- `getPhotoBackupInfo(photoId)` - Get backup info for a photo
+- `getJobCardBackups(jobCardId)` - Get all backups for a job card
+- `deleteBackup(backupId)` - Delete a backup
+- `getBackupStats()` - Get backup statistics
+- `autoBackupJobCardPhotos(jobCardId, userId)` - Auto-backup before destructive operations
+
+**6. Backup and Restore API Endpoints**
+- POST `/api/job-cards/[id]/photos/[photoId]/backup` - Create backup
+- GET `/api/job-cards/[id]/photos/[photoId]/backup` - Get backup info
+- POST `/api/job-cards/[id]/photos/[photoId]/restore` - Restore from backup
+
+**7. Updated Photo Routes**
+- Updated `/api/job-cards/[id]/photos/route.ts`:
+  - Added rate limiting to POST (upload) endpoint
+  - Added audit logging for uploads and soft deletes
+- Updated `/api/job-cards/[id]/photos/[photoId]/route.ts`:
+  - Added file cleanup on permanent delete using `deletePhotoFile()`
+  - Added audit logging for updates, soft deletes, and permanent deletes
+
+### Technical Details
+- Uses sliding window algorithm for accurate rate limiting
+- File cleanup with security path validation to prevent directory traversal
+- Automatic cleanup of orphaned files and empty directories
+- Comprehensive audit trail for compliance and debugging
+- Backup system supports MANUAL, AUTO, and SCHEDULED backup types
+- All code passes ESLint validation
+- Dev server running successfully

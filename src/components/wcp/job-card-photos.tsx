@@ -16,6 +16,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
+import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Camera, Upload, X, Trash2, Download, ZoomIn, Image as ImageIcon, 
   Plus, AlertCircle, CheckCircle, Clock, Package, Send, Wrench,
@@ -203,6 +204,57 @@ async function addWatermark(file: File, watermarkText: string): Promise<File> {
   });
 }
 
+// Loading Skeleton Components
+function CategoryTabsSkeleton() {
+  return (
+    <div className="flex flex-wrap gap-2" role="status" aria-label="Loading categories">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <Skeleton 
+          key={i} 
+          className="h-10 w-32 rounded-lg"
+          style={{ animationDelay: `${i * 100}ms` }}
+        />
+      ))}
+      <span className="sr-only">Loading photo categories...</span>
+    </div>
+  );
+}
+
+function PhotoGridSkeleton() {
+  return (
+    <div 
+      className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"
+      role="status" 
+      aria-label="Loading photos"
+    >
+      {Array.from({ length: 10 }).map((_, i) => (
+        <Skeleton 
+          key={i} 
+          className="aspect-square rounded-lg animate-pulse"
+          style={{ animationDelay: `${i * 50}ms` }}
+        />
+      ))}
+      <span className="sr-only">Loading photos...</span>
+    </div>
+  );
+}
+
+function HeaderSkeleton() {
+  return (
+    <div className="flex items-center justify-between flex-wrap gap-4">
+      <div className="space-y-2">
+        <Skeleton className="h-6 w-40" />
+        <Skeleton className="h-4 w-56" />
+      </div>
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-10 w-40" />
+        <Skeleton className="h-10 w-32" />
+        <Skeleton className="h-10 w-36" />
+      </div>
+    </div>
+  );
+}
+
 export function JobCardPhotos({ 
   jobCardId, 
   jobCardNumber, 
@@ -212,6 +264,7 @@ export function JobCardPhotos({
   const { user } = useAuth();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const photoViewerRef = useRef<HTMLDivElement>(null);
   const [categories, setCategories] = useState<PhotoCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -345,6 +398,50 @@ export function JobCardPhotos({
     setFilteredPhotos(filtered);
   }, [searchQuery, categories]);
 
+  // Keyboard navigation for photo viewer
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!viewingPhoto) return;
+      
+      switch (e.key) {
+        case 'ArrowLeft':
+          e.preventDefault();
+          navigatePhoto('prev');
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          navigatePhoto('next');
+          break;
+        case 'Escape':
+          e.preventDefault();
+          setViewingPhoto(null);
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [viewingPhoto]);
+
+  // Focus management for photo viewer
+  useEffect(() => {
+    if (viewingPhoto && photoViewerRef.current) {
+      photoViewerRef.current.focus();
+    }
+  }, [viewingPhoto]);
+
+  // Screen reader announcements for upload progress
+  const announceProgress = useCallback((message: string) => {
+    const announcement = document.createElement('div');
+    announcement.setAttribute('role', 'status');
+    announcement.setAttribute('aria-live', 'polite');
+    announcement.setAttribute('aria-atomic', 'true');
+    announcement.className = 'sr-only';
+    announcement.textContent = message;
+    document.body.appendChild(announcement);
+    setTimeout(() => announcement.remove(), 1000);
+  }, []);
+
   // Handle file selection
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -409,10 +506,12 @@ export function JobCardPhotos({
       let processedFiles = [...selectedFiles];
       
       if (enableCompression) {
+        const message = `Compressing ${processedFiles.length} image(s)...`;
         toast({
           title: 'Processing images',
-          description: `Compressing ${processedFiles.length} image(s)...`,
+          description: message,
         });
+        announceProgress(message);
         
         processedFiles = await Promise.all(
           processedFiles.map(file => 
@@ -422,10 +521,12 @@ export function JobCardPhotos({
       }
       
       if (enableWatermark && watermarkText) {
+        const message = `Adding watermark to ${processedFiles.length} image(s)...`;
         toast({
           title: 'Adding watermarks',
-          description: `Adding watermark to ${processedFiles.length} image(s)...`,
+          description: message,
         });
+        announceProgress(message);
         
         processedFiles = await Promise.all(
           processedFiles.map(file => addWatermark(file, watermarkText))
@@ -434,6 +535,7 @@ export function JobCardPhotos({
       
       setProcessingImages(false);
       setUploadProgress(20);
+      announceProgress('Uploading photos, 20% complete');
       
       const formData = new FormData();
       formData.append('categoryCode', uploadCategory);
@@ -445,6 +547,7 @@ export function JobCardPhotos({
       });
       
       setUploadProgress(40);
+      announceProgress('Uploading photos, 40% complete');
       
       const response = await fetch(`/api/job-cards/${jobCardId}/photos`, {
         method: 'POST',
@@ -452,15 +555,18 @@ export function JobCardPhotos({
       });
       
       setUploadProgress(80);
+      announceProgress('Uploading photos, 80% complete');
       
       const data = await response.json();
       
       if (response.ok && data.success) {
         setUploadProgress(100);
+        const successMessage = `${data.data.uploaded || processedFiles.length} photo(s) uploaded successfully`;
         toast({
           title: 'Upload successful',
-          description: `${data.data.uploaded || processedFiles.length} photo(s) uploaded successfully`,
+          description: successMessage,
         });
+        announceProgress(successMessage);
         setShowUploadDialog(false);
         setSelectedFiles([]);
         setPreviewUrls([]);
@@ -473,6 +579,7 @@ export function JobCardPhotos({
           description: errorMsg,
           variant: 'destructive'
         });
+        announceProgress(`Upload failed: ${errorMsg}`);
       }
     } catch (error) {
       console.error('Upload error:', error);
@@ -481,6 +588,7 @@ export function JobCardPhotos({
         description: 'Please check your connection and try again.',
         variant: 'destructive'
       });
+      announceProgress('Upload failed. Please check your connection and try again.');
     } finally {
       setUploading(false);
       setProcessingImages(false);
@@ -897,16 +1005,27 @@ export function JobCardPhotos({
     return formatSize(originalSize);
   };
 
+  // Loading state with skeletons
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+      <div className="space-y-6 animate-in fade-in duration-300">
+        <HeaderSkeleton />
+        <CategoryTabsSkeleton />
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-4 w-64" />
+          </CardHeader>
+          <CardContent>
+            <PhotoGridSkeleton />
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-300">
       {/* Header with stats and search */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
@@ -918,12 +1037,13 @@ export function JobCardPhotos({
         <div className="flex items-center gap-2 flex-wrap">
           {/* Search input */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
             <Input
               placeholder="Search photos..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 w-48"
+              aria-label="Search photos by name, description, or tags"
             />
           </div>
           
@@ -934,14 +1054,17 @@ export function JobCardPhotos({
               size="sm"
               onClick={handleDownloadAllZip}
               disabled={downloadingZip}
-              className="gap-2"
+              className="gap-2 min-h-[44px]"
+              aria-label={downloadingZip ? "Downloading all photos" : "Download all photos as ZIP"}
+              aria-busy={downloadingZip}
             >
               {downloadingZip ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
               ) : (
-                <FileArchive className="h-4 w-4" />
+                <FileArchive className="h-4 w-4" aria-hidden="true" />
               )}
-              Download All
+              <span className="hidden sm:inline">Download All</span>
+              <span className="sm:hidden">Download</span>
             </Button>
           )}
           
@@ -956,17 +1079,19 @@ export function JobCardPhotos({
                     setSelectedPhotos(new Set());
                   }
                 }}
-                className="gap-2"
+                className="gap-2 min-h-[44px]"
+                aria-pressed={bulkMode}
+                aria-label={bulkMode ? "Exit selection mode" : "Enter selection mode for bulk operations"}
               >
                 {bulkMode ? (
                   <>
-                    <XCircle className="h-4 w-4" />
-                    Cancel
+                    <XCircle className="h-4 w-4" aria-hidden="true" />
+                    <span className="hidden sm:inline">Cancel</span>
                   </>
                 ) : (
                   <>
-                    <CheckSquare className="h-4 w-4" />
-                    Select
+                    <CheckSquare className="h-4 w-4" aria-hidden="true" />
+                    <span className="hidden sm:inline">Select</span>
                   </>
                 )}
               </Button>
@@ -978,12 +1103,13 @@ export function JobCardPhotos({
                 }
               }}>
                 <DialogTrigger asChild>
-                  <Button className="gap-2">
-                    <Upload className="h-4 w-4" />
-                    Upload Photos
+                  <Button className="gap-2 min-h-[44px]" aria-label="Upload new photos">
+                    <Upload className="h-4 w-4" aria-hidden="true" />
+                    <span className="hidden sm:inline">Upload Photos</span>
+                    <span className="sm:hidden">Upload</span>
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+                <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-4 duration-300">
                   <DialogHeader>
                     <DialogTitle>Upload Job Card Photos</DialogTitle>
                     <DialogDescription>
@@ -993,9 +1119,9 @@ export function JobCardPhotos({
                   <div className="space-y-4 py-4">
                     {/* Category Selection */}
                     <div className="space-y-2">
-                      <Label>Category {categories.length === 0 && <span className="text-amber-500 text-xs">(Loading categories...)</span>}</Label>
+                      <Label htmlFor="upload-category">Category {categories.length === 0 && <span className="text-amber-500 text-xs">(Loading categories...)</span>}</Label>
                       <Select value={uploadCategory} onValueChange={setUploadCategory}>
-                        <SelectTrigger>
+                        <SelectTrigger id="upload-category" aria-describedby="category-help">
                           <SelectValue placeholder={categories.length === 0 ? "Loading categories..." : "Select category"} />
                         </SelectTrigger>
                         <SelectContent>
@@ -1021,8 +1147,9 @@ export function JobCardPhotos({
                     
                     {/* Description */}
                     <div className="space-y-2">
-                      <Label>Description (optional)</Label>
+                      <Label htmlFor="upload-description">Description (optional)</Label>
                       <Textarea
+                        id="upload-description"
                         value={uploadDescription}
                         onChange={(e) => setUploadDescription(e.target.value)}
                         placeholder="Add a description for these photos..."
@@ -1034,7 +1161,7 @@ export function JobCardPhotos({
                     <Card className="bg-slate-50 dark:bg-slate-900">
                       <CardHeader className="py-3">
                         <CardTitle className="text-sm flex items-center gap-2">
-                          <Filter className="h-4 w-4" />
+                          <Filter className="h-4 w-4" aria-hidden="true" />
                           Image Processing Options
                         </CardTitle>
                       </CardHeader>
@@ -1042,8 +1169,8 @@ export function JobCardPhotos({
                         {/* Compression */}
                         <div className="flex items-center justify-between">
                           <div className="space-y-0.5">
-                            <Label className="flex items-center gap-2">
-                              <ImageIcon className="h-4 w-4" />
+                            <Label htmlFor="enable-compression" className="flex items-center gap-2">
+                              <ImageIcon className="h-4 w-4" aria-hidden="true" />
                               Compress Images
                             </Label>
                             <p className="text-xs text-muted-foreground">
@@ -1051,31 +1178,35 @@ export function JobCardPhotos({
                             </p>
                           </div>
                           <Switch
+                            id="enable-compression"
                             checked={enableCompression}
                             onCheckedChange={setEnableCompression}
+                            aria-describedby="compression-help"
                           />
                         </div>
                         
                         {enableCompression && (
-                          <div className="space-y-3 pl-4 border-l-2 border-slate-200">
+                          <div className="space-y-3 pl-4 border-l-2 border-slate-200 animate-in slide-in-from-left-2 duration-200">
                             <div className="space-y-2">
                               <div className="flex justify-between">
-                                <Label className="text-xs">Quality</Label>
-                                <span className="text-xs text-muted-foreground">{Math.round(compressionQuality * 100)}%</span>
+                                <Label htmlFor="compression-quality" className="text-xs">Quality</Label>
+                                <span className="text-xs text-muted-foreground" aria-live="polite">{Math.round(compressionQuality * 100)}%</span>
                               </div>
                               <Slider
+                                id="compression-quality"
                                 value={[compressionQuality * 100]}
                                 onValueChange={(v) => setCompressionQuality(v[0] / 100)}
                                 min={50}
                                 max={100}
                                 step={5}
+                                aria-label="Image compression quality"
                               />
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                               <div className="space-y-1">
-                                <Label className="text-xs">Max Width</Label>
+                                <Label htmlFor="max-width" className="text-xs">Max Width</Label>
                                 <Select value={String(maxImageWidth)} onValueChange={(v) => setMaxImageWidth(Number(v))}>
-                                  <SelectTrigger className="h-8">
+                                  <SelectTrigger id="max-width" className="h-8">
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -1087,9 +1218,9 @@ export function JobCardPhotos({
                                 </Select>
                               </div>
                               <div className="space-y-1">
-                                <Label className="text-xs">Max Height</Label>
+                                <Label htmlFor="max-height" className="text-xs">Max Height</Label>
                                 <Select value={String(maxImageHeight)} onValueChange={(v) => setMaxImageHeight(Number(v))}>
-                                  <SelectTrigger className="h-8">
+                                  <SelectTrigger id="max-height" className="h-8">
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -1107,8 +1238,8 @@ export function JobCardPhotos({
                         {/* Watermark */}
                         <div className="flex items-center justify-between">
                           <div className="space-y-0.5">
-                            <Label className="flex items-center gap-2">
-                              <Droplet className="h-4 w-4" />
+                            <Label htmlFor="enable-watermark" className="flex items-center gap-2">
+                              <Droplet className="h-4 w-4" aria-hidden="true" />
                               Add Watermark
                             </Label>
                             <p className="text-xs text-muted-foreground">
@@ -1116,15 +1247,17 @@ export function JobCardPhotos({
                             </p>
                           </div>
                           <Switch
+                            id="enable-watermark"
                             checked={enableWatermark}
                             onCheckedChange={setEnableWatermark}
                           />
                         </div>
                         
                         {enableWatermark && (
-                          <div className="space-y-2 pl-4 border-l-2 border-slate-200">
-                            <Label className="text-xs">Watermark Text</Label>
+                          <div className="space-y-2 pl-4 border-l-2 border-slate-200 animate-in slide-in-from-left-2 duration-200">
+                            <Label htmlFor="watermark-text" className="text-xs">Watermark Text</Label>
                             <Input
+                              id="watermark-text"
                               value={watermarkText}
                               onChange={(e) => setWatermarkText(e.target.value)}
                               placeholder="Enter watermark text..."
@@ -1136,10 +1269,10 @@ export function JobCardPhotos({
                     
                     {/* File Drop Zone */}
                     <div className="space-y-2">
-                      <Label>Select Images</Label>
+                      <Label id="dropzone-label">Select Images</Label>
                       <div
                         className={cn(
-                          "border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer",
+                          "border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer min-h-[120px] flex flex-col items-center justify-center",
                           isDragging 
                             ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950" 
                             : "border-gray-300 hover:border-gray-400"
@@ -1148,12 +1281,22 @@ export function JobCardPhotos({
                         onDragLeave={handleDragLeave}
                         onDrop={handleDrop}
                         onClick={() => fileInputRef.current?.click()}
+                        role="button"
+                        tabIndex={0}
+                        aria-labelledby="dropzone-label"
+                        aria-describedby="dropzone-help"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            fileInputRef.current?.click();
+                          }
+                        }}
                       >
-                        <FileUp className="h-10 w-10 mx-auto text-gray-400 mb-2" />
+                        <FileUp className="h-10 w-10 mx-auto text-gray-400 mb-2" aria-hidden="true" />
                         <p className="text-sm text-gray-600 dark:text-gray-300">
                           Drag & drop images here, or <span className="text-emerald-600 font-medium">browse</span>
                         </p>
-                        <p className="text-xs text-gray-400 mt-1">
+                        <p id="dropzone-help" className="text-xs text-gray-400 mt-1">
                           Supported: JPG, PNG, GIF, WebP (max 10MB each, 50 images max)
                         </p>
                       </div>
@@ -1164,12 +1307,13 @@ export function JobCardPhotos({
                         multiple
                         onChange={handleFileSelect}
                         className="hidden"
+                        aria-label="Select image files"
                       />
                     </div>
                     
                     {/* Preview */}
                     {previewUrls.length > 0 && (
-                      <div className="space-y-2">
+                      <div className="space-y-2 animate-in fade-in duration-200">
                         <div className="flex items-center justify-between">
                           <Label>{selectedFiles.length} image(s) selected ({calculateSizeReduction()})</Label>
                           <Button 
@@ -1179,34 +1323,46 @@ export function JobCardPhotos({
                               setSelectedFiles([]);
                               setPreviewUrls([]);
                             }}
+                            aria-label="Clear all selected files"
+                            className="min-h-[44px]"
                           >
-                            <X className="h-4 w-4 mr-1" />
+                            <X className="h-4 w-4 mr-1" aria-hidden="true" />
                             Clear
                           </Button>
                         </div>
-                        <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">
-                          {previewUrls.map((url, index) => (
-                            <div key={index} className="aspect-square rounded-lg overflow-hidden border relative group">
-                              <img
-                                src={url}
-                                alt={`Preview ${index + 1}`}
-                                className="w-full h-full object-cover"
-                              />
-                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <span className="text-white text-xs text-center px-1 truncate">
-                                  {selectedFiles[index]?.name}
-                                </span>
+                        <ScrollArea className="max-h-48">
+                          <div className="grid grid-cols-4 gap-2 pr-4">
+                            {previewUrls.map((url, index) => (
+                              <div 
+                                key={index} 
+                                className="aspect-square rounded-lg overflow-hidden border relative group animate-in zoom-in-50 duration-200"
+                                style={{ animationDelay: `${index * 30}ms` }}
+                              >
+                                <img
+                                  src={url}
+                                  alt={`Preview ${index + 1}: ${selectedFiles[index]?.name || 'image'}`}
+                                  className="w-full h-full object-cover"
+                                />
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                  <span className="text-white text-xs text-center px-1 truncate">
+                                    {selectedFiles[index]?.name}
+                                  </span>
+                                </div>
                               </div>
-                            </div>
-                          ))}
-                        </div>
+                            ))}
+                          </div>
+                        </ScrollArea>
                       </div>
                     )}
                     
                     {/* Progress */}
                     {(uploading || processingImages) && (
-                      <div className="space-y-2">
-                        <Progress value={uploadProgress} />
+                      <div className="space-y-2 animate-in fade-in duration-200" role="status" aria-live="polite">
+                        <Progress 
+                          value={uploadProgress} 
+                          className="h-2 transition-all duration-300"
+                          aria-label={`Upload progress: ${uploadProgress}%`}
+                        />
                         <p className="text-sm text-center text-muted-foreground">
                           {processingImages ? 'Processing images...' : `Uploading... ${uploadProgress}%`}
                         </p>
@@ -1214,12 +1370,18 @@ export function JobCardPhotos({
                     )}
                   </div>
                   <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => setShowUploadDialog(false)}>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setShowUploadDialog(false)}
+                      className="min-h-[44px]"
+                    >
                       Cancel
                     </Button>
                     <Button 
                       onClick={handleUpload} 
                       disabled={selectedFiles.length === 0 || uploading || processingImages}
+                      className="min-h-[44px]"
+                      aria-busy={uploading || processingImages}
                     >
                       {uploading || processingImages ? 'Processing...' : `Upload ${selectedFiles.length} Image(s)`}
                     </Button>
@@ -1233,15 +1395,21 @@ export function JobCardPhotos({
 
       {/* Search Results */}
       {searchQuery && (
-        <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950">
+        <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950 animate-in slide-in-from-top-2 duration-300">
           <CardHeader className="py-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm flex items-center gap-2">
-                <Search className="h-4 w-4" />
+                <Search className="h-4 w-4" aria-hidden="true" />
                 Search Results for &quot;{searchQuery}&quot;
               </CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => setSearchQuery('')}>
-                <X className="h-4 w-4" />
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setSearchQuery('')}
+                aria-label="Clear search"
+                className="min-h-[44px] min-w-[44px]"
+              >
+                <X className="h-4 w-4" aria-hidden="true" />
               </Button>
             </div>
           </CardHeader>
@@ -1253,16 +1421,27 @@ export function JobCardPhotos({
                 {filteredPhotos.map((photo, index) => (
                   <div
                     key={photo.id}
-                    className="group relative aspect-square rounded-lg overflow-hidden border bg-muted cursor-pointer"
+                    className="group relative aspect-square rounded-lg overflow-hidden border bg-muted cursor-pointer animate-in fade-in zoom-in-95 duration-200"
+                    style={{ animationDelay: `${index * 50}ms` }}
                     onClick={() => {
                       setPhotoIndex(index);
                       setViewingPhoto(photo);
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`View photo: ${photo.originalName || photo.fileName}`}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setPhotoIndex(index);
+                        setViewingPhoto(photo);
+                      }
                     }}
                   >
                     <img
                       src={photo.filePath}
                       alt={photo.originalName || photo.fileName}
-                      className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                      className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
                     />
                     <div className="absolute bottom-0 left-0 right-0 p-1 bg-gradient-to-t from-black/60 to-transparent">
                       <p className="text-xs text-white truncate">
@@ -1279,46 +1458,66 @@ export function JobCardPhotos({
 
       {/* Bulk operations bar */}
       {bulkMode && selectedPhotos.size > 0 && (
-        <Card className="bg-emerald-50 border-emerald-200 dark:bg-emerald-950 dark:border-emerald-800">
+        <Card className="bg-emerald-50 border-emerald-200 dark:bg-emerald-950 dark:border-emerald-800 animate-in slide-in-from-top-2 duration-300">
           <CardContent className="py-3">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 dark:bg-emerald-800 dark:text-emerald-100">
                   {selectedPhotos.size} selected
                 </Badge>
-                <Button variant="ghost" size="sm" onClick={selectAllPhotos}>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={selectAllPhotos}
+                  className="min-h-[44px]"
+                  aria-label="Select all photos"
+                >
                   Select All
                 </Button>
-                <Button variant="ghost" size="sm" onClick={clearSelection}>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={clearSelection}
+                  className="min-h-[44px]"
+                  aria-label="Clear selection"
+                >
                   Clear
                 </Button>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {/* Download as ZIP */}
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="gap-2"
+                  className="gap-2 min-h-[44px]"
                   onClick={handleDownloadZip}
                   disabled={downloadingZip}
+                  aria-busy={downloadingZip}
+                  aria-label="Download selected photos as ZIP"
                 >
                   {downloadingZip ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
                   ) : (
-                    <FileArchive className="h-4 w-4" />
+                    <FileArchive className="h-4 w-4" aria-hidden="true" />
                   )}
-                  Download ZIP
+                  <span className="hidden sm:inline">Download ZIP</span>
+                  <span className="sm:hidden">ZIP</span>
                 </Button>
                 
                 {/* Move */}
                 <Dialog open={showBulkMoveDialog} onOpenChange={setShowBulkMoveDialog}>
                   <DialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-2">
-                      <Move className="h-4 w-4" />
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="gap-2 min-h-[44px]"
+                      aria-label="Move selected photos to another category"
+                    >
+                      <Move className="h-4 w-4" aria-hidden="true" />
                       Move to...
                     </Button>
                   </DialogTrigger>
-                  <DialogContent>
+                  <DialogContent className="animate-in slide-in-from-bottom-4 duration-300">
                     <DialogHeader>
                       <DialogTitle>Move Photos</DialogTitle>
                       <DialogDescription>
@@ -1326,9 +1525,9 @@ export function JobCardPhotos({
                       </DialogDescription>
                     </DialogHeader>
                     <div className="py-4">
-                      <Label>Target Category</Label>
+                      <Label htmlFor="bulk-move-category">Target Category</Label>
                       <Select value={bulkMoveCategory} onValueChange={setBulkMoveCategory}>
-                        <SelectTrigger className="mt-2">
+                        <SelectTrigger id="bulk-move-category" className="mt-2">
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>
@@ -1341,12 +1540,18 @@ export function JobCardPhotos({
                       </Select>
                     </div>
                     <DialogFooter>
-                      <Button variant="outline" onClick={() => setShowBulkMoveDialog(false)}>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setShowBulkMoveDialog(false)}
+                        className="min-h-[44px]"
+                      >
                         Cancel
                       </Button>
                       <Button 
                         onClick={handleBulkMove}
                         disabled={!bulkMoveCategory || processingBulk}
+                        className="min-h-[44px]"
+                        aria-busy={processingBulk}
                       >
                         {processingBulk ? 'Moving...' : 'Move Photos'}
                       </Button>
@@ -1357,8 +1562,13 @@ export function JobCardPhotos({
                 {/* Delete */}
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="destructive" size="sm" className="gap-2">
-                      <Trash2 className="h-4 w-4" />
+                    <Button 
+                      variant="destructive" 
+                      size="sm" 
+                      className="gap-2 min-h-[44px]"
+                      aria-label="Delete selected photos"
+                    >
+                      <Trash2 className="h-4 w-4" aria-hidden="true" />
                       Delete
                     </Button>
                   </AlertDialogTrigger>
@@ -1370,10 +1580,10 @@ export function JobCardPhotos({
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogCancel className="min-h-[44px]">Cancel</AlertDialogCancel>
                       <AlertDialogAction
                         onClick={() => handleBulkDelete(false)}
-                        className="bg-red-600 hover:bg-red-700"
+                        className="bg-red-600 hover:bg-red-700 min-h-[44px]"
                       >
                         Delete
                       </AlertDialogAction>
@@ -1388,17 +1598,18 @@ export function JobCardPhotos({
 
       {/* Category tabs */}
       {categories.length === 0 && !loading && (
-        <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950">
+        <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950 animate-in fade-in duration-300">
           <CardContent className="py-8 text-center">
-            <AlertCircle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
+            <AlertCircle className="h-12 w-12 text-amber-500 mx-auto mb-4" aria-hidden="true" />
             <p className="text-lg font-medium text-amber-800 dark:text-amber-200">No categories loaded</p>
             <p className="text-sm text-amber-600 dark:text-amber-400 mt-2">
               There was an issue loading photo categories. Please refresh the page.
             </p>
             <Button 
               variant="outline" 
-              className="mt-4"
+              className="mt-4 min-h-[44px]"
               onClick={() => fetchCategoriesOnly()}
+              aria-label="Retry loading categories"
             >
               Retry Loading Categories
             </Button>
@@ -1408,8 +1619,12 @@ export function JobCardPhotos({
       
       {!searchQuery && (
         <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
-          <TabsList className="flex-wrap h-auto gap-1 bg-transparent p-0">
-            {categories.map(category => {
+          <TabsList 
+            className="flex flex-wrap h-auto gap-1 bg-transparent p-0" 
+            role="tablist"
+            aria-label="Photo categories"
+          >
+            {categories.map((category, index) => {
               const Icon = categoryIcons[category.code] || ImageIcon;
               const status = getCategoryStatus(category);
               
@@ -1418,20 +1633,26 @@ export function JobCardPhotos({
                   key={category.id}
                   value={category.code}
                   className={cn(
-                    "flex items-center gap-2 px-4 py-2 rounded-lg border",
+                    "flex items-center gap-2 px-4 py-2 rounded-lg border transition-all duration-200 min-h-[44px]",
                     "data-[state=active]:bg-emerald-50 data-[state=active]:border-emerald-200",
                     "dark:data-[state=active]:bg-emerald-950 dark:data-[state=active]:border-emerald-800",
+                    "hover:bg-slate-50 dark:hover:bg-slate-800",
                     status === 'incomplete' && "border-red-200 bg-red-50/50 dark:bg-red-950/50",
                     status === 'full' && "border-green-200 bg-green-50/50 dark:bg-green-950/50"
                   )}
+                  style={{ animationDelay: `${index * 50}ms` }}
+                  role="tab"
+                  aria-selected={selectedCategory === category.code}
+                  aria-controls={`tabpanel-${category.id}`}
                 >
-                  <Icon className="h-4 w-4" />
-                  <span>{category.name}</span>
+                  <Icon className="h-4 w-4" aria-hidden="true" />
+                  <span className="hidden sm:inline">{category.name}</span>
+                  <span className="sm:hidden">{category.code.slice(0, 3)}</span>
                   <Badge variant="outline" className="ml-1 text-xs">
                     {category.photoCount}/{category.maxPhotos}
                   </Badge>
                   {category.isRequired && status === 'incomplete' && (
-                    <AlertCircle className="h-4 w-4 text-red-500" />
+                    <AlertCircle className="h-4 w-4 text-red-500" aria-label="Required photos incomplete" />
                   )}
                 </TabsTrigger>
               );
@@ -1439,17 +1660,30 @@ export function JobCardPhotos({
           </TabsList>
 
           {categories.map(category => (
-            <TabsContent key={category.id} value={category.code} className="mt-4">
+            <TabsContent 
+              key={category.id} 
+              value={category.code} 
+              className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300"
+              id={`tabpanel-${category.id}`}
+              role="tabpanel"
+              aria-label={`${category.name} photos`}
+            >
               <Card>
                 <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                       <CardTitle className="text-base">{category.name}</CardTitle>
                       <CardDescription>{category.description}</CardDescription>
                     </div>
                     <div className="flex items-center gap-3">
                       {bulkMode && category.photos.length > 0 && (
-                        <Button variant="ghost" size="sm" onClick={selectAllInCategory}>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={selectAllInCategory}
+                          className="min-h-[44px]"
+                          aria-label={`Select all photos in ${category.name}`}
+                        >
                           Select All
                         </Button>
                       )}
@@ -1458,6 +1692,7 @@ export function JobCardPhotos({
                         <Progress 
                           value={getCategoryProgress(category)} 
                           className="w-24 h-2 mt-1"
+                          aria-label={`${category.name} photo progress`}
                         />
                       </div>
                     </div>
@@ -1466,7 +1701,7 @@ export function JobCardPhotos({
                 <CardContent>
                   {category.photos.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-12 text-center">
-                      <Camera className="h-12 w-12 text-muted-foreground mb-4" />
+                      <Camera className="h-12 w-12 text-muted-foreground mb-4" aria-hidden="true" />
                       <p className="text-muted-foreground">No photos uploaded</p>
                       <p className="text-sm text-muted-foreground mt-1">
                         {category.isRequired 
@@ -1475,7 +1710,11 @@ export function JobCardPhotos({
                       </p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    <div 
+                      className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"
+                      role="list"
+                      aria-label={`${category.name} photos`}
+                    >
                       {category.photos.map((photo, index) => {
                         const isSelected = selectedPhotos.has(photo.id);
                         
@@ -1483,9 +1722,11 @@ export function JobCardPhotos({
                           <div
                             key={photo.id}
                             className={cn(
-                              "group relative aspect-square rounded-lg overflow-hidden border bg-muted cursor-pointer",
+                              "group relative aspect-square rounded-lg overflow-hidden border bg-muted cursor-pointer animate-in fade-in zoom-in-95 duration-200",
+                              "transition-all duration-200 hover:shadow-lg",
                               isSelected && "ring-2 ring-emerald-500 ring-offset-2"
                             )}
+                            style={{ animationDelay: `${index * 30}ms` }}
                             onClick={() => {
                               if (bulkMode) {
                                 togglePhotoSelection(photo.id);
@@ -1494,16 +1735,34 @@ export function JobCardPhotos({
                                 setViewingPhoto(photo);
                               }
                             }}
+                            role="listitem"
+                            tabIndex={0}
+                            aria-label={
+                              bulkMode 
+                                ? `${isSelected ? 'Deselect' : 'Select'} photo: ${photo.originalName || photo.fileName}`
+                                : `View photo: ${photo.originalName || photo.fileName}`
+                            }
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                if (bulkMode) {
+                                  togglePhotoSelection(photo.id);
+                                } else {
+                                  setPhotoIndex(index);
+                                  setViewingPhoto(photo);
+                                }
+                              }
+                            }}
                           >
                             <img
                               src={photo.filePath}
                               alt={photo.originalName || photo.fileName}
-                              className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                              className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
                             />
                             
                             {/* Selection checkbox */}
                             {bulkMode && (
-                              <div className="absolute top-2 left-2 z-10">
+                              <div className="absolute top-2 left-2 z-10" aria-hidden="true">
                                 {isSelected ? (
                                   <CheckSquare className="h-6 w-6 text-emerald-600 bg-white rounded" />
                                 ) : (
@@ -1512,8 +1771,8 @@ export function JobCardPhotos({
                               </div>
                             )}
                             
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors">
-                              <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-200">
+                              <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                                 <p className="text-xs text-white truncate">
                                   {photo.originalName || photo.fileName}
                                 </p>
@@ -1524,28 +1783,30 @@ export function JobCardPhotos({
                               
                               {/* Action buttons */}
                               {!bulkMode && (
-                                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                                   <Button
                                     variant="secondary"
                                     size="icon"
-                                    className="h-8 w-8"
+                                    className="h-8 w-8 min-h-[36px] min-w-[36px]"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       openEditDialog(photo);
                                     }}
+                                    aria-label={`Edit photo: ${photo.originalName || photo.fileName}`}
                                   >
-                                    <Edit className="h-4 w-4" />
+                                    <Edit className="h-4 w-4" aria-hidden="true" />
                                   </Button>
                                   <Button
                                     variant="secondary"
                                     size="icon"
-                                    className="h-8 w-8"
+                                    className="h-8 w-8 min-h-[36px] min-w-[36px]"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       window.open(photo.filePath, '_blank');
                                     }}
+                                    aria-label={`Download photo: ${photo.originalName || photo.fileName}`}
                                   >
-                                    <Download className="h-4 w-4" />
+                                    <Download className="h-4 w-4" aria-hidden="true" />
                                   </Button>
                                   {canUpload && (
                                     <AlertDialog>
@@ -1553,10 +1814,11 @@ export function JobCardPhotos({
                                         <Button
                                           variant="destructive"
                                           size="icon"
-                                          className="h-8 w-8"
+                                          className="h-8 w-8 min-h-[36px] min-w-[36px]"
                                           onClick={(e) => e.stopPropagation()}
+                                          aria-label={`Delete photo: ${photo.originalName || photo.fileName}`}
                                         >
-                                          <Trash2 className="h-4 w-4" />
+                                          <Trash2 className="h-4 w-4" aria-hidden="true" />
                                         </Button>
                                       </AlertDialogTrigger>
                                       <AlertDialogContent>
@@ -1567,10 +1829,10 @@ export function JobCardPhotos({
                                           </AlertDialogDescription>
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>
-                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                          <AlertDialogCancel className="min-h-[44px]">Cancel</AlertDialogCancel>
                                           <AlertDialogAction
                                             onClick={() => handleDeletePhoto(photo.id)}
-                                            className="bg-red-600 hover:bg-red-700"
+                                            className="bg-red-600 hover:bg-red-700 min-h-[44px]"
                                           >
                                             Delete
                                           </AlertDialogAction>
@@ -1595,25 +1857,41 @@ export function JobCardPhotos({
 
       {/* Photo Viewer Dialog */}
       <Dialog open={!!viewingPhoto} onOpenChange={() => setViewingPhoto(null)}>
-        <DialogContent className="sm:max-w-4xl p-0 overflow-hidden bg-black/95">
-          <div className="relative">
+        <DialogContent 
+          className="sm:max-w-4xl p-0 overflow-hidden bg-black/95 animate-in fade-in zoom-in-95 duration-300"
+          aria-label="Photo viewer"
+        >
+          <div 
+            ref={photoViewerRef}
+            className="relative"
+            tabIndex={-1}
+            role="dialog"
+            aria-label={`Viewing photo ${photoIndex + 1}`}
+          >
             {/* Navigation */}
             <Button
               variant="ghost"
               size="icon"
-              className="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white"
+              className="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white min-h-[44px] min-w-[44px]"
               onClick={() => navigatePhoto('prev')}
+              aria-label="Previous photo"
             >
-              <ChevronLeft className="h-6 w-6" />
+              <ChevronLeft className="h-6 w-6" aria-hidden="true" />
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              className="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white"
+              className="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white min-h-[44px] min-w-[44px]"
               onClick={() => navigatePhoto('next')}
+              aria-label="Next photo"
             >
-              <ChevronRight className="h-6 w-6" />
+              <ChevronRight className="h-6 w-6" aria-hidden="true" />
             </Button>
+            
+            {/* Keyboard navigation hint */}
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10 bg-black/50 text-white text-xs px-3 py-1 rounded-full opacity-0 hover:opacity-100 transition-opacity">
+              Use arrow keys to navigate, Escape to close
+            </div>
             
             {/* Image */}
             {viewingPhoto && (
@@ -1627,7 +1905,7 @@ export function JobCardPhotos({
             {/* Info bar */}
             {viewingPhoto && (
               <div className="bg-black/80 text-white p-4">
-                <div className="flex items-start justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                   <div>
                     <p className="font-medium">{viewingPhoto.originalName || viewingPhoto.fileName}</p>
                     <p className="text-sm text-gray-400">
@@ -1637,7 +1915,7 @@ export function JobCardPhotos({
                       <p className="text-sm text-gray-300 mt-1">{viewingPhoto.description}</p>
                     )}
                     {viewingPhoto.tags && viewingPhoto.tags.length > 0 && (
-                      <div className="flex gap-1 mt-2">
+                      <div className="flex gap-1 mt-2 flex-wrap">
                         {viewingPhoto.tags.map((tag, i) => (
                           <Badge key={i} variant="secondary" className="text-xs">
                             {tag}
@@ -1646,36 +1924,40 @@ export function JobCardPhotos({
                       </div>
                     )}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-white hover:bg-white/20"
+                      className="text-white hover:bg-white/20 min-h-[44px]"
                       onClick={() => copyPhotoUrl(viewingPhoto)}
+                      aria-label="Copy photo URL to clipboard"
                     >
-                      <Copy className="h-4 w-4 mr-1" />
-                      Copy URL
+                      <Copy className="h-4 w-4 mr-1 sm:mr-2" aria-hidden="true" />
+                      <span className="hidden sm:inline">Copy URL</span>
+                      <span className="sm:hidden">Copy</span>
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-white hover:bg-white/20"
+                      className="text-white hover:bg-white/20 min-h-[44px]"
                       onClick={() => window.open(viewingPhoto.filePath, '_blank')}
+                      aria-label="Download photo"
                     >
-                      <Download className="h-4 w-4 mr-1" />
-                      Download
+                      <Download className="h-4 w-4 mr-1 sm:mr-2" aria-hidden="true" />
+                      <span className="hidden sm:inline">Download</span>
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-white hover:bg-white/20"
+                      className="text-white hover:bg-white/20 min-h-[44px]"
                       onClick={() => {
                         setViewingPhoto(null);
                         openEditDialog(viewingPhoto);
                       }}
+                      aria-label="Edit photo details"
                     >
-                      <Edit className="h-4 w-4 mr-1" />
-                      Edit
+                      <Edit className="h-4 w-4 mr-1 sm:mr-2" aria-hidden="true" />
+                      <span className="hidden sm:inline">Edit</span>
                     </Button>
                   </div>
                 </div>
@@ -1687,7 +1969,7 @@ export function JobCardPhotos({
 
       {/* Edit Photo Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent>
+        <DialogContent className="animate-in slide-in-from-bottom-4 duration-300">
           <DialogHeader>
             <DialogTitle>Edit Photo Details</DialogTitle>
             <DialogDescription>
@@ -1708,9 +1990,9 @@ export function JobCardPhotos({
               
               {/* Category */}
               <div className="space-y-2">
-                <Label>Category</Label>
+                <Label htmlFor="edit-category">Category</Label>
                 <Select value={editCategory} onValueChange={setEditCategory}>
-                  <SelectTrigger>
+                  <SelectTrigger id="edit-category">
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1725,8 +2007,9 @@ export function JobCardPhotos({
               
               {/* Description */}
               <div className="space-y-2">
-                <Label>Description</Label>
+                <Label htmlFor="edit-description">Description</Label>
                 <Textarea
+                  id="edit-description"
                   value={editDescription}
                   onChange={(e) => setEditDescription(e.target.value)}
                   placeholder="Add a description..."
@@ -1736,9 +2019,10 @@ export function JobCardPhotos({
               
               {/* Tags */}
               <div className="space-y-2">
-                <Label>Tags</Label>
+                <Label htmlFor="edit-tags">Tags</Label>
                 <div className="flex gap-2">
                   <Input
+                    id="edit-tags"
                     value={newTag}
                     onChange={(e) => setNewTag(e.target.value)}
                     placeholder="Add a tag..."
@@ -1749,18 +2033,33 @@ export function JobCardPhotos({
                       }
                     }}
                   />
-                  <Button type="button" variant="outline" onClick={handleAddTag}>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={handleAddTag}
+                    className="min-h-[44px]"
+                    aria-label="Add tag"
+                  >
                     Add
                   </Button>
                 </div>
                 {editTags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
+                  <div className="flex flex-wrap gap-1 mt-2" role="list" aria-label="Added tags">
                     {editTags.map((tag, i) => (
-                      <Badge key={i} variant="secondary" className="gap-1">
+                      <Badge key={i} variant="secondary" className="gap-1" role="listitem">
                         {tag}
                         <X
                           className="h-3 w-3 cursor-pointer"
                           onClick={() => handleRemoveTag(tag)}
+                          aria-label={`Remove tag ${tag}`}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              handleRemoveTag(tag);
+                            }
+                          }}
                         />
                       </Badge>
                     ))}
@@ -1771,10 +2070,19 @@ export function JobCardPhotos({
           )}
           
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowEditDialog(false)}
+              className="min-h-[44px]"
+            >
               Cancel
             </Button>
-            <Button onClick={handleSaveEdit} disabled={saving}>
+            <Button 
+              onClick={handleSaveEdit} 
+              disabled={saving}
+              className="min-h-[44px]"
+              aria-busy={saving}
+            >
               {saving ? 'Saving...' : 'Save Changes'}
             </Button>
           </DialogFooter>

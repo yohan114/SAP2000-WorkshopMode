@@ -2573,3 +2573,58 @@ model Document {
   @@index([entityId])
   @@index([createdAt])
 }
+
+// ============================================
+// 23. PHOTO BACKUP DOMAIN
+// ============================================
+
+model PhotoBackup {
+  id              String    @id @default(cuid())
+  photoId         String    // Original JcPhoto ID
+  jobCardId       String
+  originalPath    String    // Original file path
+  backupPath      String    // Backup file path
+  fileName        String
+  fileSize        Int?
+  mimeType        String?
+  backupType      String    @default("MANUAL") // MANUAL, AUTO, SCHEDULED
+  status          String    @default("ACTIVE") // ACTIVE, RESTORED, DELETED
+  backedUpAt      DateTime  @default(now())
+  backedUpBy      String?
+  restoredAt      DateTime?
+  restoredBy      String?
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([photoId])
+  @@index([jobCardId])
+  @@index([status])
+  @@index([backedUpAt])
+}
+
+// ============================================
+// 24. PHOTO AUDIT LOG DOMAIN
+// ============================================
+
+model PhotoAuditLog {
+  id            String    @id @default(cuid())
+  photoId       String?   // JcPhoto ID (null for bulk operations)
+  jobCardId     String
+  action        String    // UPLOAD, UPDATE, DELETE_SOFT, DELETE_PERMANENT, RESTORE, BACKUP, BULK_MOVE, BULK_DELETE
+  entityType    String    @default("PHOTO") // PHOTO, PHOTO_CATEGORY, PHOTO_BACKUP
+  entityId      String?   // ID of the affected entity
+  userId        String?
+  details       String?   // JSON string with operation details
+  ipAddress     String?
+  userAgent     String?
+  oldValue      String?   // JSON string with previous values
+  newValue      String?   // JSON string with new values
+  createdAt     DateTime  @default(now())
+
+  @@index([photoId])
+  @@index([jobCardId])
+  @@index([action])
+  @@index([userId])
+  @@index([createdAt])
+}

@@ -13,6 +13,8 @@ import { existsSync } from 'fs';
 import path from 'path';
 import { db } from '@/lib/db';
 import { apiSuccess, apiError, apiNotFound } from '@/lib/api-utils';
+import { deletePhotoFile } from '@/lib/file-cleanup';
+import { PhotoAuditHelpers } from '@/lib/audit-log';
 
 // GET /api/job-cards/[id]/photos/[photoId] - Get single photo details
 export async function GET(
@@ -97,6 +99,10 @@ export async function PATCH(
       return apiNotFound('Photo');
     }
 
+    // Track changes for audit log
+    const oldValue: Record<string, unknown> = {};
+    const newValue: Record<string, unknown> = {};
+
     // Build update data
     const updateData: Record<string, unknown> = {};
 
@@ -108,18 +114,34 @@ export async function PATCH(
       if (!category) {
         return apiError('Invalid category', 400);
       }
+      
+      // Track category change
+      if (existingPhoto.categoryId !== category.id) {
+        oldValue.categoryId = existingPhoto.categoryId;
+        newValue.categoryId = category.id;
+      }
+      
       updateData.categoryId = category.id;
     }
 
     // Update description if provided
     if (body.description !== undefined) {
+      if (existingPhoto.description !== body.description) {
+        oldValue.description = existingPhoto.description;
+        newValue.description = body.description;
+      }
       updateData.description = body.description;
     }
 
     // Update tags if provided
     if (body.tags !== undefined) {
       if (Array.isArray(body.tags)) {
-        updateData.tags = JSON.stringify(body.tags);
+        const newTagsStr = JSON.stringify(body.tags);
+        if (existingPhoto.tags !== newTagsStr) {
+          oldValue.tags = existingPhoto.tags ? JSON.parse(existingPhoto.tags) : [];
+          newValue.tags = body.tags;
+        }
+        updateData.tags = newTagsStr;
       } else {
         return apiError('Tags must be an array', 400);
       }
@@ -139,6 +161,18 @@ export async function PATCH(
       }
     });
 
+    // Log audit trail if there were changes
+    if (Object.keys(oldValue).length > 0) {
+      await PhotoAuditHelpers.logUpdate(
+        photoId,
+        id,
+        oldValue,
+        newValue,
+        body.userId,
+        request
+      );
+    }
+
     return apiSuccess({
       photo: {
         ...updatedPhoto,
@@ -151,7 +185,7 @@ export async function PATCH(
   }
 }
 
-// DELETE /api/job-cards/[id]/photos/[photoId] - Permanently delete a photo
+// DELETE /api/job-cards/[id]/photos/[photoId] - Delete a photo (soft or permanent)
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; photoId: string }> }
@@ -180,24 +214,45 @@ export async function DELETE(
       return apiNotFound('Photo');
     }
 
+    // Store photo details for audit log before deletion
+    const photoDetails = {
+      fileName: photo.fileName,
+      originalName: photo.originalName,
+      filePath: photo.filePath,
+      fileSize: photo.fileSize,
+      mimeType: photo.mimeType,
+      categoryId: photo.categoryId,
+      description: photo.description,
+    };
+
     if (permanent) {
       // Permanently delete - remove file and database record
-      const filePath = path.join(process.cwd(), 'public', photo.filePath);
       
-      // Delete file from filesystem
-      if (existsSync(filePath)) {
-        try {
-          await unlink(filePath);
-        } catch (e) {
-          console.error('Failed to delete file:', e);
-          // Continue with database deletion even if file deletion fails
-        }
+      // Delete the actual file from filesystem using the cleanup utility
+      const fileDeleted = await deletePhotoFile({
+        id: photoId,
+        filePath: photo.filePath,
+        fileName: photo.fileName,
+        jobCardId: id,
+      });
+
+      if (!fileDeleted) {
+        console.warn(`[DELETE] Failed to delete file for photo ${photoId}, continuing with database deletion`);
       }
 
       // Hard delete from database
       await db.jcPhoto.delete({
         where: { id: photoId }
       });
+
+      // Log audit trail for permanent delete
+      await PhotoAuditHelpers.logPermanentDelete(
+        photoId,
+        id,
+        photoDetails,
+        undefined,
+        request
+      );
 
       return apiSuccess(null, 'Photo permanently deleted');
     } else {
@@ -206,6 +261,15 @@ export async function DELETE(
         where: { id: photoId },
         data: { isActive: false }
       });
+
+      // Log audit trail for soft delete
+      await PhotoAuditHelpers.logSoftDelete(
+        photoId,
+        id,
+        photoDetails,
+        undefined,
+        request
+      );
 
       return apiSuccess(null, 'Photo deleted successfully');
     }

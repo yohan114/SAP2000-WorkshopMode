@@ -4,6 +4,7 @@
  * Handles photo management for job cards:
  * - GET: Retrieve all photos for a job card
  * - POST: Upload new photos to a job card
+ * - DELETE: Soft delete a photo
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -12,6 +13,8 @@ import { existsSync } from 'fs';
 import path from 'path';
 import { db } from '@/lib/db';
 import { apiSuccess, apiError, apiNotFound } from '@/lib/api-utils';
+import { withRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
+import { PhotoAuditHelpers } from '@/lib/audit-log';
 
 // Default photo categories for job cards
 const DEFAULT_PHOTO_CATEGORIES = [
@@ -41,7 +44,7 @@ async function ensureDefaultCategories() {
 }
 
 // GET /api/job-cards/[id]/photos - Get all photos for a job card
-export async function GET(
+async function getPhotos(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -125,8 +128,8 @@ export async function GET(
   }
 }
 
-// POST /api/job-cards/[id]/photos - Upload new photos
-export async function POST(
+// POST /api/job-cards/[id]/photos - Upload new photos (with rate limiting)
+async function uploadPhotos(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -224,6 +227,19 @@ export async function POST(
         }
       });
 
+      // Log audit trail for photo upload
+      await PhotoAuditHelpers.logUpload(
+        {
+          id: photo.id,
+          jobCardId: id,
+          fileName: photo.fileName,
+          fileSize: photo.fileSize,
+          categoryId: photo.categoryId,
+          uploadedBy: photo.uploadedBy,
+        },
+        request
+      );
+
       uploadedPhotos.push(photo);
     }
 
@@ -238,7 +254,7 @@ export async function POST(
 }
 
 // DELETE /api/job-cards/[id]/photos - Delete a photo (soft delete)
-export async function DELETE(
+async function deletePhoto(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -266,9 +282,67 @@ export async function DELETE(
       data: { isActive: false }
     });
 
+    // Log audit trail for soft delete
+    await PhotoAuditHelpers.logSoftDelete(
+      photoId,
+      id,
+      {
+        fileName: photo.fileName,
+        filePath: photo.filePath,
+        fileSize: photo.fileSize,
+        categoryId: photo.categoryId,
+      },
+      undefined,
+      request
+    );
+
     return apiSuccess(null, 'Photo deleted successfully');
   } catch (error) {
     console.error('Delete job card photo error:', error);
     return apiError('Failed to delete photo', 500);
   }
+}
+
+// Export handlers with rate limiting applied
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  return getPhotos(request, { params });
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  // Apply rate limiting for photo uploads
+  const rateLimitResult = withRateLimit(request, 'PHOTO_UPLOAD');
+  
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Too many requests',
+        message: `Rate limit exceeded. Please retry after ${rateLimitResult.retryAfter} seconds.`,
+        retryAfter: rateLimitResult.retryAfter,
+      },
+      { status: 429 }
+    );
+  }
+
+  const response = await uploadPhotos(request, { params });
+  
+  // Add rate limit headers to response
+  response.headers.set('X-RateLimit-Limit', '20');
+  response.headers.set('X-RateLimit-Remaining', rateLimitResult.remaining.toString());
+  response.headers.set('X-RateLimit-Reset', rateLimitResult.resetAt.toString());
+  
+  return response;
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  return deletePhoto(request, { params });
 }
