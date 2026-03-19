@@ -118,6 +118,35 @@ export function JobCardPhotos({
   const [bulkMoveCategory, setBulkMoveCategory] = useState('');
   const [processingBulk, setProcessingBulk] = useState(false);
 
+  // Fetch categories only (fallback)
+  const fetchCategoriesOnly = useCallback(async () => {
+    try {
+      console.log('[JobCardPhotos] Fetching categories from fallback API...');
+      const response = await fetch('/api/photo-categories?limit=50&isActive=true');
+      if (response.ok) {
+        const data = await response.json();
+        console.log('[JobCardPhotos] Fallback API response:', data);
+        if (data.success) {
+          // Handle both paginated response (data.data is array) and direct array response
+          const categoriesArray = Array.isArray(data.data) ? data.data : (data.data?.data || []);
+          
+          // Transform to match expected format with empty photos array
+          const cats = categoriesArray.map((cat: { id: string; code: string; name: string; description?: string; sequence: number; minPhotos: number; maxPhotos: number; isRequired: boolean; isActive: boolean; categoryType?: string }) => ({
+            ...cat,
+            photos: [],
+            photoCount: 0
+          }));
+          console.log('[JobCardPhotos] Setting categories from fallback:', cats.length);
+          setCategories(cats);
+        }
+      } else {
+        console.error('[JobCardPhotos] Fallback API returned non-OK:', response.status);
+      }
+    } catch (error) {
+      console.error('[JobCardPhotos] Failed to fetch categories:', error);
+    }
+  }, []);
+
   // Fetch photos and categories
   const fetchPhotos = useCallback(async () => {
     try {
@@ -125,7 +154,11 @@ export function JobCardPhotos({
       console.log('[JobCardPhotos] Fetching photos for job card:', jobCardId);
       const response = await fetch(`/api/job-cards/${jobCardId}/photos`);
       
+      console.log('[JobCardPhotos] Response status:', response.status);
+      
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[JobCardPhotos] API error response:', errorText);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
@@ -143,42 +176,18 @@ export function JobCardPhotos({
         setStats(data.data.stats || { totalPhotos: 0, totalSize: 0 });
       } else {
         console.error('[JobCardPhotos] API returned error:', data.error || data.message);
+        // Try fallback API
+        console.log('[JobCardPhotos] Trying fallback categories API...');
+        await fetchCategoriesOnly();
       }
     } catch (error) {
       console.error('[JobCardPhotos] Failed to fetch photos:', error);
+      // Try fallback API on error
+      await fetchCategoriesOnly();
     } finally {
       setLoading(false);
     }
-  }, [jobCardId]);
-
-  // Fetch categories only (fallback)
-  const fetchCategoriesOnly = useCallback(async () => {
-    try {
-      console.log('Fetching categories from fallback API...');
-      const response = await fetch('/api/photo-categories?limit=50&isActive=true');
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Fallback API response:', data);
-        if (data.success) {
-          // Handle both paginated response (data.data is array) and direct array response
-          const categoriesArray = Array.isArray(data.data) ? data.data : (data.data?.data || []);
-          
-          // Transform to match expected format with empty photos array
-          const cats = categoriesArray.map((cat: { id: string; code: string; name: string; description?: string; sequence: number; minPhotos: number; maxPhotos: number; isRequired: boolean; isActive: boolean; categoryType?: string }) => ({
-            ...cat,
-            photos: [],
-            photoCount: 0
-          }));
-          console.log('Setting categories from fallback:', cats.length);
-          setCategories(cats);
-        }
-      } else {
-        console.error('Fallback API returned non-OK:', response.status);
-      }
-    } catch (error) {
-      console.error('Failed to fetch categories:', error);
-    }
-  }, []);
+  }, [jobCardId, fetchCategoriesOnly]);
 
   useEffect(() => {
     fetchPhotos();

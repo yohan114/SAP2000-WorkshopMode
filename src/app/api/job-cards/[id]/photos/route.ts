@@ -47,6 +47,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    console.log('[GET /api/job-cards/[id]/photos] Fetching photos for job card:', id);
 
     // Verify job card exists
     const jobCard = await db.jobCard.findUnique({
@@ -55,11 +56,13 @@ export async function GET(
     });
 
     if (!jobCard) {
+      console.log('[GET /api/job-cards/[id]/photos] Job card not found:', id);
       return apiNotFound('Job card');
     }
 
     // Ensure default categories exist
     await ensureDefaultCategories();
+    console.log('[GET /api/job-cards/[id]/photos] Default categories ensured');
 
     // Get all active categories
     const categories = await db.jcPhotoCategory.findMany({
@@ -68,6 +71,7 @@ export async function GET(
       },
       orderBy: { sequence: 'asc' }
     });
+    console.log('[GET /api/job-cards/[id]/photos] Found categories:', categories.length);
 
     // Get all photos for this job card
     const photos = await db.jcPhoto.findMany({
@@ -86,12 +90,16 @@ export async function GET(
       orderBy: { uploadedAt: 'desc' }
     });
 
+    console.log('[GET /api/job-cards/[id]/photos] Found photos:', photos.length);
+
     // Group photos by category
     const photosByCategory = categories.map(category => ({
       ...category,
       photos: photos.filter(p => p.categoryId === category.id || (!p.categoryId && category.code === 'OTHER')),
       photoCount: photos.filter(p => p.categoryId === category.id || (!p.categoryId && category.code === 'OTHER')).length
     }));
+
+    console.log('[GET /api/job-cards/[id]/photos] Photos by category:', photosByCategory.length, 'categories');
 
     // Calculate summary stats
     const stats = {
@@ -104,6 +112,7 @@ export async function GET(
       }))
     };
 
+    console.log('[GET /api/job-cards/[id]/photos] Returning success with', photosByCategory.length, 'categories');
     return apiSuccess({
       jobCard,
       categories: photosByCategory,
@@ -111,7 +120,7 @@ export async function GET(
       stats
     });
   } catch (error) {
-    console.error('Get job card photos error:', error);
+    console.error('[GET /api/job-cards/[id]/photos] Error:', error);
     return apiError('Failed to fetch job card photos', 500);
   }
 }
