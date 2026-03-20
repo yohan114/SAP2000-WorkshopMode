@@ -860,8 +860,11 @@ export function AssetsView() {
                       img.onload = () => {
                         canvas.width = img.width;
                         canvas.height = img.height;
-                        ctx?.fillRect(0, 0, canvas.width, canvas.height);
-                        ctx?.drawImage(img, 0, 0);
+                        if (ctx) {
+                          ctx.fillStyle = '#ffffff';
+                          ctx.fillRect(0, 0, canvas.width, canvas.height);
+                          ctx.drawImage(img, 0, 0);
+                        }
                         const pngFile = canvas.toDataURL('image/png');
                         const downloadLink = document.createElement('a');
                         downloadLink.download = `QR-${qrDialogAsset.assetNumber}.png`;
