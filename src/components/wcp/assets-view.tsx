@@ -853,21 +853,24 @@ export function AssetsView() {
                   onClick={() => {
                     const svg = document.querySelector('.bg-card svg');
                     if (svg) {
-                      const svgData = new XMLSerializer().serializeToString(svg);
+                      const svgClone = svg.cloneNode(true) as SVGElement;
+                      svgClone.setAttribute('width', '1000');
+                      svgClone.setAttribute('height', '1000');
+                      const svgData = new XMLSerializer().serializeToString(svgClone);
                       const canvas = document.createElement('canvas');
                       const ctx = canvas.getContext('2d');
                       const img = new Image();
                       img.onload = () => {
-                        canvas.width = img.width;
-                        canvas.height = img.height;
+                        canvas.width = 1000;
+                        canvas.height = 1000;
                         if (ctx) {
                           ctx.fillStyle = '#ffffff';
-                          ctx.fillRect(0, 0, canvas.width, canvas.height);
-                          ctx.drawImage(img, 0, 0);
+                          ctx.fillRect(0, 0, 1000, 1000);
+                          ctx.drawImage(img, 0, 0, 1000, 1000);
                         }
-                        const pngFile = canvas.toDataURL('image/png');
+                        const pngFile = canvas.toDataURL('image/png', 1.0);
                         const downloadLink = document.createElement('a');
-                        downloadLink.download = `QR-${qrDialogAsset.assetNumber}.png`;
+                        downloadLink.download = `QR-${qrDialogAsset.assetNumber}-HD.png`;
                         downloadLink.href = pngFile;
                         downloadLink.click();
                       };
