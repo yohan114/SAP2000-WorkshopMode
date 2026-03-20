@@ -1,6 +1,9 @@
 // Re-export everything from session.ts
 export * from './session';
 
+// Re-export authOptions for API routes
+export { authOptions } from './options';
+
 // Type declarations for next-auth
 import 'next-auth';
 
