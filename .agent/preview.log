@@ -706,3 +706,661 @@ prisma:query SELECT `main`.`PrivilegeDefinition`.`id`, `main`.`PrivilegeDefiniti
  GET /api/roles 200 in 21ms (compile: 5ms, proxy.ts: 5ms, render: 11ms)
  GET /api/auth/session 200 in 61ms (compile: 21ms, proxy.ts: 8ms, render: 32ms)
  GET /api/auth/session 200 in 42ms (compile: 22ms, proxy.ts: 8ms, render: 12ms)
+ GET /api/auth/session 200 in 63ms (compile: 33ms, proxy.ts: 10ms, render: 19ms)
+ GET /api/auth/session 200 in 59ms (compile: 24ms, proxy.ts: 10ms, render: 26ms)
+ GET /api/auth/session 200 in 56ms (compile: 21ms, proxy.ts: 7ms, render: 28ms)
+prisma:query SELECT 1
+prisma:query SELECT 1
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Supplier`.`id` FROM `main`.`Supplier` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT `main`.`Supplier`.`id`, `main`.`Supplier`.`supplierCode`, `main`.`Supplier`.`name`, `main`.`Supplier`.`contactPerson`, `main`.`Supplier`.`email`, `main`.`Supplier`.`phone`, `main`.`Supplier`.`address`, `main`.`Supplier`.`status`, `main`.`Supplier`.`paymentTerms`, `main`.`Supplier`.`createdAt` FROM `main`.`Supplier` WHERE 1=1 ORDER BY `main`.`Supplier`.`name` ASC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Store`.`id`, `main`.`Store`.`code`, `main`.`Store`.`name`, `main`.`Store`.`storeType`, `main`.`Store`.`location`, `main`.`Store`.`managerId`, `main`.`Store`.`isActive`, `main`.`Store`.`createdAt`, `main`.`Store`.`updatedAt`, COALESCE(`aggr_selection_0_StoreStock`.`_aggr_count_stock`, 0) AS `_aggr_count_stock`, COALESCE(`aggr_selection_1_MaterialIssue`.`_aggr_count_materialIssues`, 0) AS `_aggr_count_materialIssues`, COALESCE(`aggr_selection_2_GrnHeader`.`_aggr_count_grnHeaders`, 0) AS `_aggr_count_grnHeaders` FROM `main`.`Store` LEFT JOIN (SELECT `main`.`StoreStock`.`storeId`, COUNT(*) AS `_aggr_count_stock` FROM `main`.`StoreStock` WHERE 1=1 GROUP BY `main`.`StoreStock`.`storeId`) AS `aggr_selection_0_StoreStock` ON (`main`.`Store`.`id` = `aggr_selection_0_StoreStock`.`storeId`) LEFT JOIN (SELECT `main`.`MaterialIssue`.`storeId`, COUNT(*) AS `_aggr_count_materialIssues` FROM `main`.`MaterialIssue` WHERE 1=1 GROUP BY `main`.`MaterialIssue`.`storeId`) AS `aggr_selection_1_MaterialIssue` ON (`main`.`Store`.`id` = `aggr_selection_1_MaterialIssue`.`storeId`) LEFT JOIN (SELECT `main`.`GrnHeader`.`storeId`, COUNT(*) AS `_aggr_count_grnHeaders` FROM `main`.`GrnHeader` WHERE 1=1 GROUP BY `main`.`GrnHeader`.`storeId`) AS `aggr_selection_2_GrnHeader` ON (`main`.`Store`.`id` = `aggr_selection_2_GrnHeader`.`storeId`) WHERE `main`.`Store`.`isActive` = ? ORDER BY `main`.`Store`.`name` ASC LIMIT ? OFFSET ?
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`PurchaseOrder`.`id` FROM `main`.`PurchaseOrder` WHERE (`main`.`PurchaseOrder`.`isActive` = ? AND `main`.`PurchaseOrder`.`status` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT `main`.`PurchaseOrder`.`id`, `main`.`PurchaseOrder`.`poNumber`, `main`.`PurchaseOrder`.`prId`, `main`.`PurchaseOrder`.`quotationId`, `main`.`PurchaseOrder`.`supplierId`, `main`.`PurchaseOrder`.`procurementChannel`, `main`.`PurchaseOrder`.`budgetLineId`, `main`.`PurchaseOrder`.`status`, `main`.`PurchaseOrder`.`orderDate`, `main`.`PurchaseOrder`.`expectedDeliveryDate`, `main`.`PurchaseOrder`.`currency`, `main`.`PurchaseOrder`.`totalValue`, `main`.`PurchaseOrder`.`terms`, `main`.`PurchaseOrder`.`notes`, `main`.`PurchaseOrder`.`approvedBy`, `main`.`PurchaseOrder`.`approvedAt`, `main`.`PurchaseOrder`.`issuedAt`, `main`.`PurchaseOrder`.`acknowledgedAt`, `main`.`PurchaseOrder`.`commitmentCreated`, `main`.`PurchaseOrder`.`isActive`, `main`.`PurchaseOrder`.`createdAt`, `main`.`PurchaseOrder`.`updatedAt`, `main`.`PurchaseOrder`.`createdBy`, `main`.`PurchaseOrder`.`updatedBy`, COALESCE(`aggr_selection_0_PoLine`.`_aggr_count_lines`, 0) AS `_aggr_count_lines` FROM `main`.`PurchaseOrder` LEFT JOIN (SELECT `main`.`PoLine`.`poId`, COUNT(*) AS `_aggr_count_lines` FROM `main`.`PoLine` WHERE 1=1 GROUP BY `main`.`PoLine`.`poId`) AS `aggr_selection_0_PoLine` ON (`main`.`PurchaseOrder`.`id` = `aggr_selection_0_PoLine`.`poId`) WHERE (`main`.`PurchaseOrder`.`isActive` = ? AND `main`.`PurchaseOrder`.`status` = ?) ORDER BY `main`.`PurchaseOrder`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`GrnHeader`.`id` FROM `main`.`GrnHeader` WHERE `main`.`GrnHeader`.`isActive` = ? LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT `main`.`GrnHeader`.`id`, `main`.`GrnHeader`.`totalValue`, `main`.`GrnHeader`.`status`, `main`.`GrnHeader`.`createdAt`, `main`.`GrnHeader`.`verifiedAt`, `main`.`GrnHeader`.`postedAt` FROM `main`.`GrnHeader` WHERE (`main`.`GrnHeader`.`createdAt` >= ? AND `main`.`GrnHeader`.`isActive` = ?) LIMIT ? OFFSET ?
+ GET /api/suppliers?limit=100 200 in 142ms (compile: 16ms, proxy.ts: 22ms, render: 105ms)
+ GET /api/purchase-orders?status=APPROVED&limit=50 200 in 146ms (compile: 30ms, proxy.ts: 20ms, render: 95ms)
+Get GRNs error: Error [PrismaClientValidationError]: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].grnHeader.findMany()` invocation in
+D:\Yohan\ERP System\.next\dev\server\chunks\[root-of-the-server]__7a8e0a9f._.js:705:144
+
+  702     contains: search
+  703 };
+  704 const [grns, total] = await Promise.all([
+→ 705     __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].grnHeader.findMany({
+            where: {
+              isActive: true
+            },
+            skip: 0,
+            take: 50,
+            orderBy: {
+              createdAt: "desc"
+            },
+            include: {
+              supplier: {
+                select: {
+                  id: true,
+                  supplierCode: true,
+                  name: true
+                }
+              },
+              store: {
+                select: {
+                  id: true,
+                  code: true,
+                  name: true
+                }
+              },
+              purchaseOrder: {
+                select: {
+                  id: true,
+                  poNumber: true
+                }
+              },
+              creator: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              },
+              lines: {
+                include: {
+                  item: {
+                  ~~~~
+                    select: {
+                      id: true,
+                      itemCode: true,
+                      name: true,
+                      unitOfMeasure: true
+                    }
+                  },
+          ?       grnHeader?: true
+                }
+              },
+              _count: {
+                select: {
+                  lines: true
+                }
+              }
+            }
+          })
+
+Unknown field `item` for include statement on model `GrnLine`. Available options are marked with ?.
+    at <unknown> (src\app\api\grn\route.ts:213:20)
+    at async GET (src\app\api\grn\route.ts:212:27)
+  211 |
+  212 |     const [grns, total] = await Promise.all([
+> 213 |       db.grnHeader.findMany({
+      |                    ^
+  214 |         where,
+  215 |         skip,
+  216 |         take: limit, {
+  clientVersion: '6.19.2'
+}
+ GET /api/grn?page=1&limit=50 500 in 473ms (compile: 80ms, proxy.ts: 21ms, render: 372ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`StoreStock`.`id`, `main`.`StoreStock`.`storeId`, `main`.`StoreStock`.`itemId`, `main`.`StoreStock`.`availableQty`, `main`.`StoreStock`.`reservedQty`, `main`.`StoreStock`.`quarantineQty`, `main`.`StoreStock`.`wac`, `main`.`StoreStock`.`lastMovementAt`, `main`.`StoreStock`.`isActive`, `main`.`StoreStock`.`createdAt`, `main`.`StoreStock`.`updatedAt` FROM `main`.`StoreStock` WHERE (`main`.`StoreStock`.`storeId` = ? AND `main`.`StoreStock`.`availableQty` > ?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`StoreStock`.`id`, `main`.`StoreStock`.`storeId`, `main`.`StoreStock`.`itemId`, `main`.`StoreStock`.`availableQty`, `main`.`StoreStock`.`reservedQty`, `main`.`StoreStock`.`quarantineQty`, `main`.`StoreStock`.`wac`, `main`.`StoreStock`.`lastMovementAt`, `main`.`StoreStock`.`isActive`, `main`.`StoreStock`.`createdAt`, `main`.`StoreStock`.`updatedAt` FROM `main`.`StoreStock` WHERE (`main`.`StoreStock`.`storeId` = ? AND `main`.`StoreStock`.`availableQty` > ?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`StoreStock`.`id`, `main`.`StoreStock`.`storeId`, `main`.`StoreStock`.`itemId`, `main`.`StoreStock`.`availableQty`, `main`.`StoreStock`.`reservedQty`, `main`.`StoreStock`.`quarantineQty`, `main`.`StoreStock`.`wac`, `main`.`StoreStock`.`lastMovementAt`, `main`.`StoreStock`.`isActive`, `main`.`StoreStock`.`createdAt`, `main`.`StoreStock`.`updatedAt` FROM `main`.`StoreStock` WHERE (`main`.`StoreStock`.`storeId` = ? AND `main`.`StoreStock`.`availableQty` > ?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Item`.`id`, `main`.`Item`.`itemCode`, `main`.`Item`.`name`, `main`.`Item`.`unitOfMeasure` FROM `main`.`Item` WHERE `main`.`Item`.`id` IN (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+ GET /api/inventory/stores 200 in 470ms (compile: 24ms, proxy.ts: 21ms, render: 426ms)
+prisma:query SELECT `main`.`GrnHeader`.`id`, `main`.`GrnHeader`.`totalValue`, `main`.`GrnHeader`.`status` FROM `main`.`GrnHeader` WHERE (`main`.`GrnHeader`.`createdAt` >= ? AND `main`.`GrnHeader`.`createdAt` <= ? AND `main`.`GrnHeader`.`isActive` = ?) LIMIT ? OFFSET ?
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`GrnHeader`.`id` FROM `main`.`GrnHeader` WHERE (`main`.`GrnHeader`.`status` = ? AND `main`.`GrnHeader`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`GrnHeader`.`id` FROM `main`.`GrnHeader` WHERE (`main`.`GrnHeader`.`inspectionStatus` = ? AND `main`.`GrnHeader`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT `main`.`GrnHeader`.`id`, `main`.`GrnHeader`.`createdAt`, `main`.`GrnHeader`.`postedAt` FROM `main`.`GrnHeader` WHERE (`main`.`GrnHeader`.`status` = ? AND `main`.`GrnHeader`.`postedAt` IS NOT NULL AND `main`.`GrnHeader`.`isActive` = ?) ORDER BY `main`.`GrnHeader`.`postedAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT COUNT(*) AS `_count$_all`, `main`.`GrnHeader`.`status` FROM `main`.`GrnHeader` WHERE `main`.`GrnHeader`.`isActive` = ? GROUP BY `main`.`GrnHeader`.`status` LIMIT ? OFFSET ?
+prisma:query SELECT COUNT(*) AS `_count$_all`, `main`.`GrnHeader`.`inspectionStatus` FROM `main`.`GrnHeader` WHERE `main`.`GrnHeader`.`isActive` = ? GROUP BY `main`.`GrnHeader`.`inspectionStatus` LIMIT ? OFFSET ?
+prisma:query SELECT SUM(`main`.`GrnHeader`.`totalValue`) AS `_sum$totalValue`, COUNT(*) AS `_count$_all`, `main`.`GrnHeader`.`supplierId` FROM `main`.`GrnHeader` WHERE (`main`.`GrnHeader`.`createdAt` >= ? AND `main`.`GrnHeader`.`isActive` = ?) GROUP BY `main`.`GrnHeader`.`supplierId` ORDER BY SUM(`main`.`GrnHeader`.`totalValue`) DESC LIMIT ? OFFSET ?
+ GET /api/grn/statistics 200 in 498ms (compile: 111ms, proxy.ts: 23ms, render: 364ms)
+ GET / 200 in 141ms (compile: 14ms, proxy.ts: 6ms, render: 120ms)
+ GET /api/auth/session 200 in 73ms (compile: 30ms, proxy.ts: 14ms, render: 29ms)
+prisma:query SELECT 1
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Asset`.`id` FROM `main`.`Asset` WHERE `main`.`Asset`.`isActive` = ? LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Asset`.`id` FROM `main`.`Asset` WHERE (`main`.`Asset`.`isActive` = ? AND `main`.`Asset`.`status` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT 1
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Asset`.`id` FROM `main`.`Asset` WHERE (`main`.`Asset`.`isActive` = ? AND `main`.`Asset`.`status` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`isActive` = ? AND `main`.`JobCard`.`createdAt` >= ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`isActive` = ? AND `main`.`JobCard`.`status` IN (?,?,?,?) AND `main`.`JobCard`.`createdAt` >= ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`isActive` = ? AND `main`.`JobCard`.`status` IN (?,?) AND `main`.`JobCard`.`createdAt` >= ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT 1
+prisma:query SELECT 1
+prisma:query SELECT 1
+prisma:query SELECT AVG(`actualDuration`) AS `_avg$actualDuration` FROM (SELECT `main`.`JobCard`.`actualDuration` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`status` IN (?,?) AND `main`.`JobCard`.`actualStart` IS NOT NULL AND `main`.`JobCard`.`actualEnd` IS NOT NULL AND `main`.`JobCard`.`createdAt` >= ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`MaterialRequest`.`id` FROM `main`.`MaterialRequest` WHERE (`main`.`MaterialRequest`.`isActive` = ? AND `main`.`MaterialRequest`.`status` IN (?,?) AND `main`.`MaterialRequest`.`createdAt` >= ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`MaterialRequest`.`id` FROM `main`.`MaterialRequest` WHERE (`main`.`MaterialRequest`.`isActive` = ? AND `main`.`MaterialRequest`.`status` = ? AND `main`.`MaterialRequest`.`createdAt` >= ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`MaterialRequest`.`id` FROM `main`.`MaterialRequest` WHERE (`main`.`MaterialRequest`.`isActive` = ? AND `main`.`MaterialRequest`.`createdAt` >= ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`isActive` = ? AND `main`.`JobCard`.`priority` IN (?,?) AND `main`.`JobCard`.`status` IN (?,?,?)) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Item`.`id` FROM `main`.`Item` WHERE `main`.`Item`.`isActive` = ? LIMIT ? OFFSET ?) AS `sub`
+prisma:query 
+        SELECT COUNT(*) as count 
+        FROM StoreStock
+        INNER JOIN Item ON StoreStock.itemId = Item.id
+        WHERE StoreStock.availableQty <= Item.reorderLevel AND Item.reorderLevel IS NOT NULL
+      
+prisma:query SELECT SUM(`wac`) AS `_sum$wac`, SUM(`availableQty`) AS `_sum$availableQty` FROM (SELECT `main`.`StoreStock`.`wac`, `main`.`StoreStock`.`availableQty` FROM `main`.`StoreStock` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Supplier`.`id` FROM `main`.`Supplier` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Supplier`.`id` FROM `main`.`Supplier` WHERE `main`.`Supplier`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all`, `main`.`JobCard`.`status` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`isActive` = ? AND `main`.`JobCard`.`createdAt` >= ?) GROUP BY `main`.`JobCard`.`status` LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`JobCard`.`id`, `main`.`JobCard`.`jobCardNumber`, `main`.`JobCard`.`status`, `main`.`JobCard`.`priority`, `main`.`JobCard`.`assetId`, `main`.`JobCard`.`createdAt` FROM `main`.`JobCard` WHERE `main`.`JobCard`.`isActive` = ? ORDER BY `main`.`JobCard`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`MaterialRequest`.`id`, `main`.`MaterialRequest`.`mrNumber`, `main`.`MaterialRequest`.`status`, `main`.`MaterialRequest`.`requestorId`, `main`.`MaterialRequest`.`createdAt` FROM `main`.`MaterialRequest` WHERE `main`.`MaterialRequest`.`isActive` = ? ORDER BY `main`.`MaterialRequest`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Asset`.`id`, `main`.`Asset`.`name` FROM `main`.`Asset` WHERE `main`.`Asset`.`id` IN (?,?,?,?,?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`name` FROM `main`.`User` WHERE `main`.`User`.`id` IN (?,?,?,?) LIMIT ? OFFSET ?
+prisma:query SELECT COUNT(*) AS `_count$_all`, `main`.`JobCard`.`priority` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`isActive` = ? AND `main`.`JobCard`.`createdAt` >= ?) GROUP BY `main`.`JobCard`.`priority` LIMIT ? OFFSET ?
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`StockTransaction`.`id` FROM `main`.`StockTransaction` WHERE `main`.`StockTransaction`.`createdAt` >= ? LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT `main`.`Asset`.`id`, `main`.`Asset`.`assetNumber`, `main`.`Asset`.`name`, `main`.`Asset`.`status`, COALESCE(`aggr_selection_0_JobCard`.`_aggr_count_jobCards`, 0) AS `_aggr_count_jobCards` FROM `main`.`Asset` LEFT JOIN (SELECT `main`.`JobCard`.`assetId`, COUNT(*) AS `orderby_aggregator` FROM `main`.`JobCard` WHERE 1=1 GROUP BY `main`.`JobCard`.`assetId`) AS `orderby_1_JobCard` ON (`main`.`Asset`.`id` = `orderby_1_JobCard`.`assetId`) LEFT JOIN (SELECT `main`.`JobCard`.`assetId`, COUNT(*) AS `_aggr_count_jobCards` FROM `main`.`JobCard` WHERE 1=1 GROUP BY `main`.`JobCard`.`assetId`) AS `aggr_selection_0_JobCard` ON (`main`.`Asset`.`id` = `aggr_selection_0_JobCard`.`assetId`) WHERE `main`.`Asset`.`isActive` = ? ORDER BY COALESCE(`orderby_1_JobCard`.`orderby_aggregator`, ?) DESC LIMIT ? OFFSET ?
+prisma:query 
+        SELECT strftime('%Y-%m', createdAt) as month, COUNT(*) as count
+        FROM JobCard
+        WHERE isActive = 1 AND createdAt >= ?
+        GROUP BY strftime('%Y-%m', createdAt)
+        ORDER BY month ASC
+      
+prisma:query 
+        SELECT strftime('%Y-%m', COALESCE(closedAt, actualEnd)) as month, COUNT(*) as count
+        FROM JobCard
+        WHERE isActive = 1 
+          AND status IN ('COMPLETED', 'CLOSED')
+          AND COALESCE(closedAt, actualEnd) >= ?
+        GROUP BY strftime('%Y-%m', COALESCE(closedAt, actualEnd))
+        ORDER BY month ASC
+      
+prisma:query 
+        SELECT 
+          strftime('%Y-%m', createdAt) as month,
+          SUM(CASE WHEN estimatedCost IS NOT NULL THEN CAST(estimatedCost AS REAL) ELSE 0 END) as estimatedCost,
+          SUM(CASE WHEN actualCost IS NOT NULL THEN CAST(actualCost AS REAL) ELSE 0 END) as actualCost
+        FROM JobCard
+        WHERE isActive = 1 AND createdAt >= ?
+        GROUP BY strftime('%Y-%m', createdAt)
+        ORDER BY month ASC
+      
+prisma:query SELECT `main`.`DowntimeLog`.`id`, `main`.`DowntimeLog`.`assetId`, `main`.`DowntimeLog`.`downtimeType`, `main`.`DowntimeLog`.`startTime`, `main`.`DowntimeLog`.`endTime`, `main`.`DowntimeLog`.`totalMinutes` FROM `main`.`DowntimeLog` WHERE `main`.`DowntimeLog`.`startTime` >= ? LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`JobCard`.`id`, `main`.`JobCard`.`assetId`, `main`.`JobCard`.`actualStart`, `main`.`JobCard`.`actualEnd`, `main`.`JobCard`.`actualDuration` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`isActive` = ? AND `main`.`JobCard`.`status` IN (?,?) AND `main`.`JobCard`.`actualStart` IS NOT NULL AND `main`.`JobCard`.`actualEnd` IS NOT NULL AND `main`.`JobCard`.`createdAt` >= ?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Asset`.`id`, `main`.`Asset`.`status`, `main`.`Asset`.`categoryId` FROM `main`.`Asset` WHERE `main`.`Asset`.`isActive` = ? LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Asset`.`id`, `main`.`Asset`.`categoryId` FROM `main`.`Asset` WHERE `main`.`Asset`.`id` IN (?,?,?,?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`AssetCategory`.`id`, `main`.`AssetCategory`.`code`, `main`.`AssetCategory`.`name` FROM `main`.`AssetCategory` WHERE `main`.`AssetCategory`.`id` IN (?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+prisma:query 
+        SELECT 
+          strftime('%Y-%m', createdAt) as month,
+          transactionType,
+          SUM(CAST(totalValue AS REAL)) as totalValue
+        FROM StockTransaction
+        WHERE createdAt >= ?
+        GROUP BY strftime('%Y-%m', createdAt), transactionType
+        ORDER BY month ASC
+      
+prisma:query 
+        SELECT status, COUNT(*) as count
+        FROM Asset
+        WHERE isActive = 1
+        GROUP BY status
+      
+prisma:query SELECT `main`.`AssetCategory`.`id`, `main`.`AssetCategory`.`code`, `main`.`AssetCategory`.`name` FROM `main`.`AssetCategory` WHERE `main`.`AssetCategory`.`id` IN (?,?,?,?,?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`StockTransaction`.`id`, `main`.`StockTransaction`.`transactionType`, `main`.`StockTransaction`.`quantity`, `main`.`StockTransaction`.`totalValue`, `main`.`StockTransaction`.`createdAt` FROM `main`.`StockTransaction` WHERE `main`.`StockTransaction`.`createdAt` >= ? LIMIT ? OFFSET ?
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`PmSchedule`.`id` FROM `main`.`PmSchedule` WHERE (`main`.`PmSchedule`.`nextExecutionAt` < ? AND `main`.`PmSchedule`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`MaterialRequest`.`id` FROM `main`.`MaterialRequest` WHERE (`main`.`MaterialRequest`.`status` = ? AND `main`.`MaterialRequest`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCardApproval`.`id` FROM `main`.`JobCardApproval` WHERE `main`.`JobCardApproval`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`createdAt` >= ? AND `main`.`JobCard`.`createdAt` < ? AND `main`.`JobCard`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`createdAt` >= ? AND `main`.`JobCard`.`createdAt` < ? AND `main`.`JobCard`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`status` IN (?,?) AND `main`.`JobCard`.`actualEnd` >= ? AND `main`.`JobCard`.`actualEnd` < ? AND `main`.`JobCard`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`status` IN (?,?) AND `main`.`JobCard`.`actualEnd` >= ? AND `main`.`JobCard`.`actualEnd` < ? AND `main`.`JobCard`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`createdAt` >= ? AND `main`.`JobCard`.`createdAt` < ? AND `main`.`JobCard`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`status` IN (?,?) AND `main`.`JobCard`.`actualEnd` >= ? AND `main`.`JobCard`.`actualEnd` < ? AND `main`.`JobCard`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`createdAt` >= ? AND `main`.`JobCard`.`createdAt` < ? AND `main`.`JobCard`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`status` IN (?,?) AND `main`.`JobCard`.`actualEnd` >= ? AND `main`.`JobCard`.`actualEnd` < ? AND `main`.`JobCard`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`createdAt` >= ? AND `main`.`JobCard`.`createdAt` < ? AND `main`.`JobCard`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`status` IN (?,?) AND `main`.`JobCard`.`actualEnd` >= ? AND `main`.`JobCard`.`actualEnd` < ? AND `main`.`JobCard`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`createdAt` >= ? AND `main`.`JobCard`.`createdAt` < ? AND `main`.`JobCard`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`status` IN (?,?) AND `main`.`JobCard`.`actualEnd` >= ? AND `main`.`JobCard`.`actualEnd` < ? AND `main`.`JobCard`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`createdAt` >= ? AND `main`.`JobCard`.`createdAt` < ? AND `main`.`JobCard`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`status` IN (?,?) AND `main`.`JobCard`.`actualEnd` >= ? AND `main`.`JobCard`.`actualEnd` < ? AND `main`.`JobCard`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`status` IN (?,?) AND `main`.`JobCard`.`actualEnd` >= ? AND `main`.`JobCard`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`scheduledEnd` >= ? AND `main`.`JobCard`.`scheduledEnd` < ? AND `main`.`JobCard`.`status` IN (?,?,?) AND `main`.`JobCard`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all`, `main`.`Asset`.`status` FROM `main`.`Asset` WHERE `main`.`Asset`.`isActive` = ? GROUP BY `main`.`Asset`.`status` LIMIT ? OFFSET ?
+prisma:query 
+        SELECT 
+          Item.id,
+          Item.itemCode,
+          Item.name,
+          CAST(StoreStock.availableQty AS REAL) as availableQty,
+          CAST(Item.reorderLevel AS REAL) as reorderLevel,
+          Store.name as storeName
+        FROM StoreStock
+        INNER JOIN Item ON StoreStock.itemId = Item.id
+        INNER JOIN Store ON StoreStock.storeId = Store.id
+        WHERE StoreStock.availableQty <= Item.reorderLevel 
+          AND Item.reorderLevel IS NOT NULL
+          AND StoreStock.availableQty > 0
+        ORDER BY (StoreStock.availableQty * 1.0 / Item.reorderLevel) ASC
+        LIMIT 10
+      
+prisma:query SELECT `main`.`JcTechnicianAssignment`.`id`, `main`.`JcTechnicianAssignment`.`jobCardId`, `main`.`JcTechnicianAssignment`.`technicianId`, `main`.`JcTechnicianAssignment`.`role`, `main`.`JcTechnicianAssignment`.`assignedAt`, `main`.`JcTechnicianAssignment`.`assignedBy`, `main`.`JcTechnicianAssignment`.`startTime`, `main`.`JcTechnicianAssignment`.`endTime`, `main`.`JcTechnicianAssignment`.`isActive`, `main`.`JcTechnicianAssignment`.`createdAt`, `main`.`JcTechnicianAssignment`.`updatedAt` FROM `main`.`JcTechnicianAssignment` LEFT JOIN `main`.`JobCard` AS `j0` ON (`j0`.`id`) = (`main`.`JcTechnicianAssignment`.`jobCardId`) WHERE (`main`.`JcTechnicianAssignment`.`isActive` = ? AND (`j0`.`status` IN (?,?) AND `j0`.`actualEnd` >= ? AND `j0`.`actualEnd` <= ? AND `j0`.`isActive` = ? AND (`j0`.`id` IS NOT NULL))) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`JobCard`.`id`, `main`.`JobCard`.`jobCardNumber`, `main`.`JobCard`.`faultDescription`, `main`.`JobCard`.`status`, `main`.`JobCard`.`createdAt`, `main`.`JobCard`.`assetId` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`priority` = ? AND `main`.`JobCard`.`status` IN (?,?,?) AND `main`.`JobCard`.`isActive` = ?) ORDER BY `main`.`JobCard`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`name`, `main`.`User`.`employeeId` FROM `main`.`User` WHERE `main`.`User`.`id` IN (?,?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`JobCard`.`id`, `main`.`JobCard`.`actualDuration` FROM `main`.`JobCard` WHERE `main`.`JobCard`.`id` IN (?,?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`JobCard`.`id`, `main`.`JobCard`.`jobCardNumber`, `main`.`JobCard`.`status`, `main`.`JobCard`.`scheduledEnd`, `main`.`JobCard`.`assetId` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`scheduledEnd` < ? AND `main`.`JobCard`.`status` IN (?,?,?) AND `main`.`JobCard`.`isActive` = ?) ORDER BY `main`.`JobCard`.`scheduledEnd` ASC LIMIT ? OFFSET ?
+ GET /api/dashboard?period=month 200 in 201ms (compile: 27ms, proxy.ts: 50ms, render: 123ms)
+ GET /api/dashboard/analytics?months=6 200 in 200ms (compile: 68ms, proxy.ts: 55ms, render: 78ms)
+ GET /api/dashboard/widgets 200 in 204ms (compile: 89ms, proxy.ts: 52ms, render: 63ms)
+prisma:query SELECT `main`.`UserRole`.`id`, `main`.`UserRole`.`userId`, `main`.`UserRole`.`roleId`, `main`.`UserRole`.`workshopId`, `main`.`UserRole`.`validFrom`, `main`.`UserRole`.`validTo`, `main`.`UserRole`.`isActive`, `main`.`UserRole`.`createdAt`, `main`.`UserRole`.`updatedAt` FROM `main`.`UserRole` LEFT JOIN `main`.`Role` AS `j0` ON (`j0`.`id`) = (`main`.`UserRole`.`roleId`) WHERE (`main`.`UserRole`.`userId` = ? AND `main`.`UserRole`.`isActive` = ? AND (`j0`.`isActive` = ? AND (`j0`.`id` IS NOT NULL)) AND `main`.`UserRole`.`validFrom` <= ? AND (`main`.`UserRole`.`validTo` IS NULL OR `main`.`UserRole`.`validTo` >= ?)) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Role`.`id`, `main`.`Role`.`code`, `main`.`Role`.`name`, `main`.`Role`.`description`, `main`.`Role`.`level`, `main`.`Role`.`isActive`, `main`.`Role`.`createdAt`, `main`.`Role`.`updatedAt` FROM `main`.`Role` WHERE `main`.`Role`.`id` IN (?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`RolePrivilegeSet`.`id`, `main`.`RolePrivilegeSet`.`roleId`, `main`.`RolePrivilegeSet`.`privilegeId`, `main`.`RolePrivilegeSet`.`isGranted`, `main`.`RolePrivilegeSet`.`maxAmount`, `main`.`RolePrivilegeSet`.`workshopScope`, `main`.`RolePrivilegeSet`.`createdAt`, `main`.`RolePrivilegeSet`.`updatedAt` FROM `main`.`RolePrivilegeSet` WHERE (`main`.`RolePrivilegeSet`.`isGranted` = ? AND `main`.`RolePrivilegeSet`.`roleId` IN (?)) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`PrivilegeDefinition`.`id`, `main`.`PrivilegeDefinition`.`code`, `main`.`PrivilegeDefinition`.`name`, `main`.`PrivilegeDefinition`.`category`, `main`.`PrivilegeDefinition`.`description`, `main`.`PrivilegeDefinition`.`isActive`, `main`.`PrivilegeDefinition`.`createdAt`, `main`.`PrivilegeDefinition`.`updatedAt` FROM `main`.`PrivilegeDefinition` WHERE `main`.`PrivilegeDefinition`.`id` IN (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Role`.`id`, `main`.`Role`.`code`, `main`.`Role`.`name`, `main`.`Role`.`description`, `main`.`Role`.`level`, `main`.`Role`.`isActive`, `main`.`Role`.`createdAt`, `main`.`Role`.`updatedAt`, COALESCE(`aggr_selection_0_UserRole`.`_aggr_count_users`, 0) AS `_aggr_count_users`, COALESCE(`aggr_selection_1_RolePrivilegeSet`.`_aggr_count_privileges`, 0) AS `_aggr_count_privileges` FROM `main`.`Role` LEFT JOIN (SELECT `main`.`UserRole`.`roleId`, COUNT(*) AS `_aggr_count_users` FROM `main`.`UserRole` WHERE 1=1 GROUP BY `main`.`UserRole`.`roleId`) AS `aggr_selection_0_UserRole` ON (`main`.`Role`.`id` = `aggr_selection_0_UserRole`.`roleId`) LEFT JOIN (SELECT `main`.`RolePrivilegeSet`.`roleId`, COUNT(*) AS `_aggr_count_privileges` FROM `main`.`RolePrivilegeSet` WHERE 1=1 GROUP BY `main`.`RolePrivilegeSet`.`roleId`) AS `aggr_selection_1_RolePrivilegeSet` ON (`main`.`Role`.`id` = `aggr_selection_1_RolePrivilegeSet`.`roleId`) WHERE 1=1 ORDER BY `main`.`Role`.`level` ASC, `main`.`Role`.`name` ASC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`RolePrivilegeSet`.`id`, `main`.`RolePrivilegeSet`.`privilegeId`, `main`.`RolePrivilegeSet`.`roleId` FROM `main`.`RolePrivilegeSet` WHERE (`main`.`RolePrivilegeSet`.`isGranted` = ? AND `main`.`RolePrivilegeSet`.`roleId` IN (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`UserPrivilegeOverride`.`id`, `main`.`UserPrivilegeOverride`.`userId`, `main`.`UserPrivilegeOverride`.`privilegeId`, `main`.`UserPrivilegeOverride`.`isGranted`, `main`.`UserPrivilegeOverride`.`reason`, `main`.`UserPrivilegeOverride`.`validFrom`, `main`.`UserPrivilegeOverride`.`validTo`, `main`.`UserPrivilegeOverride`.`grantedBy`, `main`.`UserPrivilegeOverride`.`createdAt`, `main`.`UserPrivilegeOverride`.`updatedAt` FROM `main`.`UserPrivilegeOverride` WHERE (`main`.`UserPrivilegeOverride`.`userId` = ? AND `main`.`UserPrivilegeOverride`.`validFrom` <= ? AND (`main`.`UserPrivilegeOverride`.`validTo` IS NULL OR `main`.`UserPrivilegeOverride`.`validTo` >= ?)) LIMIT ? OFFSET ?
+ GET /api/privileges/check?userId=cmmyw3m59007yu7gwbrb4pm5m 200 in 32ms (compile: 6ms, proxy.ts: 10ms, render: 17ms)
+prisma:query SELECT `main`.`PrivilegeDefinition`.`id`, `main`.`PrivilegeDefinition`.`code`, `main`.`PrivilegeDefinition`.`name`, `main`.`PrivilegeDefinition`.`category` FROM `main`.`PrivilegeDefinition` WHERE `main`.`PrivilegeDefinition`.`id` IN (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+ GET /api/roles 200 in 37ms (compile: 9ms, proxy.ts: 10ms, render: 18ms)
+prisma:query SELECT `main`.`Role`.`id`, `main`.`Role`.`code`, `main`.`Role`.`name`, `main`.`Role`.`description`, `main`.`Role`.`level`, `main`.`Role`.`isActive`, `main`.`Role`.`createdAt`, `main`.`Role`.`updatedAt` FROM `main`.`Role` WHERE (`main`.`Role`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`PrivilegeDefinition`.`id`, `main`.`PrivilegeDefinition`.`code`, `main`.`PrivilegeDefinition`.`name`, `main`.`PrivilegeDefinition`.`category`, `main`.`PrivilegeDefinition`.`description`, `main`.`PrivilegeDefinition`.`isActive`, `main`.`PrivilegeDefinition`.`createdAt`, `main`.`PrivilegeDefinition`.`updatedAt` FROM `main`.`PrivilegeDefinition` WHERE `main`.`PrivilegeDefinition`.`isActive` = ? ORDER BY `main`.`PrivilegeDefinition`.`category` ASC, `main`.`PrivilegeDefinition`.`name` ASC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`RolePrivilegeSet`.`id`, `main`.`RolePrivilegeSet`.`roleId`, `main`.`RolePrivilegeSet`.`privilegeId`, `main`.`RolePrivilegeSet`.`isGranted`, `main`.`RolePrivilegeSet`.`maxAmount`, `main`.`RolePrivilegeSet`.`workshopScope`, `main`.`RolePrivilegeSet`.`createdAt`, `main`.`RolePrivilegeSet`.`updatedAt` FROM `main`.`RolePrivilegeSet` WHERE `main`.`RolePrivilegeSet`.`roleId` = ? LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`PrivilegeDefinition`.`id`, `main`.`PrivilegeDefinition`.`code`, `main`.`PrivilegeDefinition`.`name`, `main`.`PrivilegeDefinition`.`category`, `main`.`PrivilegeDefinition`.`description`, `main`.`PrivilegeDefinition`.`isActive`, `main`.`PrivilegeDefinition`.`createdAt`, `main`.`PrivilegeDefinition`.`updatedAt` FROM `main`.`PrivilegeDefinition` WHERE `main`.`PrivilegeDefinition`.`id` IN (?,?,?,?,?,?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+ GET /api/roles/cmmyw3lbw0016u7gwggk0rxki/privileges 200 in 921ms (compile: 904ms, proxy.ts: 5ms, render: 12ms)
+ GET /api/auth/session 200 in 60ms (compile: 24ms, proxy.ts: 8ms, render: 29ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Role`.`id`, `main`.`Role`.`code`, `main`.`Role`.`name`, `main`.`Role`.`description`, `main`.`Role`.`level`, `main`.`Role`.`isActive`, `main`.`Role`.`createdAt`, `main`.`Role`.`updatedAt` FROM `main`.`Role` WHERE (`main`.`Role`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`PrivilegeDefinition`.`id`, `main`.`PrivilegeDefinition`.`code`, `main`.`PrivilegeDefinition`.`name`, `main`.`PrivilegeDefinition`.`category`, `main`.`PrivilegeDefinition`.`description`, `main`.`PrivilegeDefinition`.`isActive`, `main`.`PrivilegeDefinition`.`createdAt`, `main`.`PrivilegeDefinition`.`updatedAt` FROM `main`.`PrivilegeDefinition` WHERE `main`.`PrivilegeDefinition`.`isActive` = ? ORDER BY `main`.`PrivilegeDefinition`.`category` ASC, `main`.`PrivilegeDefinition`.`name` ASC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`RolePrivilegeSet`.`id`, `main`.`RolePrivilegeSet`.`roleId`, `main`.`RolePrivilegeSet`.`privilegeId`, `main`.`RolePrivilegeSet`.`isGranted`, `main`.`RolePrivilegeSet`.`maxAmount`, `main`.`RolePrivilegeSet`.`workshopScope`, `main`.`RolePrivilegeSet`.`createdAt`, `main`.`RolePrivilegeSet`.`updatedAt` FROM `main`.`RolePrivilegeSet` WHERE `main`.`RolePrivilegeSet`.`roleId` = ? LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`PrivilegeDefinition`.`id`, `main`.`PrivilegeDefinition`.`code`, `main`.`PrivilegeDefinition`.`name`, `main`.`PrivilegeDefinition`.`category`, `main`.`PrivilegeDefinition`.`description`, `main`.`PrivilegeDefinition`.`isActive`, `main`.`PrivilegeDefinition`.`createdAt`, `main`.`PrivilegeDefinition`.`updatedAt` FROM `main`.`PrivilegeDefinition` WHERE `main`.`PrivilegeDefinition`.`id` IN (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+ GET /api/roles/cmmyw3ld9001fu7gwxayj6lj3/privileges 200 in 38ms (compile: 14ms, proxy.ts: 4ms, render: 20ms)
+ GET /api/auth/session 200 in 48ms (compile: 24ms, proxy.ts: 12ms, render: 12ms)
+prisma:query SELECT 1
+prisma:query SELECT 1
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`GrnHeader`.`id` FROM `main`.`GrnHeader` WHERE `main`.`GrnHeader`.`isActive` = ? LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT `main`.`GrnHeader`.`id`, `main`.`GrnHeader`.`totalValue`, `main`.`GrnHeader`.`status`, `main`.`GrnHeader`.`createdAt`, `main`.`GrnHeader`.`verifiedAt`, `main`.`GrnHeader`.`postedAt` FROM `main`.`GrnHeader` WHERE (`main`.`GrnHeader`.`createdAt` >= ? AND `main`.`GrnHeader`.`isActive` = ?) LIMIT ? OFFSET ?
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Supplier`.`id` FROM `main`.`Supplier` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT `main`.`Supplier`.`id`, `main`.`Supplier`.`supplierCode`, `main`.`Supplier`.`name`, `main`.`Supplier`.`contactPerson`, `main`.`Supplier`.`email`, `main`.`Supplier`.`phone`, `main`.`Supplier`.`address`, `main`.`Supplier`.`status`, `main`.`Supplier`.`paymentTerms`, `main`.`Supplier`.`createdAt` FROM `main`.`Supplier` WHERE 1=1 ORDER BY `main`.`Supplier`.`name` ASC LIMIT ? OFFSET ?
+Get GRNs error: Error [PrismaClientValidationError]: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].grnHeader.findMany()` invocation in
+D:\Yohan\ERP System\.next\dev\server\chunks\[root-of-the-server]__7a8e0a9f._.js:705:144
+
+  702     contains: search
+  703 };
+  704 const [grns, total] = await Promise.all([
+→ 705     __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].grnHeader.findMany({
+            where: {
+              isActive: true
+            },
+            skip: 0,
+            take: 50,
+            orderBy: {
+              createdAt: "desc"
+            },
+            include: {
+              supplier: {
+                select: {
+                  id: true,
+                  supplierCode: true,
+                  name: true
+                }
+              },
+              store: {
+                select: {
+                  id: true,
+                  code: true,
+                  name: true
+                }
+              },
+              purchaseOrder: {
+                select: {
+                  id: true,
+                  poNumber: true
+                }
+              },
+              creator: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              },
+              lines: {
+                include: {
+                  item: {
+                  ~~~~
+                    select: {
+                      id: true,
+                      itemCode: true,
+                      name: true,
+                      unitOfMeasure: true
+                    }
+                  },
+          ?       grnHeader?: true
+                }
+              },
+              _count: {
+                select: {
+                  lines: true
+                }
+              }
+            }
+          })
+
+Unknown field `item` for include statement on model `GrnLine`. Available options are marked with ?.
+    at <unknown> (src\app\api\grn\route.ts:213:20)
+    at async GET (src\app\api\grn\route.ts:212:27)
+  211 |
+  212 |     const [grns, total] = await Promise.all([
+> 213 |       db.grnHeader.findMany({
+      |                    ^
+  214 |         where,
+  215 |         skip,
+  216 |         take: limit, {
+  clientVersion: '6.19.2'
+}
+ GET /api/grn?page=1&limit=50 500 in 224ms (compile: 18ms, proxy.ts: 20ms, render: 185ms)
+ GET /api/suppliers?limit=100 200 in 236ms (compile: 23ms, proxy.ts: 24ms, render: 188ms)
+prisma:query SELECT `main`.`Store`.`id`, `main`.`Store`.`code`, `main`.`Store`.`name`, `main`.`Store`.`storeType`, `main`.`Store`.`location`, `main`.`Store`.`managerId`, `main`.`Store`.`isActive`, `main`.`Store`.`createdAt`, `main`.`Store`.`updatedAt`, COALESCE(`aggr_selection_0_StoreStock`.`_aggr_count_stock`, 0) AS `_aggr_count_stock`, COALESCE(`aggr_selection_1_MaterialIssue`.`_aggr_count_materialIssues`, 0) AS `_aggr_count_materialIssues`, COALESCE(`aggr_selection_2_GrnHeader`.`_aggr_count_grnHeaders`, 0) AS `_aggr_count_grnHeaders` FROM `main`.`Store` LEFT JOIN (SELECT `main`.`StoreStock`.`storeId`, COUNT(*) AS `_aggr_count_stock` FROM `main`.`StoreStock` WHERE 1=1 GROUP BY `main`.`StoreStock`.`storeId`) AS `aggr_selection_0_StoreStock` ON (`main`.`Store`.`id` = `aggr_selection_0_StoreStock`.`storeId`) LEFT JOIN (SELECT `main`.`MaterialIssue`.`storeId`, COUNT(*) AS `_aggr_count_materialIssues` FROM `main`.`MaterialIssue` WHERE 1=1 GROUP BY `main`.`MaterialIssue`.`storeId`) AS `aggr_selection_1_MaterialIssue` ON (`main`.`Store`.`id` = `aggr_selection_1_MaterialIssue`.`storeId`) LEFT JOIN (SELECT `main`.`GrnHeader`.`storeId`, COUNT(*) AS `_aggr_count_grnHeaders` FROM `main`.`GrnHeader` WHERE 1=1 GROUP BY `main`.`GrnHeader`.`storeId`) AS `aggr_selection_2_GrnHeader` ON (`main`.`Store`.`id` = `aggr_selection_2_GrnHeader`.`storeId`) WHERE `main`.`Store`.`isActive` = ? ORDER BY `main`.`Store`.`name` ASC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`GrnHeader`.`id`, `main`.`GrnHeader`.`totalValue`, `main`.`GrnHeader`.`status` FROM `main`.`GrnHeader` WHERE (`main`.`GrnHeader`.`createdAt` >= ? AND `main`.`GrnHeader`.`createdAt` <= ? AND `main`.`GrnHeader`.`isActive` = ?) LIMIT ? OFFSET ?
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`PurchaseOrder`.`id` FROM `main`.`PurchaseOrder` WHERE (`main`.`PurchaseOrder`.`isActive` = ? AND `main`.`PurchaseOrder`.`status` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT `main`.`PurchaseOrder`.`id`, `main`.`PurchaseOrder`.`poNumber`, `main`.`PurchaseOrder`.`prId`, `main`.`PurchaseOrder`.`quotationId`, `main`.`PurchaseOrder`.`supplierId`, `main`.`PurchaseOrder`.`procurementChannel`, `main`.`PurchaseOrder`.`budgetLineId`, `main`.`PurchaseOrder`.`status`, `main`.`PurchaseOrder`.`orderDate`, `main`.`PurchaseOrder`.`expectedDeliveryDate`, `main`.`PurchaseOrder`.`currency`, `main`.`PurchaseOrder`.`totalValue`, `main`.`PurchaseOrder`.`terms`, `main`.`PurchaseOrder`.`notes`, `main`.`PurchaseOrder`.`approvedBy`, `main`.`PurchaseOrder`.`approvedAt`, `main`.`PurchaseOrder`.`issuedAt`, `main`.`PurchaseOrder`.`acknowledgedAt`, `main`.`PurchaseOrder`.`commitmentCreated`, `main`.`PurchaseOrder`.`isActive`, `main`.`PurchaseOrder`.`createdAt`, `main`.`PurchaseOrder`.`updatedAt`, `main`.`PurchaseOrder`.`createdBy`, `main`.`PurchaseOrder`.`updatedBy`, COALESCE(`aggr_selection_0_PoLine`.`_aggr_count_lines`, 0) AS `_aggr_count_lines` FROM `main`.`PurchaseOrder` LEFT JOIN (SELECT `main`.`PoLine`.`poId`, COUNT(*) AS `_aggr_count_lines` FROM `main`.`PoLine` WHERE 1=1 GROUP BY `main`.`PoLine`.`poId`) AS `aggr_selection_0_PoLine` ON (`main`.`PurchaseOrder`.`id` = `aggr_selection_0_PoLine`.`poId`) WHERE (`main`.`PurchaseOrder`.`isActive` = ? AND `main`.`PurchaseOrder`.`status` = ?) ORDER BY `main`.`PurchaseOrder`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT 1
+prisma:query SELECT `main`.`StoreStock`.`id`, `main`.`StoreStock`.`storeId`, `main`.`StoreStock`.`itemId`, `main`.`StoreStock`.`availableQty`, `main`.`StoreStock`.`reservedQty`, `main`.`StoreStock`.`quarantineQty`, `main`.`StoreStock`.`wac`, `main`.`StoreStock`.`lastMovementAt`, `main`.`StoreStock`.`isActive`, `main`.`StoreStock`.`createdAt`, `main`.`StoreStock`.`updatedAt` FROM `main`.`StoreStock` WHERE (`main`.`StoreStock`.`storeId` = ? AND `main`.`StoreStock`.`availableQty` > ?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`StoreStock`.`id`, `main`.`StoreStock`.`storeId`, `main`.`StoreStock`.`itemId`, `main`.`StoreStock`.`availableQty`, `main`.`StoreStock`.`reservedQty`, `main`.`StoreStock`.`quarantineQty`, `main`.`StoreStock`.`wac`, `main`.`StoreStock`.`lastMovementAt`, `main`.`StoreStock`.`isActive`, `main`.`StoreStock`.`createdAt`, `main`.`StoreStock`.`updatedAt` FROM `main`.`StoreStock` WHERE (`main`.`StoreStock`.`storeId` = ? AND `main`.`StoreStock`.`availableQty` > ?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`StoreStock`.`id`, `main`.`StoreStock`.`storeId`, `main`.`StoreStock`.`itemId`, `main`.`StoreStock`.`availableQty`, `main`.`StoreStock`.`reservedQty`, `main`.`StoreStock`.`quarantineQty`, `main`.`StoreStock`.`wac`, `main`.`StoreStock`.`lastMovementAt`, `main`.`StoreStock`.`isActive`, `main`.`StoreStock`.`createdAt`, `main`.`StoreStock`.`updatedAt` FROM `main`.`StoreStock` WHERE (`main`.`StoreStock`.`storeId` = ? AND `main`.`StoreStock`.`availableQty` > ?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Item`.`id`, `main`.`Item`.`itemCode`, `main`.`Item`.`name`, `main`.`Item`.`unitOfMeasure` FROM `main`.`Item` WHERE `main`.`Item`.`id` IN (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`GrnHeader`.`id` FROM `main`.`GrnHeader` WHERE (`main`.`GrnHeader`.`status` = ? AND `main`.`GrnHeader`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+ GET /api/purchase-orders?status=APPROVED&limit=50 200 in 247ms (compile: 214ms, proxy.ts: 19ms, render: 15ms)
+ GET /api/inventory/stores 200 in 258ms (compile: 196ms, proxy.ts: 24ms, render: 38ms)
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`GrnHeader`.`id` FROM `main`.`GrnHeader` WHERE (`main`.`GrnHeader`.`inspectionStatus` = ? AND `main`.`GrnHeader`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT `main`.`GrnHeader`.`id`, `main`.`GrnHeader`.`createdAt`, `main`.`GrnHeader`.`postedAt` FROM `main`.`GrnHeader` WHERE (`main`.`GrnHeader`.`status` = ? AND `main`.`GrnHeader`.`postedAt` IS NOT NULL AND `main`.`GrnHeader`.`isActive` = ?) ORDER BY `main`.`GrnHeader`.`postedAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT COUNT(*) AS `_count$_all`, `main`.`GrnHeader`.`status` FROM `main`.`GrnHeader` WHERE `main`.`GrnHeader`.`isActive` = ? GROUP BY `main`.`GrnHeader`.`status` LIMIT ? OFFSET ?
+prisma:query SELECT COUNT(*) AS `_count$_all`, `main`.`GrnHeader`.`inspectionStatus` FROM `main`.`GrnHeader` WHERE `main`.`GrnHeader`.`isActive` = ? GROUP BY `main`.`GrnHeader`.`inspectionStatus` LIMIT ? OFFSET ?
+prisma:query SELECT SUM(`main`.`GrnHeader`.`totalValue`) AS `_sum$totalValue`, COUNT(*) AS `_count$_all`, `main`.`GrnHeader`.`supplierId` FROM `main`.`GrnHeader` WHERE (`main`.`GrnHeader`.`createdAt` >= ? AND `main`.`GrnHeader`.`isActive` = ?) GROUP BY `main`.`GrnHeader`.`supplierId` ORDER BY SUM(`main`.`GrnHeader`.`totalValue`) DESC LIMIT ? OFFSET ?
+ GET /api/grn/statistics 200 in 276ms (compile: 20ms, proxy.ts: 25ms, render: 231ms)
+ GET / 200 in 90ms (compile: 10ms, proxy.ts: 7ms, render: 74ms)
+ GET /api/auth/session 200 in 37ms (compile: 16ms, proxy.ts: 7ms, render: 14ms)
+prisma:query SELECT 1
+prisma:query SELECT 1
+prisma:query SELECT 1
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Asset`.`id` FROM `main`.`Asset` WHERE `main`.`Asset`.`isActive` = ? LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Asset`.`id` FROM `main`.`Asset` WHERE (`main`.`Asset`.`isActive` = ? AND `main`.`Asset`.`status` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Asset`.`id` FROM `main`.`Asset` WHERE (`main`.`Asset`.`isActive` = ? AND `main`.`Asset`.`status` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`isActive` = ? AND `main`.`JobCard`.`createdAt` >= ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`isActive` = ? AND `main`.`JobCard`.`status` IN (?,?,?,?) AND `main`.`JobCard`.`createdAt` >= ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT 1
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`isActive` = ? AND `main`.`JobCard`.`status` IN (?,?) AND `main`.`JobCard`.`createdAt` >= ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`isActive` = ? AND `main`.`JobCard`.`priority` IN (?,?) AND `main`.`JobCard`.`status` IN (?,?,?)) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`MaterialRequest`.`id` FROM `main`.`MaterialRequest` WHERE (`main`.`MaterialRequest`.`isActive` = ? AND `main`.`MaterialRequest`.`createdAt` >= ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT AVG(`actualDuration`) AS `_avg$actualDuration` FROM (SELECT `main`.`JobCard`.`actualDuration` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`status` IN (?,?) AND `main`.`JobCard`.`actualStart` IS NOT NULL AND `main`.`JobCard`.`actualEnd` IS NOT NULL AND `main`.`JobCard`.`createdAt` >= ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`MaterialRequest`.`id` FROM `main`.`MaterialRequest` WHERE (`main`.`MaterialRequest`.`isActive` = ? AND `main`.`MaterialRequest`.`status` IN (?,?) AND `main`.`MaterialRequest`.`createdAt` >= ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`MaterialRequest`.`id` FROM `main`.`MaterialRequest` WHERE (`main`.`MaterialRequest`.`isActive` = ? AND `main`.`MaterialRequest`.`status` = ? AND `main`.`MaterialRequest`.`createdAt` >= ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Item`.`id` FROM `main`.`Item` WHERE `main`.`Item`.`isActive` = ? LIMIT ? OFFSET ?) AS `sub`
+prisma:query 
+        SELECT COUNT(*) as count 
+        FROM StoreStock
+        INNER JOIN Item ON StoreStock.itemId = Item.id
+        WHERE StoreStock.availableQty <= Item.reorderLevel AND Item.reorderLevel IS NOT NULL
+      
+prisma:query SELECT SUM(`wac`) AS `_sum$wac`, SUM(`availableQty`) AS `_sum$availableQty` FROM (SELECT `main`.`StoreStock`.`wac`, `main`.`StoreStock`.`availableQty` FROM `main`.`StoreStock` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Supplier`.`id` FROM `main`.`Supplier` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Supplier`.`id` FROM `main`.`Supplier` WHERE `main`.`Supplier`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all`, `main`.`JobCard`.`status` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`isActive` = ? AND `main`.`JobCard`.`createdAt` >= ?) GROUP BY `main`.`JobCard`.`status` LIMIT ? OFFSET ?
+prisma:query SELECT COUNT(*) AS `_count$_all`, `main`.`JobCard`.`priority` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`isActive` = ? AND `main`.`JobCard`.`createdAt` >= ?) GROUP BY `main`.`JobCard`.`priority` LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`JobCard`.`id`, `main`.`JobCard`.`jobCardNumber`, `main`.`JobCard`.`status`, `main`.`JobCard`.`priority`, `main`.`JobCard`.`assetId`, `main`.`JobCard`.`createdAt` FROM `main`.`JobCard` WHERE `main`.`JobCard`.`isActive` = ? ORDER BY `main`.`JobCard`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`MaterialRequest`.`id`, `main`.`MaterialRequest`.`mrNumber`, `main`.`MaterialRequest`.`status`, `main`.`MaterialRequest`.`requestorId`, `main`.`MaterialRequest`.`createdAt` FROM `main`.`MaterialRequest` WHERE `main`.`MaterialRequest`.`isActive` = ? ORDER BY `main`.`MaterialRequest`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Asset`.`id`, `main`.`Asset`.`name` FROM `main`.`Asset` WHERE `main`.`Asset`.`id` IN (?,?,?,?,?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`name` FROM `main`.`User` WHERE `main`.`User`.`id` IN (?,?,?,?) LIMIT ? OFFSET ?
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`StockTransaction`.`id` FROM `main`.`StockTransaction` WHERE `main`.`StockTransaction`.`createdAt` >= ? LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT `main`.`Asset`.`id`, `main`.`Asset`.`assetNumber`, `main`.`Asset`.`name`, `main`.`Asset`.`status`, COALESCE(`aggr_selection_0_JobCard`.`_aggr_count_jobCards`, 0) AS `_aggr_count_jobCards` FROM `main`.`Asset` LEFT JOIN (SELECT `main`.`JobCard`.`assetId`, COUNT(*) AS `orderby_aggregator` FROM `main`.`JobCard` WHERE 1=1 GROUP BY `main`.`JobCard`.`assetId`) AS `orderby_1_JobCard` ON (`main`.`Asset`.`id` = `orderby_1_JobCard`.`assetId`) LEFT JOIN (SELECT `main`.`JobCard`.`assetId`, COUNT(*) AS `_aggr_count_jobCards` FROM `main`.`JobCard` WHERE 1=1 GROUP BY `main`.`JobCard`.`assetId`) AS `aggr_selection_0_JobCard` ON (`main`.`Asset`.`id` = `aggr_selection_0_JobCard`.`assetId`) WHERE `main`.`Asset`.`isActive` = ? ORDER BY COALESCE(`orderby_1_JobCard`.`orderby_aggregator`, ?) DESC LIMIT ? OFFSET ?
+prisma:query 
+        SELECT strftime('%Y-%m', createdAt) as month, COUNT(*) as count
+        FROM JobCard
+        WHERE isActive = 1 AND createdAt >= ?
+        GROUP BY strftime('%Y-%m', createdAt)
+        ORDER BY month ASC
+      
+prisma:query 
+        SELECT strftime('%Y-%m', COALESCE(closedAt, actualEnd)) as month, COUNT(*) as count
+        FROM JobCard
+        WHERE isActive = 1 
+          AND status IN ('COMPLETED', 'CLOSED')
+          AND COALESCE(closedAt, actualEnd) >= ?
+        GROUP BY strftime('%Y-%m', COALESCE(closedAt, actualEnd))
+        ORDER BY month ASC
+      
+prisma:query 
+        SELECT 
+          strftime('%Y-%m', createdAt) as month,
+          SUM(CASE WHEN estimatedCost IS NOT NULL THEN CAST(estimatedCost AS REAL) ELSE 0 END) as estimatedCost,
+          SUM(CASE WHEN actualCost IS NOT NULL THEN CAST(actualCost AS REAL) ELSE 0 END) as actualCost
+        FROM JobCard
+        WHERE isActive = 1 AND createdAt >= ?
+        GROUP BY strftime('%Y-%m', createdAt)
+        ORDER BY month ASC
+      
+prisma:query SELECT `main`.`DowntimeLog`.`id`, `main`.`DowntimeLog`.`assetId`, `main`.`DowntimeLog`.`downtimeType`, `main`.`DowntimeLog`.`startTime`, `main`.`DowntimeLog`.`endTime`, `main`.`DowntimeLog`.`totalMinutes` FROM `main`.`DowntimeLog` WHERE `main`.`DowntimeLog`.`startTime` >= ? LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`JobCard`.`id`, `main`.`JobCard`.`assetId`, `main`.`JobCard`.`actualStart`, `main`.`JobCard`.`actualEnd`, `main`.`JobCard`.`actualDuration` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`isActive` = ? AND `main`.`JobCard`.`status` IN (?,?) AND `main`.`JobCard`.`actualStart` IS NOT NULL AND `main`.`JobCard`.`actualEnd` IS NOT NULL AND `main`.`JobCard`.`createdAt` >= ?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Asset`.`id`, `main`.`Asset`.`status`, `main`.`Asset`.`categoryId` FROM `main`.`Asset` WHERE `main`.`Asset`.`isActive` = ? LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Asset`.`id`, `main`.`Asset`.`categoryId` FROM `main`.`Asset` WHERE `main`.`Asset`.`id` IN (?,?,?,?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`AssetCategory`.`id`, `main`.`AssetCategory`.`code`, `main`.`AssetCategory`.`name` FROM `main`.`AssetCategory` WHERE `main`.`AssetCategory`.`id` IN (?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`StockTransaction`.`id`, `main`.`StockTransaction`.`transactionType`, `main`.`StockTransaction`.`quantity`, `main`.`StockTransaction`.`totalValue`, `main`.`StockTransaction`.`createdAt` FROM `main`.`StockTransaction` WHERE `main`.`StockTransaction`.`createdAt` >= ? LIMIT ? OFFSET ?
+prisma:query 
+        SELECT 
+          strftime('%Y-%m', createdAt) as month,
+          transactionType,
+          SUM(CAST(totalValue AS REAL)) as totalValue
+        FROM StockTransaction
+        WHERE createdAt >= ?
+        GROUP BY strftime('%Y-%m', createdAt), transactionType
+        ORDER BY month ASC
+      
+prisma:query SELECT `main`.`AssetCategory`.`id`, `main`.`AssetCategory`.`code`, `main`.`AssetCategory`.`name` FROM `main`.`AssetCategory` WHERE `main`.`AssetCategory`.`id` IN (?,?,?,?,?) LIMIT ? OFFSET ?
+prisma:query 
+        SELECT status, COUNT(*) as count
+        FROM Asset
+        WHERE isActive = 1
+        GROUP BY status
+      
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`PmSchedule`.`id` FROM `main`.`PmSchedule` WHERE (`main`.`PmSchedule`.`nextExecutionAt` < ? AND `main`.`PmSchedule`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`MaterialRequest`.`id` FROM `main`.`MaterialRequest` WHERE (`main`.`MaterialRequest`.`status` = ? AND `main`.`MaterialRequest`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCardApproval`.`id` FROM `main`.`JobCardApproval` WHERE `main`.`JobCardApproval`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`createdAt` >= ? AND `main`.`JobCard`.`createdAt` < ? AND `main`.`JobCard`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`status` IN (?,?) AND `main`.`JobCard`.`actualEnd` >= ? AND `main`.`JobCard`.`actualEnd` < ? AND `main`.`JobCard`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`createdAt` >= ? AND `main`.`JobCard`.`createdAt` < ? AND `main`.`JobCard`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`createdAt` >= ? AND `main`.`JobCard`.`createdAt` < ? AND `main`.`JobCard`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`status` IN (?,?) AND `main`.`JobCard`.`actualEnd` >= ? AND `main`.`JobCard`.`actualEnd` < ? AND `main`.`JobCard`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`status` IN (?,?) AND `main`.`JobCard`.`actualEnd` >= ? AND `main`.`JobCard`.`actualEnd` < ? AND `main`.`JobCard`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`createdAt` >= ? AND `main`.`JobCard`.`createdAt` < ? AND `main`.`JobCard`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`status` IN (?,?) AND `main`.`JobCard`.`actualEnd` >= ? AND `main`.`JobCard`.`actualEnd` < ? AND `main`.`JobCard`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`createdAt` >= ? AND `main`.`JobCard`.`createdAt` < ? AND `main`.`JobCard`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`status` IN (?,?) AND `main`.`JobCard`.`actualEnd` >= ? AND `main`.`JobCard`.`actualEnd` < ? AND `main`.`JobCard`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`createdAt` >= ? AND `main`.`JobCard`.`createdAt` < ? AND `main`.`JobCard`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`status` IN (?,?) AND `main`.`JobCard`.`actualEnd` >= ? AND `main`.`JobCard`.`actualEnd` < ? AND `main`.`JobCard`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`createdAt` >= ? AND `main`.`JobCard`.`createdAt` < ? AND `main`.`JobCard`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`status` IN (?,?) AND `main`.`JobCard`.`actualEnd` >= ? AND `main`.`JobCard`.`actualEnd` < ? AND `main`.`JobCard`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`status` IN (?,?) AND `main`.`JobCard`.`actualEnd` >= ? AND `main`.`JobCard`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`scheduledEnd` >= ? AND `main`.`JobCard`.`scheduledEnd` < ? AND `main`.`JobCard`.`status` IN (?,?,?) AND `main`.`JobCard`.`isActive` = ?) LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all`, `main`.`Asset`.`status` FROM `main`.`Asset` WHERE `main`.`Asset`.`isActive` = ? GROUP BY `main`.`Asset`.`status` LIMIT ? OFFSET ?
+prisma:query 
+        SELECT 
+          Item.id,
+          Item.itemCode,
+          Item.name,
+          CAST(StoreStock.availableQty AS REAL) as availableQty,
+          CAST(Item.reorderLevel AS REAL) as reorderLevel,
+          Store.name as storeName
+        FROM StoreStock
+        INNER JOIN Item ON StoreStock.itemId = Item.id
+        INNER JOIN Store ON StoreStock.storeId = Store.id
+        WHERE StoreStock.availableQty <= Item.reorderLevel 
+          AND Item.reorderLevel IS NOT NULL
+          AND StoreStock.availableQty > 0
+        ORDER BY (StoreStock.availableQty * 1.0 / Item.reorderLevel) ASC
+        LIMIT 10
+      
+prisma:query SELECT `main`.`JcTechnicianAssignment`.`id`, `main`.`JcTechnicianAssignment`.`jobCardId`, `main`.`JcTechnicianAssignment`.`technicianId`, `main`.`JcTechnicianAssignment`.`role`, `main`.`JcTechnicianAssignment`.`assignedAt`, `main`.`JcTechnicianAssignment`.`assignedBy`, `main`.`JcTechnicianAssignment`.`startTime`, `main`.`JcTechnicianAssignment`.`endTime`, `main`.`JcTechnicianAssignment`.`isActive`, `main`.`JcTechnicianAssignment`.`createdAt`, `main`.`JcTechnicianAssignment`.`updatedAt` FROM `main`.`JcTechnicianAssignment` LEFT JOIN `main`.`JobCard` AS `j0` ON (`j0`.`id`) = (`main`.`JcTechnicianAssignment`.`jobCardId`) WHERE (`main`.`JcTechnicianAssignment`.`isActive` = ? AND (`j0`.`status` IN (?,?) AND `j0`.`actualEnd` >= ? AND `j0`.`actualEnd` <= ? AND `j0`.`isActive` = ? AND (`j0`.`id` IS NOT NULL))) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`name`, `main`.`User`.`employeeId` FROM `main`.`User` WHERE `main`.`User`.`id` IN (?,?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`JobCard`.`id`, `main`.`JobCard`.`jobCardNumber`, `main`.`JobCard`.`faultDescription`, `main`.`JobCard`.`status`, `main`.`JobCard`.`createdAt`, `main`.`JobCard`.`assetId` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`priority` = ? AND `main`.`JobCard`.`status` IN (?,?,?) AND `main`.`JobCard`.`isActive` = ?) ORDER BY `main`.`JobCard`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`JobCard`.`id`, `main`.`JobCard`.`actualDuration` FROM `main`.`JobCard` WHERE `main`.`JobCard`.`id` IN (?,?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`JobCard`.`id`, `main`.`JobCard`.`jobCardNumber`, `main`.`JobCard`.`status`, `main`.`JobCard`.`scheduledEnd`, `main`.`JobCard`.`assetId` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`scheduledEnd` < ? AND `main`.`JobCard`.`status` IN (?,?,?) AND `main`.`JobCard`.`isActive` = ?) ORDER BY `main`.`JobCard`.`scheduledEnd` ASC LIMIT ? OFFSET ?
+ GET /api/dashboard?period=month 200 in 121ms (compile: 38ms, proxy.ts: 19ms, render: 64ms)
+ GET /api/dashboard/analytics?months=6 200 in 124ms (compile: 58ms, proxy.ts: 17ms, render: 49ms)
+ GET /api/dashboard/widgets 200 in 124ms (compile: 68ms, proxy.ts: 19ms, render: 38ms)
+prisma:query SELECT `main`.`Asset`.`id`, `main`.`Asset`.`assetNumber`, `main`.`Asset`.`categoryId`, `main`.`Asset`.`name`, `main`.`Asset`.`description`, `main`.`Asset`.`make`, `main`.`Asset`.`model`, `main`.`Asset`.`serialNumber`, `main`.`Asset`.`yearOfManufacture`, `main`.`Asset`.`acquisitionDate`, `main`.`Asset`.`acquisitionCost`, `main`.`Asset`.`currentLocation`, `main`.`Asset`.`status`, `main`.`Asset`.`criticality`, `main`.`Asset`.`warrantyExpiry`, `main`.`Asset`.`isActive`, `main`.`Asset`.`createdAt`, `main`.`Asset`.`updatedAt`, `main`.`Asset`.`createdBy`, `main`.`Asset`.`updatedBy`, `main`.`Asset`.`deletedAt`, COALESCE(`aggr_selection_0_JobCard`.`_aggr_count_jobCards`, 0) AS `_aggr_count_jobCards` FROM `main`.`Asset` LEFT JOIN (SELECT `main`.`JobCard`.`assetId`, COUNT(*) AS `_aggr_count_jobCards` FROM `main`.`JobCard` WHERE 1=1 GROUP BY `main`.`JobCard`.`assetId`) AS `aggr_selection_0_JobCard` ON (`main`.`Asset`.`id` = `aggr_selection_0_JobCard`.`assetId`) WHERE `main`.`Asset`.`isActive` = ? ORDER BY `main`.`Asset`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`AssetCategory`.`id`, `main`.`AssetCategory`.`code`, `main`.`AssetCategory`.`name` FROM `main`.`AssetCategory` WHERE `main`.`AssetCategory`.`id` IN (?,?,?,?) LIMIT ? OFFSET ?
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Asset`.`id` FROM `main`.`Asset` WHERE `main`.`Asset`.`isActive` = ? LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT `main`.`AssetQrCode`.`id`, `main`.`AssetQrCode`.`qrCode`, `main`.`AssetQrCode`.`assetId` FROM `main`.`AssetQrCode` WHERE (`main`.`AssetQrCode`.`isActive` = ? AND `main`.`AssetQrCode`.`assetId` IN (?,?,?,?,?,?,?,?,?,?)) ORDER BY `main`.`AssetQrCode`.`id` ASC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`AssetMeter`.`id`, `main`.`AssetMeter`.`meterType`, `main`.`AssetMeter`.`unit`, `main`.`AssetMeter`.`currentValue`, `main`.`AssetMeter`.`assetId` FROM `main`.`AssetMeter` WHERE (`main`.`AssetMeter`.`isActive` = ? AND `main`.`AssetMeter`.`assetId` IN (?,?,?,?,?,?,?,?,?,?)) LIMIT ? OFFSET ?
+ GET /api/assets?page=1&limit=10 200 in 56ms (compile: 11ms, proxy.ts: 15ms, render: 30ms)
+prisma:query SELECT `main`.`AssetCategory`.`id`, `main`.`AssetCategory`.`code`, `main`.`AssetCategory`.`name`, `main`.`AssetCategory`.`parentCatId`, `main`.`AssetCategory`.`description`, `main`.`AssetCategory`.`isActive`, `main`.`AssetCategory`.`createdAt`, `main`.`AssetCategory`.`updatedAt`, COALESCE(`aggr_selection_0_Asset`.`_aggr_count_assets`, 0) AS `_aggr_count_assets` FROM `main`.`AssetCategory` LEFT JOIN (SELECT `main`.`Asset`.`categoryId`, COUNT(*) AS `_aggr_count_assets` FROM `main`.`Asset` WHERE 1=1 GROUP BY `main`.`Asset`.`categoryId`) AS `aggr_selection_0_Asset` ON (`main`.`AssetCategory`.`id` = `aggr_selection_0_Asset`.`categoryId`) WHERE `main`.`AssetCategory`.`isActive` = ? ORDER BY `main`.`AssetCategory`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/asset-categories 200 in 57ms (compile: 24ms, proxy.ts: 13ms, render: 19ms)
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`JobCard`.`id` FROM `main`.`JobCard` WHERE `main`.`JobCard`.`isActive` = ? LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT `main`.`JobCard`.`id`, `main`.`JobCard`.`jobCardNumber`, `main`.`JobCard`.`assetId`, `main`.`JobCard`.`jobType`, `main`.`JobCard`.`priority`, `main`.`JobCard`.`status`, `main`.`JobCard`.`faultDescription`, `main`.`JobCard`.`diagnosisNotes`, `main`.`JobCard`.`workPerformed`, `main`.`JobCard`.`estimatedCost`, `main`.`JobCard`.`estimatedDuration`, `main`.`JobCard`.`actualCost`, `main`.`JobCard`.`actualDuration`, `main`.`JobCard`.`scheduledStart`, `main`.`JobCard`.`scheduledEnd`, `main`.`JobCard`.`actualStart`, `main`.`JobCard`.`actualEnd`, `main`.`JobCard`.`meterReadingStart`, `main`.`JobCard`.`meterReadingEnd`, `main`.`JobCard`.`ecoNumber`, `main`.`JobCard`.`accidentReportRef`, `main`.`JobCard`.`warrantyClaimRef`, `main`.`JobCard`.`closedAt`, `main`.`JobCard`.`closedBy`, `main`.`JobCard`.`cancellationReason`, `main`.`JobCard`.`cancelledAt`, `main`.`JobCard`.`cancelledBy`, `main`.`JobCard`.`reopenReason`, `main`.`JobCard`.`reopenedAt`, `main`.`JobCard`.`reopenedBy`, `main`.`JobCard`.`isActive`, `main`.`JobCard`.`createdAt`, `main`.`JobCard`.`updatedAt`, `main`.`JobCard`.`createdBy`, `main`.`JobCard`.`updatedBy`, `main`.`JobCard`.`deletedAt`, COALESCE(`aggr_selection_0_JcTask`.`_aggr_count_tasks`, 0) AS `_aggr_count_tasks`, COALESCE(`aggr_selection_1_MaterialRequest`.`_aggr_count_materialRequests`, 0) AS `_aggr_count_materialRequests` FROM `main`.`JobCard` LEFT JOIN (SELECT `main`.`JcTask`.`jobCardId`, COUNT(*) AS `_aggr_count_tasks` FROM `main`.`JcTask` WHERE 1=1 GROUP BY `main`.`JcTask`.`jobCardId`) AS `aggr_selection_0_JcTask` ON (`main`.`JobCard`.`id` = `aggr_selection_0_JcTask`.`jobCardId`) LEFT JOIN (SELECT `main`.`MaterialRequest`.`jobCardId`, COUNT(*) AS `_aggr_count_materialRequests` FROM `main`.`MaterialRequest` WHERE 1=1 GROUP BY `main`.`MaterialRequest`.`jobCardId`) AS `aggr_selection_1_MaterialRequest` ON (`main`.`JobCard`.`id` = `aggr_selection_1_MaterialRequest`.`jobCardId`) WHERE `main`.`JobCard`.`isActive` = ? ORDER BY `main`.`JobCard`.`priority` DESC, `main`.`JobCard`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Asset`.`id`, `main`.`Asset`.`assetNumber`, `main`.`Asset`.`name`, `main`.`Asset`.`status` FROM `main`.`Asset` WHERE `main`.`Asset`.`id` IN (?,?,?,?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`name`, `main`.`User`.`email` FROM `main`.`User` WHERE `main`.`User`.`id` IN (?,?,?,?,?,?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`name` FROM `main`.`User` WHERE `main`.`User`.`id` IN (?,?,?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`JcTechnicianAssignment`.`id`, `main`.`JcTechnicianAssignment`.`jobCardId`, `main`.`JcTechnicianAssignment`.`technicianId`, `main`.`JcTechnicianAssignment`.`role`, `main`.`JcTechnicianAssignment`.`assignedAt`, `main`.`JcTechnicianAssignment`.`assignedBy`, `main`.`JcTechnicianAssignment`.`startTime`, `main`.`JcTechnicianAssignment`.`endTime`, `main`.`JcTechnicianAssignment`.`isActive`, `main`.`JcTechnicianAssignment`.`createdAt`, `main`.`JcTechnicianAssignment`.`updatedAt` FROM `main`.`JcTechnicianAssignment` WHERE (`main`.`JcTechnicianAssignment`.`isActive` = ? AND `main`.`JcTechnicianAssignment`.`jobCardId` IN (?,?,?,?,?,?,?,?,?,?)) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`name`, `main`.`User`.`employeeId` FROM `main`.`User` WHERE `main`.`User`.`id` IN (?,?) LIMIT ? OFFSET ?
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Asset`.`id` FROM `main`.`Asset` WHERE `main`.`Asset`.`isActive` = ? LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT `main`.`Asset`.`id`, `main`.`Asset`.`assetNumber`, `main`.`Asset`.`categoryId`, `main`.`Asset`.`name`, `main`.`Asset`.`description`, `main`.`Asset`.`make`, `main`.`Asset`.`model`, `main`.`Asset`.`serialNumber`, `main`.`Asset`.`yearOfManufacture`, `main`.`Asset`.`acquisitionDate`, `main`.`Asset`.`acquisitionCost`, `main`.`Asset`.`currentLocation`, `main`.`Asset`.`status`, `main`.`Asset`.`criticality`, `main`.`Asset`.`warrantyExpiry`, `main`.`Asset`.`isActive`, `main`.`Asset`.`createdAt`, `main`.`Asset`.`updatedAt`, `main`.`Asset`.`createdBy`, `main`.`Asset`.`updatedBy`, `main`.`Asset`.`deletedAt`, COALESCE(`aggr_selection_0_JobCard`.`_aggr_count_jobCards`, 0) AS `_aggr_count_jobCards` FROM `main`.`Asset` LEFT JOIN (SELECT `main`.`JobCard`.`assetId`, COUNT(*) AS `_aggr_count_jobCards` FROM `main`.`JobCard` WHERE 1=1 GROUP BY `main`.`JobCard`.`assetId`) AS `aggr_selection_0_JobCard` ON (`main`.`Asset`.`id` = `aggr_selection_0_JobCard`.`assetId`) WHERE `main`.`Asset`.`isActive` = ? ORDER BY `main`.`Asset`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`AssetCategory`.`id`, `main`.`AssetCategory`.`code`, `main`.`AssetCategory`.`name` FROM `main`.`AssetCategory` WHERE `main`.`AssetCategory`.`id` IN (?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`AssetQrCode`.`id`, `main`.`AssetQrCode`.`qrCode`, `main`.`AssetQrCode`.`assetId` FROM `main`.`AssetQrCode` WHERE (`main`.`AssetQrCode`.`isActive` = ? AND `main`.`AssetQrCode`.`assetId` IN (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)) ORDER BY `main`.`AssetQrCode`.`id` ASC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`AssetMeter`.`id`, `main`.`AssetMeter`.`meterType`, `main`.`AssetMeter`.`unit`, `main`.`AssetMeter`.`currentValue`, `main`.`AssetMeter`.`assetId` FROM `main`.`AssetMeter` WHERE (`main`.`AssetMeter`.`isActive` = ? AND `main`.`AssetMeter`.`assetId` IN (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)) LIMIT ? OFFSET ?
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`User`.`id` FROM `main`.`User` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`employeeId`, `main`.`User`.`name`, `main`.`User`.`email`, `main`.`User`.`phone`, `main`.`User`.`department`, `main`.`User`.`costCentre`, `main`.`User`.`contractType`, `main`.`User`.`riskLevel`, `main`.`User`.`isActive`, `main`.`User`.`lastLoginAt`, `main`.`User`.`createdAt`, `main`.`User`.`updatedAt`, COALESCE(`aggr_selection_0_UserRole`.`_aggr_count_roles`, 0) AS `_aggr_count_roles` FROM `main`.`User` LEFT JOIN (SELECT `main`.`UserRole`.`userId`, COUNT(*) AS `_aggr_count_roles` FROM `main`.`UserRole` WHERE `main`.`UserRole`.`isActive` = ? GROUP BY `main`.`UserRole`.`userId`) AS `aggr_selection_0_UserRole` ON (`main`.`User`.`id` = `aggr_selection_0_UserRole`.`userId`) WHERE 1=1 ORDER BY `main`.`User`.`name` ASC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`UserRole`.`id`, `main`.`UserRole`.`roleId`, `main`.`UserRole`.`userId` FROM `main`.`UserRole` WHERE (`main`.`UserRole`.`isActive` = ? AND `main`.`UserRole`.`userId` IN (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Role`.`id`, `main`.`Role`.`code`, `main`.`Role`.`name`, `main`.`Role`.`level` FROM `main`.`Role` WHERE `main`.`Role`.`id` IN (?,?,?,?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+ GET /api/job-cards?page=1&limit=10 200 in 57ms (compile: 9ms, proxy.ts: 16ms, render: 32ms)
+ GET /api/assets?limit=100 200 in 59ms (compile: 15ms, proxy.ts: 15ms, render: 29ms)
+API error: Error [PrismaClientValidationError]: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].jobCard.findMany()` invocation in
+D:\Yohan\ERP System\.next\dev\server\chunks\[root-of-the-server]__432a8a1a._.js:778:163
+
+  775 }
+  776 async function getSlaDashboardStats() {
+  777     // Get active job cards (not closed/cancelled)
+→ 778     const activeJobCards = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].jobCard.findMany({
+            where: {
+              isActive: true,
+              status: {
+                in: [
+                  "PENDING",
+                  "APPROVED",
+                  "IN_PROGRESS",
+                  "ON_HOLD"
+                ]
+              }
+            },
+            select: {
+              id: true,
+              priority: true,
+              status: true,
+              createdAt: true,
+              slaStatus: true,
+              ~~~~~~~~~
+              escalatedTo: true,
+              actualStart: true,
+              actualEnd: true,
+          ?   jobCardNumber?: true,
+          ?   assetId?: true,
+          ?   jobType?: true,
+          ?   faultDescription?: true,
+          ?   diagnosisNotes?: true,
+          ?   workPerformed?: true,
+          ?   estimatedCost?: true,
+          ?   estimatedDuration?: true,
+          ?   actualCost?: true,
+          ?   actualDuration?: true,
+          ?   scheduledStart?: true,
+          ?   scheduledEnd?: true,
+          ?   meterReadingStart?: true,
+          ?   meterReadingEnd?: true,
+          ?   ecoNumber?: true,
+          ?   accidentReportRef?: true,
+          ?   warrantyClaimRef?: true,
+          ?   closedAt?: true,
+          ?   closedBy?: true,
+          ?   cancellationReason?: true,
+          ?   cancelledAt?: true,
+          ?   cancelledBy?: true,
+          ?   reopenReason?: true,
+          ?   reopenedAt?: true,
+          ?   reopenedBy?: true,
+          ?   isActive?: true,
+          ?   updatedAt?: true,
+          ?   createdBy?: true,
+          ?   updatedBy?: true,
+          ?   deletedAt?: true,
+          ?   asset?: true,
+          ?   creator?: true,
+          ?   supervisor?: true,
+          ?   tasks?: true,
+          ?   stateTransitions?: true,
+          ?   costLines?: true,
+          ?   documents?: true,
+          ?   photos?: true,
+          ?   technicianAssignments?: true,
+          ?   approvals?: true,
+          ?   materialRequests?: true,
+          ?   materialIssues?: true,
+          ?   toolLoans?: true,
+          ?   externalJobs?: true,
+          ?   timeLogs?: true,
+          ?   correctiveActions?: true,
+          ?   _count?: true
+            }
+          })
+
+Unknown field `slaStatus` for select statement on model `JobCard`. Available options are marked with ?.
+    at <unknown> (src\lib\sla-monitor.ts:342:43)
+    at async getSlaDashboardStats (src\lib\sla-monitor.ts:342:26)
+    at async GET (src\app\api\sla\dashboard\route.ts:8:19)
+  340 | export async function getSlaDashboardStats(): Promise<SlaDashboardStats> {
+  341 |   // Get active job cards (not closed/cancelled)
+> 342 |   const activeJobCards = await db.jobCard.findMany({
+      |                                           ^
+  343 |     where: {
+  344 |       isActive: true,
+  345 |       status: { in: ['PENDING', 'APPROVED', 'IN_PROGRESS', 'ON_HOLD'] }, {
+  clientVersion: '6.19.2'
+}
+ GET /api/sla/dashboard 500 in 232ms (compile: 30ms, proxy.ts: 13ms, render: 190ms)
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`department` FROM `main`.`User` WHERE `main`.`User`.`department` IS NOT NULL LIMIT ? OFFSET ?
+ GET /api/users?role=TECHNICIAN&limit=100 200 in 243ms (compile: 21ms, proxy.ts: 14ms, render: 209ms)
+prisma:query SELECT `main`.`JobCard`.`id`, `main`.`JobCard`.`jobCardNumber`, `main`.`JobCard`.`status`, `main`.`JobCard`.`priority`, `main`.`JobCard`.`createdAt`, `main`.`JobCard`.`actualStart`, `main`.`JobCard`.`actualEnd`, `main`.`JobCard`.`scheduledStart`, `main`.`JobCard`.`scheduledEnd`, `main`.`JobCard`.`assetId` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Asset`.`id`, `main`.`Asset`.`assetNumber`, `main`.`Asset`.`name` FROM `main`.`Asset` WHERE `main`.`Asset`.`id` IN (?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`JcStateTransition`.`id`, `main`.`JcStateTransition`.`fromState`, `main`.`JcStateTransition`.`toState`, `main`.`JcStateTransition`.`transitionType`, `main`.`JcStateTransition`.`createdAt`, `main`.`JcStateTransition`.`jobCardId` FROM `main`.`JcStateTransition` WHERE `main`.`JcStateTransition`.`jobCardId` IN (?) ORDER BY `main`.`JcStateTransition`.`createdAt` ASC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`JobCard`.`id`, `main`.`JobCard`.`jobCardNumber`, `main`.`JobCard`.`status`, `main`.`JobCard`.`priority`, `main`.`JobCard`.`createdAt`, `main`.`JobCard`.`actualStart`, `main`.`JobCard`.`actualEnd`, `main`.`JobCard`.`scheduledStart`, `main`.`JobCard`.`scheduledEnd`, `main`.`JobCard`.`assetId` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Asset`.`id`, `main`.`Asset`.`assetNumber`, `main`.`Asset`.`name` FROM `main`.`Asset` WHERE `main`.`Asset`.`id` IN (?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`JcStateTransition`.`id`, `main`.`JcStateTransition`.`fromState`, `main`.`JcStateTransition`.`toState`, `main`.`JcStateTransition`.`transitionType`, `main`.`JcStateTransition`.`createdAt`, `main`.`JcStateTransition`.`jobCardId` FROM `main`.`JcStateTransition` WHERE `main`.`JcStateTransition`.`jobCardId` IN (?) ORDER BY `main`.`JcStateTransition`.`createdAt` ASC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`JobCard`.`id`, `main`.`JobCard`.`jobCardNumber`, `main`.`JobCard`.`status`, `main`.`JobCard`.`priority`, `main`.`JobCard`.`createdAt`, `main`.`JobCard`.`actualStart`, `main`.`JobCard`.`actualEnd`, `main`.`JobCard`.`scheduledStart`, `main`.`JobCard`.`scheduledEnd`, `main`.`JobCard`.`assetId` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Asset`.`id`, `main`.`Asset`.`assetNumber`, `main`.`Asset`.`name` FROM `main`.`Asset` WHERE `main`.`Asset`.`id` IN (?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`JcStateTransition`.`id`, `main`.`JcStateTransition`.`fromState`, `main`.`JcStateTransition`.`toState`, `main`.`JcStateTransition`.`transitionType`, `main`.`JcStateTransition`.`createdAt`, `main`.`JcStateTransition`.`jobCardId` FROM `main`.`JcStateTransition` WHERE `main`.`JcStateTransition`.`jobCardId` IN (?) ORDER BY `main`.`JcStateTransition`.`createdAt` ASC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`JobCard`.`id`, `main`.`JobCard`.`jobCardNumber`, `main`.`JobCard`.`status`, `main`.`JobCard`.`priority`, `main`.`JobCard`.`createdAt`, `main`.`JobCard`.`actualStart`, `main`.`JobCard`.`actualEnd`, `main`.`JobCard`.`scheduledStart`, `main`.`JobCard`.`scheduledEnd`, `main`.`JobCard`.`assetId` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Asset`.`id`, `main`.`Asset`.`assetNumber`, `main`.`Asset`.`name` FROM `main`.`Asset` WHERE `main`.`Asset`.`id` IN (?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`JcStateTransition`.`id`, `main`.`JcStateTransition`.`fromState`, `main`.`JcStateTransition`.`toState`, `main`.`JcStateTransition`.`transitionType`, `main`.`JcStateTransition`.`createdAt`, `main`.`JcStateTransition`.`jobCardId` FROM `main`.`JcStateTransition` WHERE `main`.`JcStateTransition`.`jobCardId` IN (?) ORDER BY `main`.`JcStateTransition`.`createdAt` ASC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`JobCard`.`id`, `main`.`JobCard`.`jobCardNumber`, `main`.`JobCard`.`status`, `main`.`JobCard`.`priority`, `main`.`JobCard`.`createdAt`, `main`.`JobCard`.`actualStart`, `main`.`JobCard`.`actualEnd`, `main`.`JobCard`.`scheduledStart`, `main`.`JobCard`.`scheduledEnd`, `main`.`JobCard`.`assetId` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Asset`.`id`, `main`.`Asset`.`assetNumber`, `main`.`Asset`.`name` FROM `main`.`Asset` WHERE `main`.`Asset`.`id` IN (?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`JcStateTransition`.`id`, `main`.`JcStateTransition`.`fromState`, `main`.`JcStateTransition`.`toState`, `main`.`JcStateTransition`.`transitionType`, `main`.`JcStateTransition`.`createdAt`, `main`.`JcStateTransition`.`jobCardId` FROM `main`.`JcStateTransition` WHERE `main`.`JcStateTransition`.`jobCardId` IN (?) ORDER BY `main`.`JcStateTransition`.`createdAt` ASC LIMIT ? OFFSET ?
+ GET /api/job-cards/cmmyw3o8p00lxu7gwzbsigca2/sla 200 in 88ms (compile: 33ms, proxy.ts: 25ms, render: 30ms)
+ GET /api/job-cards/cmmyw3o7w00lru7gw868jqnyv/sla 200 in 88ms (compile: 39ms, proxy.ts: 23ms, render: 26ms)
+ GET /api/job-cards/cmmyw3o6x00lju7gw03zqjc5g/sla 200 in 87ms (compile: 43ms, proxy.ts: 21ms, render: 23ms)
+ GET /api/job-cards/cmmyw3o4e00ldu7gw4tyuo6fi/sla 200 in 85ms (compile: 48ms, proxy.ts: 18ms, render: 19ms)
+ GET /api/job-cards/cmmyw3n4d00e2u7gwgxa93rc9/sla 200 in 90ms (compile: 52ms, proxy.ts: 16ms, render: 21ms)
+prisma:query SELECT `main`.`JobCard`.`id`, `main`.`JobCard`.`jobCardNumber`, `main`.`JobCard`.`status`, `main`.`JobCard`.`priority`, `main`.`JobCard`.`createdAt`, `main`.`JobCard`.`actualStart`, `main`.`JobCard`.`actualEnd`, `main`.`JobCard`.`scheduledStart`, `main`.`JobCard`.`scheduledEnd`, `main`.`JobCard`.`assetId` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Asset`.`id`, `main`.`Asset`.`assetNumber`, `main`.`Asset`.`name` FROM `main`.`Asset` WHERE `main`.`Asset`.`id` IN (?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`JcStateTransition`.`id`, `main`.`JcStateTransition`.`fromState`, `main`.`JcStateTransition`.`toState`, `main`.`JcStateTransition`.`transitionType`, `main`.`JcStateTransition`.`createdAt`, `main`.`JcStateTransition`.`jobCardId` FROM `main`.`JcStateTransition` WHERE `main`.`JcStateTransition`.`jobCardId` IN (?) ORDER BY `main`.`JcStateTransition`.`createdAt` ASC LIMIT ? OFFSET ?
+ GET /api/job-cards/cmmyw3n3n00dyu7gw512d7exz/sla 200 in 103ms (compile: 66ms, proxy.ts: 12ms, render: 25ms)
+prisma:query SELECT `main`.`JobCard`.`id`, `main`.`JobCard`.`jobCardNumber`, `main`.`JobCard`.`status`, `main`.`JobCard`.`priority`, `main`.`JobCard`.`createdAt`, `main`.`JobCard`.`actualStart`, `main`.`JobCard`.`actualEnd`, `main`.`JobCard`.`scheduledStart`, `main`.`JobCard`.`scheduledEnd`, `main`.`JobCard`.`assetId` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Asset`.`id`, `main`.`Asset`.`assetNumber`, `main`.`Asset`.`name` FROM `main`.`Asset` WHERE `main`.`Asset`.`id` IN (?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`JcStateTransition`.`id`, `main`.`JcStateTransition`.`fromState`, `main`.`JcStateTransition`.`toState`, `main`.`JcStateTransition`.`transitionType`, `main`.`JcStateTransition`.`createdAt`, `main`.`JcStateTransition`.`jobCardId` FROM `main`.`JcStateTransition` WHERE `main`.`JcStateTransition`.`jobCardId` IN (?) ORDER BY `main`.`JcStateTransition`.`createdAt` ASC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`JobCard`.`id`, `main`.`JobCard`.`jobCardNumber`, `main`.`JobCard`.`status`, `main`.`JobCard`.`priority`, `main`.`JobCard`.`createdAt`, `main`.`JobCard`.`actualStart`, `main`.`JobCard`.`actualEnd`, `main`.`JobCard`.`scheduledStart`, `main`.`JobCard`.`scheduledEnd`, `main`.`JobCard`.`assetId` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Asset`.`id`, `main`.`Asset`.`assetNumber`, `main`.`Asset`.`name` FROM `main`.`Asset` WHERE `main`.`Asset`.`id` IN (?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`JcStateTransition`.`id`, `main`.`JcStateTransition`.`fromState`, `main`.`JcStateTransition`.`toState`, `main`.`JcStateTransition`.`transitionType`, `main`.`JcStateTransition`.`createdAt`, `main`.`JcStateTransition`.`jobCardId` FROM `main`.`JcStateTransition` WHERE `main`.`JcStateTransition`.`jobCardId` IN (?) ORDER BY `main`.`JcStateTransition`.`createdAt` ASC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`JobCard`.`id`, `main`.`JobCard`.`jobCardNumber`, `main`.`JobCard`.`status`, `main`.`JobCard`.`priority`, `main`.`JobCard`.`createdAt`, `main`.`JobCard`.`actualStart`, `main`.`JobCard`.`actualEnd`, `main`.`JobCard`.`scheduledStart`, `main`.`JobCard`.`scheduledEnd`, `main`.`JobCard`.`assetId` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Asset`.`id`, `main`.`Asset`.`assetNumber`, `main`.`Asset`.`name` FROM `main`.`Asset` WHERE `main`.`Asset`.`id` IN (?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`JcStateTransition`.`id`, `main`.`JcStateTransition`.`fromState`, `main`.`JcStateTransition`.`toState`, `main`.`JcStateTransition`.`transitionType`, `main`.`JcStateTransition`.`createdAt`, `main`.`JcStateTransition`.`jobCardId` FROM `main`.`JcStateTransition` WHERE `main`.`JcStateTransition`.`jobCardId` IN (?) ORDER BY `main`.`JcStateTransition`.`createdAt` ASC LIMIT ? OFFSET ?
+ GET /api/job-cards/cmmyw3n2x00dsu7gw1pi4xsqn/sla 200 in 89ms (compile: 25ms, proxy.ts: 31ms, render: 33ms)
+ GET /api/job-cards/cmmyw3o8g00lvu7gwl37aiigq/sla 200 in 89ms (compile: 31ms, proxy.ts: 29ms, render: 28ms)
+ GET /api/job-cards/cmmyw3o7500llu7gwc4toiupi/sla 200 in 80ms (compile: 39ms, proxy.ts: 19ms, render: 22ms)
+prisma:query SELECT `main`.`JobCard`.`id`, `main`.`JobCard`.`jobCardNumber`, `main`.`JobCard`.`status`, `main`.`JobCard`.`priority`, `main`.`JobCard`.`createdAt`, `main`.`JobCard`.`actualStart`, `main`.`JobCard`.`actualEnd`, `main`.`JobCard`.`scheduledStart`, `main`.`JobCard`.`scheduledEnd`, `main`.`JobCard`.`assetId` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Asset`.`id`, `main`.`Asset`.`assetNumber`, `main`.`Asset`.`name` FROM `main`.`Asset` WHERE `main`.`Asset`.`id` IN (?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`JcStateTransition`.`id`, `main`.`JcStateTransition`.`fromState`, `main`.`JcStateTransition`.`toState`, `main`.`JcStateTransition`.`transitionType`, `main`.`JcStateTransition`.`createdAt`, `main`.`JcStateTransition`.`jobCardId` FROM `main`.`JcStateTransition` WHERE `main`.`JcStateTransition`.`jobCardId` IN (?) ORDER BY `main`.`JcStateTransition`.`createdAt` ASC LIMIT ? OFFSET ?
+ GET /api/job-cards/cmmyw3o7e00lnu7gw0k60mv3y/sla 200 in 114ms (compile: 45ms, proxy.ts: 18ms, render: 50ms)
+prisma:query SELECT `main`.`JobCard`.`id`, `main`.`JobCard`.`jobCardNumber`, `main`.`JobCard`.`status`, `main`.`JobCard`.`priority`, `main`.`JobCard`.`createdAt`, `main`.`JobCard`.`actualStart`, `main`.`JobCard`.`actualEnd`, `main`.`JobCard`.`scheduledStart`, `main`.`JobCard`.`scheduledEnd`, `main`.`JobCard`.`assetId` FROM `main`.`JobCard` WHERE (`main`.`JobCard`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Asset`.`id`, `main`.`Asset`.`assetNumber`, `main`.`Asset`.`name` FROM `main`.`Asset` WHERE `main`.`Asset`.`id` IN (?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`JcStateTransition`.`id`, `main`.`JcStateTransition`.`fromState`, `main`.`JcStateTransition`.`toState`, `main`.`JcStateTransition`.`transitionType`, `main`.`JcStateTransition`.`createdAt`, `main`.`JcStateTransition`.`jobCardId` FROM `main`.`JcStateTransition` WHERE `main`.`JcStateTransition`.`jobCardId` IN (?) ORDER BY `main`.`JcStateTransition`.`createdAt` ASC LIMIT ? OFFSET ?
+ GET /api/job-cards/cmmyw3o8p00lxu7gwzbsigca2/sla 200 in 37ms (compile: 21ms, proxy.ts: 6ms, render: 10ms)
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`isActive` FROM `main`.`User` WHERE (`main`.`User`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+ GET /api/job-cards/cmmyw3o8p00lxu7gwzbsigca2/guards?userId=current 404 in 1045ms (compile: 1032ms, proxy.ts: 7ms, render: 7ms)
