@@ -204,7 +204,7 @@ export function AdvancedKpiView() {
       );
     }
     return (
-      <div className="flex items-center gap-1 text-slate-500">
+      <div className="flex items-center gap-1 text-muted-foreground">
         <Minus className="h-4 w-4" />
         <span className="text-sm">Stable</span>
       </div>
@@ -794,7 +794,7 @@ export function AdvancedKpiView() {
                 {filteredKPIs.slice(0, 5).map((kpi) => (
                   <div
                     key={kpi.id}
-                    className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
+                    className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
                   >
                     <div>
                       <p className="font-medium">{kpi.name}</p>
@@ -836,19 +836,19 @@ export function AdvancedKpiView() {
           {selectedKPI && (
             <div className="space-y-4">
               <div className="grid grid-cols-3 gap-4">
-                <div className="p-4 bg-slate-50 rounded-lg text-center">
+                <div className="p-4 bg-muted/50 rounded-lg text-center">
                   <p className="text-sm text-muted-foreground">Current Value</p>
                   <p className="text-2xl font-bold">
                     {selectedKPI.currentValue.toFixed(1)} {selectedKPI.unit}
                   </p>
                 </div>
-                <div className="p-4 bg-slate-50 rounded-lg text-center">
+                <div className="p-4 bg-muted/50 rounded-lg text-center">
                   <p className="text-sm text-muted-foreground">Previous Value</p>
                   <p className="text-2xl font-bold">
                     {selectedKPI.previousValue.toFixed(1)} {selectedKPI.unit}
                   </p>
                 </div>
-                <div className="p-4 bg-slate-50 rounded-lg text-center">
+                <div className="p-4 bg-muted/50 rounded-lg text-center">
                   <p className="text-sm text-muted-foreground">Target</p>
                   <p className="text-2xl font-bold">
                     {selectedKPI.target} {selectedKPI.unit}

@@ -598,7 +598,7 @@ export async function calculateCostPerRepair(
     current,
     previous,
     target: 500, // Target average
-    unit: 'USD',
+    unit: 'LKR',
     description: 'Average cost per job card',
     inverseStatus: true,
   });

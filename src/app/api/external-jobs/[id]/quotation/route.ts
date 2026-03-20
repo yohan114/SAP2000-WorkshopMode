@@ -20,7 +20,7 @@ const QuotationStatus = {
 const createQuotationSchema = z.object({
   quotationNumber: z.string().optional(),
   amount: z.number().positive('Amount must be positive'),
-  currency: z.string().default('USD'),
+  currency: z.string().default('LKR'),
   validUntil: z.string().optional(),
   notes: z.string().optional(),
 });

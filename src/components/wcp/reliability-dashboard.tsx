@@ -253,8 +253,8 @@ export function ReliabilityDashboard() {
       <div className="space-y-6 max-w-7xl mx-auto">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-slate-900">Reliability Analytics</h2>
-            <p className="text-slate-500">MTBF/MTTR Dashboard</p>
+            <h2 className="text-2xl font-bold text-foreground">Reliability Analytics</h2>
+            <p className="text-muted-foreground">MTBF/MTTR Dashboard</p>
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -347,8 +347,8 @@ export function ReliabilityDashboard() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Reliability Analytics</h2>
-          <p className="text-slate-500">MTBF/MTTR Dashboard - Fleet Performance</p>
+          <h2 className="text-2xl font-bold text-foreground">Reliability Analytics</h2>
+          <p className="text-muted-foreground">MTBF/MTTR Dashboard - Fleet Performance</p>
         </div>
         <div className="flex items-center gap-2">
           <Select value={months} onValueChange={setMonths}>
@@ -374,16 +374,16 @@ export function ReliabilityDashboard() {
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm text-slate-500">{kpi.title}</p>
+                  <p className="text-sm text-muted-foreground">{kpi.title}</p>
                   <div className="flex items-center gap-2 mt-1">
-                    <p className="text-3xl font-bold text-slate-900">{kpi.value}</p>
+                    <p className="text-3xl font-bold text-foreground">{kpi.value}</p>
                     {kpi.trend && (
                       kpi.trend === 'up' 
                         ? <ArrowUpRight className="h-5 w-5 text-emerald-500" />
                         : <ArrowDownRight className="h-5 w-5 text-red-500" />
                     )}
                   </div>
-                  <p className="text-xs text-slate-400 mt-1">{kpi.subtitle}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{kpi.subtitle}</p>
                   {kpi.trendLabel && (
                     <Badge 
                       variant="outline" 
@@ -443,7 +443,7 @@ export function ReliabilityDashboard() {
                     </ResponsiveContainer>
                   </ChartContainer>
                 ) : (
-                  <div className="h-[300px] flex items-center justify-center text-slate-500">
+                  <div className="h-[300px] flex items-center justify-center text-muted-foreground">
                     No trend data available
                   </div>
                 )}
@@ -479,11 +479,11 @@ export function ReliabilityDashboard() {
                             if (active && payload && payload.length) {
                               const data = payload[0].payload;
                               return (
-                                <div className="bg-white p-2 border rounded shadow-sm">
+                                <div className="bg-card p-2 border rounded shadow-sm">
                                   <p className="font-medium text-sm">{data.category}</p>
-                                  <p className="text-xs text-slate-600">Avg: {data.avgRepairTime}h</p>
-                                  <p className="text-xs text-slate-500">Min: {data.minRepairTime}h | Max: {data.maxRepairTime}h</p>
-                                  <p className="text-xs text-slate-500">Repairs: {data.repairCount}</p>
+                                  <p className="text-xs text-muted-foreground">Avg: {data.avgRepairTime}h</p>
+                                  <p className="text-xs text-muted-foreground">Min: {data.minRepairTime}h | Max: {data.maxRepairTime}h</p>
+                                  <p className="text-xs text-muted-foreground">Repairs: {data.repairCount}</p>
                                 </div>
                               );
                             }
@@ -495,7 +495,7 @@ export function ReliabilityDashboard() {
                     </ResponsiveContainer>
                   </ChartContainer>
                 ) : (
-                  <div className="h-[300px] flex items-center justify-center text-slate-500">
+                  <div className="h-[300px] flex items-center justify-center text-muted-foreground">
                     No repair time data available
                   </div>
                 )}
@@ -663,11 +663,11 @@ export function ReliabilityDashboard() {
                         if (active && payload && payload.length) {
                           const data = payload[0].payload;
                           return (
-                            <div className="bg-white p-2 border rounded shadow-sm">
+                            <div className="bg-card p-2 border rounded shadow-sm">
                               <p className="font-medium text-sm">{data.assetName}</p>
-                              <p className="text-xs text-slate-600">{data.category}</p>
-                              <p className="text-xs text-slate-600">Reliability: {data.reliabilityRate}%</p>
-                              <p className="text-xs text-slate-500">Failures: {data.totalFailures} | Downtime: {data.totalDowntime}h</p>
+                              <p className="text-xs text-muted-foreground">{data.category}</p>
+                              <p className="text-xs text-muted-foreground">Reliability: {data.reliabilityRate}%</p>
+                              <p className="text-xs text-muted-foreground">Failures: {data.totalFailures} | Downtime: {data.totalDowntime}h</p>
                             </div>
                           );
                         }
@@ -693,7 +693,7 @@ export function ReliabilityDashboard() {
             <CardContent>
               <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
                 <Table>
-                  <TableHeader className="sticky top-0 bg-white">
+                  <TableHeader className="sticky top-0 bg-card">
                     <TableRow>
                       <TableHead>Asset</TableHead>
                       <TableHead>Category</TableHead>
@@ -711,7 +711,7 @@ export function ReliabilityDashboard() {
                         <TableCell>
                           <div>
                             <p className="font-medium">{asset.assetNumber}</p>
-                            <p className="text-xs text-slate-500">{asset.assetName}</p>
+                            <p className="text-xs text-muted-foreground">{asset.assetName}</p>
                           </div>
                         </TableCell>
                         <TableCell>{asset.category}</TableCell>
@@ -768,11 +768,11 @@ export function ReliabilityDashboard() {
                             if (active && payload && payload.length) {
                               const data = payload[0].payload;
                               return (
-                                <div className="bg-white p-2 border rounded shadow-sm">
+                                <div className="bg-card p-2 border rounded shadow-sm">
                                   <p className="font-medium text-sm">{data.cause}</p>
-                                  <p className="text-xs text-slate-600">Count: {data.count}</p>
-                                  <p className="text-xs text-slate-600">Percentage: {data.percentage}%</p>
-                                  <p className="text-xs text-slate-500">Total Downtime: {data.totalDowntime}h</p>
+                                  <p className="text-xs text-muted-foreground">Count: {data.count}</p>
+                                  <p className="text-xs text-muted-foreground">Percentage: {data.percentage}%</p>
+                                  <p className="text-xs text-muted-foreground">Total Downtime: {data.totalDowntime}h</p>
                                 </div>
                               );
                             }
@@ -784,7 +784,7 @@ export function ReliabilityDashboard() {
                     </ResponsiveContainer>
                   </ChartContainer>
                 ) : (
-                  <div className="h-[350px] flex items-center justify-center text-slate-500">
+                  <div className="h-[350px] flex items-center justify-center text-muted-foreground">
                     No failure cause data available
                   </div>
                 )}
@@ -830,15 +830,15 @@ export function ReliabilityDashboard() {
                             className="w-3 h-3 rounded flex-shrink-0" 
                             style={{ backgroundColor: COLORS[index % COLORS.length] }}
                           />
-                          <span className="text-slate-600 flex-1 truncate" title={item.cause}>{item.cause}</span>
+                          <span className="text-muted-foreground flex-1 truncate" title={item.cause}>{item.cause}</span>
                           <span className="font-medium">{item.count}</span>
-                          <span className="text-slate-400 text-xs">({item.percentage}%)</span>
+                          <span className="text-muted-foreground text-xs">({item.percentage}%)</span>
                         </div>
                       ))}
                     </div>
                   </div>
                 ) : (
-                  <div className="h-[350px] flex items-center justify-center text-slate-500">
+                  <div className="h-[350px] flex items-center justify-center text-muted-foreground">
                     No failure cause data available
                   </div>
                 )}
@@ -884,9 +884,9 @@ export function ReliabilityDashboard() {
       </Tabs>
 
       {/* Summary Footer */}
-      <Card className="bg-slate-50">
+      <Card className="bg-muted/50">
         <CardContent className="p-4">
-          <div className="flex flex-wrap items-center justify-between gap-4 text-sm text-slate-600">
+          <div className="flex flex-wrap items-center justify-between gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-4">
               <span className="flex items-center gap-1">
                 <CheckCircle className="h-4 w-4 text-emerald-500" />
@@ -901,7 +901,7 @@ export function ReliabilityDashboard() {
                 Total Assets: {fleet.totalAssets}
               </span>
             </div>
-            <div className="text-slate-400">
+            <div className="text-muted-foreground">
               Last updated: {new Date().toLocaleString()}
             </div>
           </div>

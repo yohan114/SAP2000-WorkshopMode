@@ -173,8 +173,8 @@ export function NotificationsView() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Notifications</h1>
-          <p className="text-slate-500 text-sm">Manage your notifications and preferences</p>
+          <h1 className="text-2xl font-bold text-foreground">Notifications</h1>
+          <p className="text-muted-foreground text-sm">Manage your notifications and preferences</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 mr-2">
@@ -207,7 +207,7 @@ export function NotificationsView() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{notifications.length}</p>
-                <p className="text-xs text-slate-500">Total Notifications</p>
+                <p className="text-xs text-muted-foreground">Total Notifications</p>
               </div>
             </div>
           </CardContent>
@@ -220,7 +220,7 @@ export function NotificationsView() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{unreadCount}</p>
-                <p className="text-xs text-slate-500">Unread</p>
+                <p className="text-xs text-muted-foreground">Unread</p>
               </div>
             </div>
           </CardContent>
@@ -233,7 +233,7 @@ export function NotificationsView() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{notifications.filter(n => n.read).length}</p>
-                <p className="text-xs text-slate-500">Read</p>
+                <p className="text-xs text-muted-foreground">Read</p>
               </div>
             </div>
           </CardContent>
@@ -268,7 +268,7 @@ export function NotificationsView() {
           <CardContent className="p-4">
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search notifications..."
                   value={searchTerm}
@@ -368,7 +368,7 @@ export function NotificationsView() {
                 </TableBody>
               </Table>
             ) : (
-              <div className="text-center py-8 text-slate-500">
+              <div className="text-center py-8 text-muted-foreground">
                 No preferences configured
               </div>
             )}
@@ -403,7 +403,7 @@ function NotificationList({
         <CardContent className="py-12">
           <div className="text-center">
             <BellOff className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-            <p className="text-slate-500">No notifications</p>
+            <p className="text-muted-foreground">No notifications</p>
           </div>
         </CardContent>
       </Card>
@@ -417,12 +417,12 @@ function NotificationList({
           <div className="divide-y">
             {notifications.map((notification) => {
               const Icon = typeIcons[notification.type] || Bell;
-              const colorClass = typeColors[notification.type] || 'bg-slate-100 text-slate-700';
+              const colorClass = typeColors[notification.type] || 'bg-slate-100 text-foreground';
               
               return (
                 <div 
                   key={notification.id}
-                  className={`p-4 hover:bg-slate-50 transition-colors ${!notification.read ? 'bg-slate-50/50' : ''}`}
+                  className={`p-4 hover:bg-muted/50 transition-colors ${!notification.read ? 'bg-muted/50/50' : ''}`}
                 >
                   <div className="flex items-start gap-4">
                     <div className={`p-2 rounded-lg ${colorClass.split(' ')[0]}`}>
@@ -430,7 +430,7 @@ function NotificationList({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
-                        <p className={`font-medium ${!notification.read ? 'text-slate-900' : 'text-slate-600'}`}>
+                        <p className={`font-medium ${!notification.read ? 'text-foreground' : 'text-muted-foreground'}`}>
                           {notification.title}
                         </p>
                         <Button
@@ -439,13 +439,13 @@ function NotificationList({
                           className="h-6 w-6 shrink-0"
                           onClick={() => deleteNotification(notification.id)}
                         >
-                          <X className="h-3 w-3 text-slate-400" />
+                          <X className="h-3 w-3 text-muted-foreground" />
                         </Button>
                       </div>
-                      <p className="text-sm text-slate-500 mt-1">{notification.message}</p>
+                      <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
                       <div className="flex items-center gap-2 mt-2">
-                        <Clock className="h-3 w-3 text-slate-400" />
-                        <span className="text-xs text-slate-400">
+                        <Clock className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">
                           {formatRelativeTime(notification.createdAt)}
                         </span>
                         {!notification.read && (

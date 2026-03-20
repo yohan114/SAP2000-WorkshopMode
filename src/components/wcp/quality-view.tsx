@@ -118,7 +118,7 @@ const statusColors: Record<string, string> = {
   'IN_PROGRESS': 'bg-purple-100 text-purple-700',
   'COMPLETED': 'bg-emerald-100 text-emerald-700',
   'FAILED': 'bg-red-100 text-red-700',
-  'CANCELLED': 'bg-slate-100 text-slate-700',
+  'CANCELLED': 'bg-slate-100 text-foreground',
 };
 
 const resultColors: Record<string, string> = {
@@ -432,12 +432,12 @@ export function QualityView() {
           <p>WCP - Workshop Control Platform</p>
         </div>
         <div class="info-grid">
-          <div class="info-item"><label>Inspection Number</label><p>${selectedInspection.inspectionNumber}</p></div>
-          <div class="info-item"><label>Type</label><p>${selectedInspection.inspectionType}</p></div>
-          <div class="info-item"><label>Date</label><p>${selectedInspection.scheduledDate ? new Date(selectedInspection.scheduledDate).toLocaleDateString() : '-'}</p></div>
-          <div class="info-item"><label>Status</label><p>${selectedInspection.status}</p></div>
-          <div class="info-item"><label>Result</label><p class="${selectedInspection.result === 'PASS' ? 'pass' : 'fail'}">${selectedInspection.result || '-'}</p></div>
-          <div class="info-item"><label>Inspector</label><p>${selectedInspection.inspector?.name || '-'}</p></div>
+          <div class="info-item"><label>Inspection Number</label><p>LKR {selectedInspection.inspectionNumber}</p></div>
+          <div class="info-item"><label>Type</label><p>LKR {selectedInspection.inspectionType}</p></div>
+          <div class="info-item"><label>Date</label><p>LKR {selectedInspection.scheduledDate ? new Date(selectedInspection.scheduledDate).toLocaleDateString() : '-'}</p></div>
+          <div class="info-item"><label>Status</label><p>LKR {selectedInspection.status}</p></div>
+          <div class="info-item"><label>Result</label><p class="${selectedInspection.result === 'PASS' ? 'pass' : 'fail'}">LKR {selectedInspection.result || '-'}</p></div>
+          <div class="info-item"><label>Inspector</label><p>LKR {selectedInspection.inspector?.name || '-'}</p></div>
         </div>
         <h3>Checklist</h3>
         <table>
@@ -445,10 +445,10 @@ export function QualityView() {
           <tbody>
             ${(selectedInspection.checklistItems || []).map(item => `
               <tr>
-                <td>${item.criterion}</td>
-                <td>${item.expectedResult || '-'}</td>
-                <td>${item.actualResult || '-'}</td>
-                <td class="${item.status === 'PASS' ? 'pass' : item.status === 'FAIL' ? 'fail' : ''}">${item.status}</td>
+                <td>LKR {item.criterion}</td>
+                <td>LKR {item.expectedResult || '-'}</td>
+                <td>LKR {item.actualResult || '-'}</td>
+                <td class="${item.status === 'PASS' ? 'pass' : item.status === 'FAIL' ? 'fail' : ''}">LKR {item.status}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -460,10 +460,10 @@ export function QualityView() {
             <tbody>
               ${selectedInspection.defects.map(d => `
                 <tr>
-                  <td>${d.severity}</td>
-                  <td>${d.description}</td>
-                  <td>${d.location || '-'}</td>
-                  <td>${d.status}</td>
+                  <td>LKR {d.severity}</td>
+                  <td>LKR {d.description}</td>
+                  <td>LKR {d.location || '-'}</td>
+                  <td>LKR {d.status}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -506,8 +506,8 @@ export function QualityView() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Quality Management</h1>
-          <p className="text-slate-500 text-sm">Manage quality inspections and defects</p>
+          <h1 className="text-2xl font-bold text-foreground">Quality Management</h1>
+          <p className="text-muted-foreground text-sm">Manage quality inspections and defects</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setShowTemplateDialog(true)}>
@@ -531,7 +531,7 @@ export function QualityView() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.total}</p>
-                <p className="text-xs text-slate-500">Total Inspections</p>
+                <p className="text-xs text-muted-foreground">Total Inspections</p>
               </div>
             </div>
           </CardContent>
@@ -544,7 +544,7 @@ export function QualityView() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.passed}</p>
-                <p className="text-xs text-slate-500">Passed</p>
+                <p className="text-xs text-muted-foreground">Passed</p>
               </div>
             </div>
           </CardContent>
@@ -557,7 +557,7 @@ export function QualityView() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.failed}</p>
-                <p className="text-xs text-slate-500">Failed</p>
+                <p className="text-xs text-muted-foreground">Failed</p>
               </div>
             </div>
           </CardContent>
@@ -570,7 +570,7 @@ export function QualityView() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.passRate}%</p>
-                <p className="text-xs text-slate-500">Pass Rate</p>
+                <p className="text-xs text-muted-foreground">Pass Rate</p>
               </div>
             </div>
           </CardContent>
@@ -581,7 +581,7 @@ export function QualityView() {
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Search inspections..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -609,7 +609,7 @@ export function QualityView() {
           ) : filteredInspections.length === 0 ? (
             <div className="text-center py-12">
               <ShieldCheck className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-              <p className="text-slate-500">No inspections found</p>
+              <p className="text-muted-foreground">No inspections found</p>
             </div>
           ) : (
             <Table>
@@ -653,7 +653,7 @@ export function QualityView() {
                     <TableCell>
                       <div className="flex items-center gap-2 w-24">
                         <Progress value={getCompletionPercentage(inspection)} className="h-2" />
-                        <span className="text-xs text-slate-500">{getCompletionPercentage(inspection)}%</span>
+                        <span className="text-xs text-muted-foreground">{getCompletionPercentage(inspection)}%</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
@@ -753,7 +753,7 @@ export function QualityView() {
                 {/* Progress */}
                 <div className="flex items-center gap-4 mb-4">
                   <Progress value={getCompletionPercentage(selectedInspection)} className="flex-1" />
-                  <span className="text-sm text-slate-500">{getCompletionPercentage(selectedInspection)}%</span>
+                  <span className="text-sm text-muted-foreground">{getCompletionPercentage(selectedInspection)}%</span>
                 </div>
 
                 <Table>
@@ -781,7 +781,7 @@ export function QualityView() {
                           <Badge className={
                             item.status === 'PASS' ? 'bg-emerald-100 text-emerald-700' :
                             item.status === 'FAIL' ? 'bg-red-100 text-red-700' :
-                            'bg-slate-100 text-slate-700'
+                            'bg-slate-100 text-foreground'
                           }>
                             {item.status}
                           </Badge>
@@ -820,7 +820,7 @@ export function QualityView() {
                       {selectedInspection.defects.map((defect) => (
                         <TableRow key={defect.id}>
                           <TableCell>
-                            <Badge className={severityColors[defect.severity] || 'bg-slate-500'}>
+                            <Badge className={severityColors[defect.severity] || 'bg-muted/500'}>
                               {defect.severity}
                             </Badge>
                           </TableCell>
@@ -843,11 +843,11 @@ export function QualityView() {
                     </TableBody>
                   </Table>
                 ) : (
-                  <div className="text-center py-8 text-slate-500">No defects recorded</div>
+                  <div className="text-center py-8 text-muted-foreground">No defects recorded</div>
                 )}
 
                 {selectedInspection.status === 'IN_PROGRESS' && (
-                  <Card className="bg-slate-50">
+                  <Card className="bg-muted/50">
                     <CardHeader><CardTitle className="text-sm">Add Defect</CardTitle></CardHeader>
                     <CardContent className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
@@ -873,16 +873,16 @@ export function QualityView() {
 
               <TabsContent value="details" className="flex-1 overflow-auto mt-4 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div><p className="text-sm text-slate-500">Inspection Number</p><p className="font-medium">{selectedInspection.inspectionNumber}</p></div>
-                  <div><p className="text-sm text-slate-500">Type</p><p className="font-medium">{selectedInspection.inspectionType}</p></div>
-                  <div><p className="text-sm text-slate-500">Entity</p><p className="font-medium">{selectedInspection.entityType} - {selectedInspection.entityId || '-'}</p></div>
-                  <div><p className="text-sm text-slate-500">Inspector</p><p className="font-medium">{selectedInspection.inspector?.name || '-'}</p></div>
-                  <div><p className="text-sm text-slate-500">Scheduled Date</p><p className="font-medium">{selectedInspection.scheduledDate ? new Date(selectedInspection.scheduledDate).toLocaleDateString() : '-'}</p></div>
-                  <div><p className="text-sm text-slate-500">Result</p><p className={`font-medium ${resultColors[selectedInspection.result || '']}`}>{selectedInspection.result || '-'}</p></div>
+                  <div><p className="text-sm text-muted-foreground">Inspection Number</p><p className="font-medium">{selectedInspection.inspectionNumber}</p></div>
+                  <div><p className="text-sm text-muted-foreground">Type</p><p className="font-medium">{selectedInspection.inspectionType}</p></div>
+                  <div><p className="text-sm text-muted-foreground">Entity</p><p className="font-medium">{selectedInspection.entityType} - {selectedInspection.entityId || '-'}</p></div>
+                  <div><p className="text-sm text-muted-foreground">Inspector</p><p className="font-medium">{selectedInspection.inspector?.name || '-'}</p></div>
+                  <div><p className="text-sm text-muted-foreground">Scheduled Date</p><p className="font-medium">{selectedInspection.scheduledDate ? new Date(selectedInspection.scheduledDate).toLocaleDateString() : '-'}</p></div>
+                  <div><p className="text-sm text-muted-foreground">Result</p><p className={`font-medium ${resultColors[selectedInspection.result || '']}`}>{selectedInspection.result || '-'}</p></div>
                 </div>
                 {selectedInspection.notes && (
-                  <div className="bg-slate-50 rounded-lg p-3">
-                    <p className="text-sm text-slate-500">Notes</p>
+                  <div className="bg-muted/50 rounded-lg p-3">
+                    <p className="text-sm text-muted-foreground">Notes</p>
                     <p className="text-sm">{selectedInspection.notes}</p>
                   </div>
                 )}

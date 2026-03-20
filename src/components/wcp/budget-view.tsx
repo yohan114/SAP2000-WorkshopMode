@@ -373,7 +373,7 @@ export function BudgetView() {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'LKR',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
@@ -418,11 +418,11 @@ export function BudgetView() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <DollarSign className="h-6 w-6 text-emerald-600" />
             Budget Control
           </h1>
-          <p className="text-slate-500 mt-1">
+          <p className="text-muted-foreground mt-1">
             Manage budget lines, track commitments, and monitor spending
           </p>
         </div>
@@ -480,7 +480,7 @@ export function BudgetView() {
             <CardContent className="pt-4">
               <div className="flex flex-wrap gap-4">
                 <div className="flex items-center gap-2">
-                  <Search className="h-4 w-4 text-slate-400" />
+                  <Search className="h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search budget lines..."
                     value={searchQuery}
@@ -525,7 +525,7 @@ export function BudgetView() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-slate-500">
+                  <p className="text-sm text-muted-foreground">
                     {varianceData.summary.totalBudgetLines} budget lines
                   </p>
                 </CardContent>
@@ -572,7 +572,7 @@ export function BudgetView() {
                     ) : (
                       <TrendingUp className="h-4 w-4 text-red-500" />
                     )}
-                    <span className="text-slate-500">
+                    <span className="text-muted-foreground">
                       {varianceData.summary.totalVariance >= 0 ? 'Under budget' : 'Over budget'}
                     </span>
                   </div>
@@ -595,7 +595,7 @@ export function BudgetView() {
                   <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
                 </div>
               ) : budgetLines.length === 0 ? (
-                <div className="text-center py-8 text-slate-500">
+                <div className="text-center py-8 text-muted-foreground">
                   No budget lines found. Click &quot;Add Budget Line&quot; to create one.
                 </div>
               ) : (
@@ -683,7 +683,7 @@ export function BudgetView() {
                       <ComposedChart data={varianceData.chartData}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="department" tick={{ fontSize: 12 }} />
-                        <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+                        <YAxis tickFormatter={(value) => `LKR ${(value / 1000).toFixed(0)}k`} />
                         <Tooltip
                           formatter={(value: number) => formatCurrency(value)}
                           labelFormatter={(label) => `Department: ${label}`}
@@ -756,7 +756,7 @@ export function BudgetView() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-slate-500">Over budget limit</p>
+                <p className="text-sm text-muted-foreground">Over budget limit</p>
               </CardContent>
             </Card>
             <Card className="border-l-4 border-l-orange-500">
@@ -767,7 +767,7 @@ export function BudgetView() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-slate-500">90%+ utilized</p>
+                <p className="text-sm text-muted-foreground">90%+ utilized</p>
               </CardContent>
             </Card>
             <Card className="border-l-4 border-l-amber-500">
@@ -778,7 +778,7 @@ export function BudgetView() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-slate-500">80%+ utilized</p>
+                <p className="text-sm text-muted-foreground">80%+ utilized</p>
               </CardContent>
             </Card>
           </div>
@@ -792,7 +792,7 @@ export function BudgetView() {
             </CardHeader>
             <CardContent>
               {alerts.length === 0 ? (
-                <div className="text-center py-8 text-slate-500">
+                <div className="text-center py-8 text-muted-foreground">
                   <CheckCircle className="h-12 w-12 mx-auto mb-4 text-emerald-500" />
                   <p>No budget alerts. All budget lines are within acceptable limits.</p>
                 </div>
@@ -814,9 +814,9 @@ export function BudgetView() {
                           <div>
                             <div className="flex items-center gap-2">
                               <span className="font-semibold">{alert.code}</span>
-                              <span className="text-slate-600">- {alert.name}</span>
+                              <span className="text-muted-foreground">- {alert.name}</span>
                             </div>
-                            <div className="text-sm text-slate-500 mt-1">
+                            <div className="text-sm text-muted-foreground mt-1">
                               {alert.department || 'No Department'} • FY {alert.financialYear}
                             </div>
                           </div>

@@ -222,14 +222,14 @@ interface PurchaseRequest {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  DRAFT: 'bg-slate-100 text-slate-700',
+  DRAFT: 'bg-slate-100 text-foreground',
   PENDING_APPROVAL: 'bg-amber-100 text-amber-700',
   APPROVED: 'bg-blue-100 text-blue-700',
   ISSUED: 'bg-cyan-100 text-cyan-700',
   ACKNOWLEDGED: 'bg-teal-100 text-teal-700',
   PARTIALLY_RECEIVED: 'bg-purple-100 text-purple-700',
   RECEIVED: 'bg-emerald-100 text-emerald-700',
-  CLOSED: 'bg-slate-100 text-slate-500',
+  CLOSED: 'bg-slate-100 text-muted-foreground',
   CANCELLED: 'bg-red-100 text-red-700',
   VERIFIED: 'bg-green-100 text-green-700',
   POSTED: 'bg-emerald-100 text-emerald-700',
@@ -237,9 +237,9 @@ const STATUS_COLORS: Record<string, string> = {
   PARTIALLY_MATCHED: 'bg-amber-100 text-amber-700',
   DISPUTED: 'bg-red-100 text-red-700',
   PAID: 'bg-emerald-100 text-emerald-700',
-  PENDING: 'bg-slate-100 text-slate-700',
+  PENDING: 'bg-slate-100 text-foreground',
   // RFQ/Quotation statuses
-  INVITED: 'bg-slate-100 text-slate-700',
+  INVITED: 'bg-slate-100 text-foreground',
   SENT: 'bg-cyan-100 text-cyan-700',
   RESPONDED: 'bg-blue-100 text-blue-700',
   SUBMITTED: 'bg-amber-100 text-amber-700',
@@ -364,7 +364,7 @@ export function PurchaseOrdersView() {
     supplierId: '',
     procurementChannel: 'LOCAL',
     expectedDeliveryDate: '',
-    currency: 'USD',
+    currency: 'LKR',
     terms: '',
     notes: '',
     lines: [{ itemId: '', description: '', orderedQty: 1, unitPrice: 0 }],
@@ -393,7 +393,7 @@ export function PurchaseOrdersView() {
     invoiceNumber: '',
     invoiceDate: '',
     dueDate: '',
-    currency: 'USD',
+    currency: 'LKR',
     totalValue: 0,
     taxAmount: 0,
     invoicePdfPath: '',
@@ -414,7 +414,7 @@ export function PurchaseOrdersView() {
     country: '',
     taxId: '',
     paymentTerms: '',
-    currency: 'USD',
+    currency: 'LKR',
     notes: '',
   });
 
@@ -432,7 +432,7 @@ export function PurchaseOrdersView() {
     quotationNumber: '',
     quotationDate: '',
     validUntil: '',
-    currency: 'USD',
+    currency: 'LKR',
     terms: '',
     notes: '',
     lines: [] as Array<{ rfqLineId: string; description: string; quantity: number; unitPrice: number; leadTime: number | null }>,
@@ -570,7 +570,7 @@ export function PurchaseOrdersView() {
           country: '',
           taxId: '',
           paymentTerms: '',
-          currency: 'USD',
+          currency: 'LKR',
           notes: '',
         });
         fetchAllSuppliers();
@@ -707,7 +707,7 @@ export function PurchaseOrdersView() {
           quotationNumber: '',
           quotationDate: '',
           validUntil: '',
-          currency: 'USD',
+          currency: 'LKR',
           terms: '',
           notes: '',
           lines: [],
@@ -943,7 +943,7 @@ export function PurchaseOrdersView() {
       invoiceNumber: '',
       invoiceDate: '',
       dueDate: '',
-      currency: po.currency || 'USD',
+      currency: po.currency || 'LKR',
       totalValue: po.totalValue,
       taxAmount: 0,
       invoicePdfPath: '',
@@ -1206,7 +1206,7 @@ export function PurchaseOrdersView() {
           invoiceNumber: '',
           invoiceDate: '',
           dueDate: '',
-          currency: 'USD',
+          currency: 'LKR',
           totalValue: 0,
           taxAmount: 0,
           invoicePdfPath: '',
@@ -1283,7 +1283,7 @@ export function PurchaseOrdersView() {
       supplierId: '',
       procurementChannel: 'LOCAL',
       expectedDeliveryDate: '',
-      currency: 'USD',
+      currency: 'LKR',
       terms: '',
       notes: '',
       lines: [{ itemId: '', description: '', orderedQty: 1, unitPrice: 0 }],
@@ -1301,8 +1301,8 @@ export function PurchaseOrdersView() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Procurement</h2>
-          <p className="text-slate-500">Purchase orders, goods receipts, and invoice matching</p>
+          <h2 className="text-2xl font-bold text-foreground">Procurement</h2>
+          <p className="text-muted-foreground">Purchase orders, goods receipts, and invoice matching</p>
         </div>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
@@ -1350,7 +1350,7 @@ export function PurchaseOrdersView() {
                     <Select value={formData.currency} onValueChange={(v) => setFormData({ ...formData, currency: v })}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="USD">USD</SelectItem>
+                        <SelectItem value="LKR">LKR</SelectItem>
                         <SelectItem value="EUR">EUR</SelectItem>
                         <SelectItem value="KES">KES</SelectItem>
                       </SelectContent>
@@ -1428,25 +1428,25 @@ export function PurchaseOrdersView() {
         <Card><CardContent className="p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-emerald-100 rounded-lg"><ShoppingCart className="h-5 w-5 text-emerald-600" /></div>
-            <div><p className="text-sm text-slate-500">Total Orders</p><p className="text-xl font-bold">{total}</p></div>
+            <div><p className="text-sm text-muted-foreground">Total Orders</p><p className="text-xl font-bold">{total}</p></div>
           </div>
         </CardContent></Card>
         <Card><CardContent className="p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-amber-100 rounded-lg"><AlertCircle className="h-5 w-5 text-amber-600" /></div>
-            <div><p className="text-sm text-slate-500">Pending Approval</p><p className="text-xl font-bold">{pendingApprovalCount}</p></div>
+            <div><p className="text-sm text-muted-foreground">Pending Approval</p><p className="text-xl font-bold">{pendingApprovalCount}</p></div>
           </div>
         </CardContent></Card>
         <Card><CardContent className="p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-100 rounded-lg"><Truck className="h-5 w-5 text-blue-600" /></div>
-            <div><p className="text-sm text-slate-500">Awaiting Delivery</p><p className="text-xl font-bold">{issuedCount}</p></div>
+            <div><p className="text-sm text-muted-foreground">Awaiting Delivery</p><p className="text-xl font-bold">{issuedCount}</p></div>
           </div>
         </CardContent></Card>
         <Card><CardContent className="p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-purple-100 rounded-lg"><DollarSign className="h-5 w-5 text-purple-600" /></div>
-            <div><p className="text-sm text-slate-500">Total Value</p><p className="text-xl font-bold">LKR {totalValue.toFixed(0)}</p></div>
+            <div><p className="text-sm text-muted-foreground">Total Value</p><p className="text-xl font-bold">LKR {totalValue.toFixed(0)}</p></div>
           </div>
         </CardContent></Card>
       </div>
@@ -1481,7 +1481,7 @@ export function PurchaseOrdersView() {
             <CardContent className="p-4">
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input placeholder="Search POs..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
                 </div>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -1506,7 +1506,7 @@ export function PurchaseOrdersView() {
               {loading ? (
                 <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-emerald-600" /></div>
               ) : purchaseOrders.length === 0 ? (
-                <div className="text-center py-12 text-slate-500">
+                <div className="text-center py-12 text-muted-foreground">
                   <ShoppingCart className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>No purchase orders found</p>
                 </div>
@@ -1526,14 +1526,14 @@ export function PurchaseOrdersView() {
                     </TableHeader>
                     <TableBody>
                       {purchaseOrders.map((po) => (
-                        <TableRow key={po.id} className="cursor-pointer hover:bg-slate-50" onClick={() => { 
+                        <TableRow key={po.id} className="cursor-pointer hover:bg-muted/50" onClick={() => { 
                           setSelectedPO(po); 
                           setDetailOpen(true); 
                           fetchAmendments(po.id);
                         }}>
                           <TableCell className="font-medium">{po.poNumber}</TableCell>
                           <TableCell>
-                            <div><div className="font-medium">{po.supplier.name}</div><div className="text-xs text-slate-500">{po.supplier.supplierCode}</div></div>
+                            <div><div className="font-medium">{po.supplier.name}</div><div className="text-xs text-muted-foreground">{po.supplier.supplierCode}</div></div>
                           </TableCell>
                           <TableCell className="hidden md:table-cell">{po.lineCount}</TableCell>
                           <TableCell className="text-right">{po.currency} LKR {po.totalValue.toFixed(2)}</TableCell>
@@ -1587,7 +1587,7 @@ export function PurchaseOrdersView() {
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex items-center justify-between">
-              <p className="text-sm text-slate-500">Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, total)} of {total}</p>
+              <p className="text-sm text-muted-foreground">Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, total)} of {total}</p>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Previous</Button>
                 <Button variant="outline" size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>Next</Button>
@@ -1615,7 +1615,7 @@ export function PurchaseOrdersView() {
                 </DialogHeader>
                 <div className="max-h-[60vh] overflow-y-auto">
                   {issuedPOs.length === 0 ? (
-                    <div className="text-center py-8 text-slate-500">
+                    <div className="text-center py-8 text-muted-foreground">
                       <Package className="h-10 w-10 mx-auto mb-3 opacity-50" />
                       <p>No issued purchase orders available</p>
                       <p className="text-sm">Create and issue a PO first to receive goods</p>
@@ -1625,18 +1625,18 @@ export function PurchaseOrdersView() {
                       {issuedPOs.map((po) => (
                         <div
                           key={po.id}
-                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
+                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
                           onClick={() => openGRNFromTab(po)}
                         >
                           <div>
                             <div className="font-medium">{po.poNumber}</div>
-                            <div className="text-sm text-slate-500">{po.supplier.name}</div>
+                            <div className="text-sm text-muted-foreground">{po.supplier.name}</div>
                           </div>
                           <div className="text-right">
                             <div className="font-medium">LKR {po.totalValue.toFixed(2)}</div>
-                            <div className="text-sm text-slate-500">{po.lineCount} lines • {po.lines.filter(l => l.orderedQty > l.receivedQty).length} pending</div>
+                            <div className="text-sm text-muted-foreground">{po.lineCount} lines • {po.lines.filter(l => l.orderedQty > l.receivedQty).length} pending</div>
                           </div>
-                          <ArrowRight className="h-5 w-5 text-slate-400" />
+                          <ArrowRight className="h-5 w-5 text-muted-foreground" />
                         </div>
                       ))}
                     </div>
@@ -1651,7 +1651,7 @@ export function PurchaseOrdersView() {
               {grnLoading ? (
                 <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-emerald-600" /></div>
               ) : grns.length === 0 ? (
-                <div className="text-center py-12 text-slate-500">
+                <div className="text-center py-12 text-muted-foreground">
                   <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>No goods receipt notes found</p>
                 </div>
@@ -1671,7 +1671,7 @@ export function PurchaseOrdersView() {
                     </TableHeader>
                     <TableBody>
                       {grns.map((grn) => (
-                        <TableRow key={grn.id} className="cursor-pointer hover:bg-slate-50" onClick={() => { setSelectedGRN(grn); setGRNDetailOpen(true); }}>
+                        <TableRow key={grn.id} className="cursor-pointer hover:bg-muted/50" onClick={() => { setSelectedGRN(grn); setGRNDetailOpen(true); }}>
                           <TableCell className="font-medium">{grn.grnNumber}</TableCell>
                           <TableCell>{grn.po?.poNumber || '-'}</TableCell>
                           <TableCell>{grn.supplier.name}</TableCell>
@@ -1714,7 +1714,7 @@ export function PurchaseOrdersView() {
                 </DialogHeader>
                 <div className="max-h-[60vh] overflow-y-auto">
                   {invoicePOs.length === 0 ? (
-                    <div className="text-center py-8 text-slate-500">
+                    <div className="text-center py-8 text-muted-foreground">
                       <Receipt className="h-10 w-10 mx-auto mb-3 opacity-50" />
                       <p>No purchase orders available for invoicing</p>
                       <p className="text-sm">Create and issue a PO first</p>
@@ -1724,18 +1724,18 @@ export function PurchaseOrdersView() {
                       {invoicePOs.map((po) => (
                         <div
                           key={po.id}
-                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
+                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
                           onClick={() => openInvoiceFromTab(po)}
                         >
                           <div>
                             <div className="font-medium">{po.poNumber}</div>
-                            <div className="text-sm text-slate-500">{po.supplier.name}</div>
+                            <div className="text-sm text-muted-foreground">{po.supplier.name}</div>
                           </div>
                           <div className="text-right">
                             <div className="font-medium">LKR {po.totalValue.toFixed(2)}</div>
-                            <div className="text-sm text-slate-500">{po.lineCount} lines</div>
+                            <div className="text-sm text-muted-foreground">{po.lineCount} lines</div>
                           </div>
-                          <ArrowRight className="h-5 w-5 text-slate-400" />
+                          <ArrowRight className="h-5 w-5 text-muted-foreground" />
                         </div>
                       ))}
                     </div>
@@ -1750,7 +1750,7 @@ export function PurchaseOrdersView() {
               {invoiceLoading ? (
                 <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-emerald-600" /></div>
               ) : invoices.length === 0 ? (
-                <div className="text-center py-12 text-slate-500">
+                <div className="text-center py-12 text-muted-foreground">
                   <Receipt className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>No invoices found</p>
                 </div>
@@ -1866,7 +1866,7 @@ export function PurchaseOrdersView() {
                       <Select value={supplierForm.currency} onValueChange={(v) => setSupplierForm({ ...supplierForm, currency: v })}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="USD">USD</SelectItem>
+                          <SelectItem value="LKR">LKR</SelectItem>
                           <SelectItem value="EUR">EUR</SelectItem>
                           <SelectItem value="LKR">LKR</SelectItem>
                           <SelectItem value="KES">KES</SelectItem>
@@ -1919,7 +1919,7 @@ export function PurchaseOrdersView() {
               {supplierLoading ? (
                 <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-emerald-600" /></div>
               ) : allSuppliers.length === 0 ? (
-                <div className="text-center py-12 text-slate-500">
+                <div className="text-center py-12 text-muted-foreground">
                   <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>No suppliers found</p>
                 </div>
@@ -1939,19 +1939,19 @@ export function PurchaseOrdersView() {
                     </TableHeader>
                     <TableBody>
                       {allSuppliers.map((supplier) => (
-                        <TableRow key={supplier.id} className="hover:bg-slate-50">
+                        <TableRow key={supplier.id} className="hover:bg-muted/50">
                           <TableCell className="font-medium">{supplier.supplierCode}</TableCell>
                           <TableCell>
                             <div>
                               <div className="font-medium">{supplier.name}</div>
-                              {supplier.city && <div className="text-xs text-slate-500">{supplier.city}{supplier.country && `, ${supplier.country}`}</div>}
+                              {supplier.city && <div className="text-xs text-muted-foreground">{supplier.city}{supplier.country && `, ${supplier.country}`}</div>}
                             </div>
                           </TableCell>
                           <TableCell className="hidden md:table-cell">{supplier.contactPerson || '-'}</TableCell>
                           <TableCell className="hidden lg:table-cell">{supplier.email || '-'}</TableCell>
                           <TableCell className="hidden lg:table-cell">{supplier.phone || '-'}</TableCell>
                           <TableCell>
-                            <Badge className={supplier.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}>
+                            <Badge className={supplier.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-muted-foreground'}>
                               {supplier.status}
                             </Badge>
                           </TableCell>
@@ -1970,7 +1970,7 @@ export function PurchaseOrdersView() {
           {/* Supplier Pagination */}
           {Math.ceil(supplierTotal / limit) > 1 && (
             <div className="flex items-center justify-between">
-              <p className="text-sm text-slate-500">Showing {((supplierPage - 1) * limit) + 1} to {Math.min(supplierPage * limit, supplierTotal)} of {supplierTotal}</p>
+              <p className="text-sm text-muted-foreground">Showing {((supplierPage - 1) * limit) + 1} to {Math.min(supplierPage * limit, supplierTotal)} of {supplierTotal}</p>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => setSupplierPage(p => Math.max(1, p - 1))} disabled={supplierPage === 1}>Previous</Button>
                 <Button variant="outline" size="sm" onClick={() => setSupplierPage(p => Math.min(Math.ceil(supplierTotal / limit), p + 1))} disabled={supplierPage === Math.ceil(supplierTotal / limit)}>Next</Button>
@@ -2086,7 +2086,7 @@ export function PurchaseOrdersView() {
               {rfqLoading ? (
                 <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-emerald-600" /></div>
               ) : rfqs.length === 0 ? (
-                <div className="text-center py-12 text-slate-500">
+                <div className="text-center py-12 text-muted-foreground">
                   <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>No RFQs found</p>
                 </div>
@@ -2106,7 +2106,7 @@ export function PurchaseOrdersView() {
                     </TableHeader>
                     <TableBody>
                       {rfqs.map((rfq) => (
-                        <TableRow key={rfq.id} className="cursor-pointer hover:bg-slate-50" onClick={() => { setSelectedRFQ(rfq); setRFQDetailOpen(true); }}>
+                        <TableRow key={rfq.id} className="cursor-pointer hover:bg-muted/50" onClick={() => { setSelectedRFQ(rfq); setRFQDetailOpen(true); }}>
                           <TableCell className="font-medium">{rfq.rfqNumber}</TableCell>
                           <TableCell className="hidden md:table-cell">{rfq._count.suppliers}</TableCell>
                           <TableCell className="hidden md:table-cell">{rfq._count.lines}</TableCell>
@@ -2114,7 +2114,7 @@ export function PurchaseOrdersView() {
                             {rfq.closingDate ? new Date(rfq.closingDate).toLocaleDateString() : '-'}
                           </TableCell>
                           <TableCell>
-                            <Badge className={rfq._count.quotations > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}>
+                            <Badge className={rfq._count.quotations > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-muted-foreground'}>
                               {rfq._count.quotations} received
                             </Badge>
                           </TableCell>
@@ -2145,7 +2145,7 @@ export function PurchaseOrdersView() {
           {/* RFQ Pagination */}
           {Math.ceil(rfqTotal / limit) > 1 && (
             <div className="flex items-center justify-between">
-              <p className="text-sm text-slate-500">Showing {((rfqPage - 1) * limit) + 1} to {Math.min(rfqPage * limit, rfqTotal)} of {rfqTotal}</p>
+              <p className="text-sm text-muted-foreground">Showing {((rfqPage - 1) * limit) + 1} to {Math.min(rfqPage * limit, rfqTotal)} of {rfqTotal}</p>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => setRFQPage(p => Math.max(1, p - 1))} disabled={rfqPage === 1}>Previous</Button>
                 <Button variant="outline" size="sm" onClick={() => setRFQPage(p => Math.min(Math.ceil(rfqTotal / limit), p + 1))} disabled={rfqPage === Math.ceil(rfqTotal / limit)}>Next</Button>
@@ -2273,7 +2273,7 @@ export function PurchaseOrdersView() {
               {prLoading ? (
                 <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-emerald-600" /></div>
               ) : prs.length === 0 ? (
-                <div className="text-center py-12 text-slate-500">
+                <div className="text-center py-12 text-muted-foreground">
                   <ClipboardList className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>No purchase requests found</p>
                 </div>
@@ -2294,7 +2294,7 @@ export function PurchaseOrdersView() {
                     </TableHeader>
                     <TableBody>
                       {prs.map((pr) => (
-                        <TableRow key={pr.id} className="cursor-pointer hover:bg-slate-50" onClick={() => { setSelectedPR(pr); setPRDetailOpen(true); }}>
+                        <TableRow key={pr.id} className="cursor-pointer hover:bg-muted/50" onClick={() => { setSelectedPR(pr); setPRDetailOpen(true); }}>
                           <TableCell className="font-medium">{pr.prNumber}</TableCell>
                           <TableCell className="hidden md:table-cell">{pr.requestor?.name || '-'}</TableCell>
                           <TableCell className="hidden md:table-cell">{pr.department || '-'}</TableCell>
@@ -2303,7 +2303,7 @@ export function PurchaseOrdersView() {
                             {pr.estimatedValue ? `LKR ${Number(pr.estimatedValue).toFixed(2)}` : '-'}
                           </TableCell>
                           <TableCell>
-                            <Badge className={pr.priority === 'CRITICAL' ? 'bg-red-100 text-red-700' : pr.priority === 'HIGH' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}>
+                            <Badge className={pr.priority === 'CRITICAL' ? 'bg-red-100 text-red-700' : pr.priority === 'HIGH' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-muted-foreground'}>
                               {pr.priority}
                             </Badge>
                           </TableCell>
@@ -2329,7 +2329,7 @@ export function PurchaseOrdersView() {
           {/* PR Pagination */}
           {Math.ceil(prTotal / limit) > 1 && (
             <div className="flex items-center justify-between">
-              <p className="text-sm text-slate-500">Showing {((prPage - 1) * limit) + 1} to {Math.min(prPage * limit, prTotal)} of {prTotal}</p>
+              <p className="text-sm text-muted-foreground">Showing {((prPage - 1) * limit) + 1} to {Math.min(prPage * limit, prTotal)} of {prTotal}</p>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => setPRPage(p => Math.max(1, p - 1))} disabled={prPage === 1}>Previous</Button>
                 <Button variant="outline" size="sm" onClick={() => setPRPage(p => Math.min(Math.ceil(prTotal / limit), p + 1))} disabled={prPage === Math.ceil(prTotal / limit)}>Next</Button>
@@ -2352,17 +2352,17 @@ export function PurchaseOrdersView() {
             <ScrollArea className="flex-1 -mx-6 px-6">
               <div className="space-y-4 py-4">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div><p className="text-sm text-slate-500">Supplier</p><p className="font-medium">{selectedPO.supplier.name}</p></div>
-                  <div><p className="text-sm text-slate-500">Total Value</p><p className="font-medium">{selectedPO.currency} LKR {selectedPO.totalValue.toFixed(2)}</p></div>
-                  <div><p className="text-sm text-slate-500">Expected Delivery</p><p className="font-medium">{selectedPO.expectedDeliveryDate ? new Date(selectedPO.expectedDeliveryDate).toLocaleDateString() : 'Not specified'}</p></div>
-                  <div><p className="text-sm text-slate-500">Created</p><p className="font-medium">{new Date(selectedPO.createdAt).toLocaleDateString()}</p></div>
+                  <div><p className="text-sm text-muted-foreground">Supplier</p><p className="font-medium">{selectedPO.supplier.name}</p></div>
+                  <div><p className="text-sm text-muted-foreground">Total Value</p><p className="font-medium">{selectedPO.currency} LKR {selectedPO.totalValue.toFixed(2)}</p></div>
+                  <div><p className="text-sm text-muted-foreground">Expected Delivery</p><p className="font-medium">{selectedPO.expectedDeliveryDate ? new Date(selectedPO.expectedDeliveryDate).toLocaleDateString() : 'Not specified'}</p></div>
+                  <div><p className="text-sm text-muted-foreground">Created</p><p className="font-medium">{new Date(selectedPO.createdAt).toLocaleDateString()}</p></div>
                 </div>
                 
                 <div>
                   <h4 className="font-medium mb-2">Order Lines</h4>
                   <div className="rounded-lg border overflow-hidden">
                     <Table>
-                      <TableHeader className="bg-slate-50">
+                      <TableHeader className="bg-muted/50">
                         <TableRow>
                           <TableHead className="font-semibold">Description</TableHead>
                           <TableHead className="font-semibold text-center">Ordered</TableHead>
@@ -2376,7 +2376,7 @@ export function PurchaseOrdersView() {
                           <TableRow key={line.id}>
                             <TableCell>
                               <div><div className="font-medium">{line.description}</div>
-                              {line.item && <div className="text-xs text-slate-500">{line.item.itemCode}</div>}</div>
+                              {line.item && <div className="text-xs text-muted-foreground">{line.item.itemCode}</div>}</div>
                             </TableCell>
                             <TableCell className="text-center">{line.orderedQty}</TableCell>
                             <TableCell className="text-center">
@@ -2399,17 +2399,17 @@ export function PurchaseOrdersView() {
                     <h4 className="font-medium mb-2 flex items-center gap-2"><History className="h-4 w-4" />Amendments</h4>
                     <div className="space-y-2">
                       {amendments.map((a) => (
-                        <div key={a.id} className="p-3 bg-slate-50 rounded-lg">
+                        <div key={a.id} className="p-3 bg-muted/50 rounded-lg">
                           <div className="flex justify-between items-start">
                             <div>
                               <span className="font-medium">Amendment #{a.amendmentNumber}</span>
                               <Badge className="ml-2" variant="outline">{a.amendmentType.replace(/_/g, ' ')}</Badge>
                             </div>
-                            <span className="text-xs text-slate-500">{new Date(a.createdAt).toLocaleDateString()}</span>
+                            <span className="text-xs text-muted-foreground">{new Date(a.createdAt).toLocaleDateString()}</span>
                           </div>
-                          <p className="text-sm text-slate-600 mt-1">{a.reason}</p>
+                          <p className="text-sm text-muted-foreground mt-1">{a.reason}</p>
                           {a.previousValue && a.newValue && (
-                            <p className="text-xs text-slate-500 mt-1">Changed from "{a.previousValue}" to "{a.newValue}"</p>
+                            <p className="text-xs text-muted-foreground mt-1">Changed from "{a.previousValue}" to "{a.newValue}"</p>
                           )}
                         </div>
                       ))}
@@ -2465,17 +2465,17 @@ export function PurchaseOrdersView() {
           {selectedGRN && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div><p className="text-sm text-slate-500">PO</p><p className="font-medium">{selectedGRN.po?.poNumber || 'Direct'}</p></div>
-                <div><p className="text-sm text-slate-500">Supplier</p><p className="font-medium">{selectedGRN.supplier.name}</p></div>
-                <div><p className="text-sm text-slate-500">Store</p><p className="font-medium">{selectedGRN.store.name}</p></div>
-                <div><p className="text-sm text-slate-500">Total Value</p><p className="font-medium">LKR {selectedGRN.totalValue.toFixed(2)}</p></div>
+                <div><p className="text-sm text-muted-foreground">PO</p><p className="font-medium">{selectedGRN.po?.poNumber || 'Direct'}</p></div>
+                <div><p className="text-sm text-muted-foreground">Supplier</p><p className="font-medium">{selectedGRN.supplier.name}</p></div>
+                <div><p className="text-sm text-muted-foreground">Store</p><p className="font-medium">{selectedGRN.store.name}</p></div>
+                <div><p className="text-sm text-muted-foreground">Total Value</p><p className="font-medium">LKR {selectedGRN.totalValue.toFixed(2)}</p></div>
               </div>
               
               <div>
                 <h4 className="font-medium mb-2">Received Items</h4>
                 <div className="rounded-lg border overflow-hidden">
                   <Table>
-                    <TableHeader className="bg-slate-50">
+                    <TableHeader className="bg-muted/50">
                       <TableRow>
                         <TableHead className="font-semibold">Item</TableHead>
                         <TableHead className="font-semibold text-center">Received</TableHead>
@@ -2571,10 +2571,10 @@ export function PurchaseOrdersView() {
                     if (!poLine) return null;
                     
                     return (
-                      <div key={index} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                      <div key={index} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                         <div className="flex-1">
                           <div className="font-medium">{poLine.description}</div>
-                          <div className="text-xs text-slate-500">Ordered: {poLine.orderedQty} | Remaining: {poLine.orderedQty - poLine.receivedQty}</div>
+                          <div className="text-xs text-muted-foreground">Ordered: {poLine.orderedQty} | Remaining: {poLine.orderedQty - poLine.receivedQty}</div>
                         </div>
                         <div className="flex items-center gap-2">
                           <Label className="text-xs">Received</Label>
@@ -2697,7 +2697,7 @@ export function PurchaseOrdersView() {
                         <File className="h-8 w-8 text-emerald-600" />
                         <div>
                           <p className="font-medium text-sm">{invoicePdfFile.name}</p>
-                          <p className="text-xs text-slate-500">{(invoicePdfFile.size / 1024).toFixed(1)} KB</p>
+                          <p className="text-xs text-muted-foreground">{(invoicePdfFile.size / 1024).toFixed(1)} KB</p>
                         </div>
                       </div>
                       <Button
@@ -2731,9 +2731,9 @@ export function PurchaseOrdersView() {
                         htmlFor="invoice-pdf-upload"
                         className="cursor-pointer flex flex-col items-center gap-2 py-4"
                       >
-                        <Upload className="h-10 w-10 text-slate-400" />
-                        <span className="text-sm text-slate-500">Click to upload invoice PDF or image</span>
-                        <span className="text-xs text-slate-400">PDF, JPG, PNG (max 10MB)</span>
+                        <Upload className="h-10 w-10 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">Click to upload invoice PDF or image</span>
+                        <span className="text-xs text-muted-foreground">PDF, JPG, PNG (max 10MB)</span>
                       </label>
                     </div>
                   )}

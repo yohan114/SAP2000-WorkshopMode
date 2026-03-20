@@ -267,8 +267,8 @@ export function WebhooksView() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Webhooks</h1>
-          <p className="text-slate-500 text-sm">Manage webhook integrations for external systems</p>
+          <h1 className="text-2xl font-bold text-foreground">Webhooks</h1>
+          <p className="text-muted-foreground text-sm">Manage webhook integrations for external systems</p>
         </div>
         <Button onClick={() => { resetForm(); setShowCreateDialog(true); }} className="bg-emerald-600 hover:bg-emerald-700">
           <Plus className="h-4 w-4 mr-2" />
@@ -279,7 +279,7 @@ export function WebhooksView() {
       <Card>
         <CardContent className="p-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search webhooks..."
               value={searchTerm}
@@ -299,7 +299,7 @@ export function WebhooksView() {
           ) : filteredWebhooks.length === 0 ? (
             <div className="text-center py-12">
               <Webhook className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-              <p className="text-slate-500">No webhooks configured</p>
+              <p className="text-muted-foreground">No webhooks configured</p>
               <Button variant="outline" className="mt-4" onClick={() => setShowCreateDialog(true)}>
                 Create your first webhook
               </Button>
@@ -354,18 +354,18 @@ export function WebhooksView() {
                           checked={webhook.isActive}
                           onCheckedChange={() => handleToggleActive(webhook)}
                         />
-                        <span className={webhook.isActive ? 'text-emerald-600' : 'text-slate-400'}>
+                        <span className={webhook.isActive ? 'text-emerald-600' : 'text-muted-foreground'}>
                           {webhook.isActive ? 'Active' : 'Inactive'}
                         </span>
                       </div>
                     </TableCell>
                     <TableCell>
                       {webhook.lastTriggeredAt ? (
-                        <span className="text-sm text-slate-500">
+                        <span className="text-sm text-muted-foreground">
                           {new Date(webhook.lastTriggeredAt).toLocaleString()}
                         </span>
                       ) : (
-                        <span className="text-sm text-slate-400">Never</span>
+                        <span className="text-sm text-muted-foreground">Never</span>
                       )}
                     </TableCell>
                     <TableCell className="text-right">
@@ -438,7 +438,7 @@ export function WebhooksView() {
                 onChange={(e) => setFormData(prev => ({ ...prev, secret: e.target.value }))}
                 placeholder="Auto-generated if empty"
               />
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted-foreground">
                 Used to sign webhook payloads with HMAC-SHA256
               </p>
             </div>
@@ -509,7 +509,7 @@ export function WebhooksView() {
             ) : deliveries.length === 0 ? (
               <div className="text-center py-12">
                 <Clock className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                <p className="text-slate-500">No deliveries yet</p>
+                <p className="text-muted-foreground">No deliveries yet</p>
               </div>
             ) : (
               <Table>

@@ -288,7 +288,7 @@ export function LpaManagementView() {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'LKR',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
@@ -307,11 +307,11 @@ export function LpaManagementView() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Shield className="h-6 w-6 text-emerald-600" />
             LPA Management
           </h1>
-          <p className="text-slate-500 text-sm">Manage Limited Purchase Authority configurations for workshops</p>
+          <p className="text-muted-foreground text-sm">Manage Limited Purchase Authority configurations for workshops</p>
         </div>
         <Button onClick={() => setShowCreateDialog(true)} className="bg-emerald-600 hover:bg-emerald-700">
           <Plus className="h-4 w-4 mr-2" />
@@ -326,10 +326,10 @@ export function LpaManagementView() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-slate-500">Total Workshops</p>
+                  <p className="text-sm text-muted-foreground">Total Workshops</p>
                   <p className="text-2xl font-bold">{summary.totalWorkshops}</p>
                 </div>
-                <DollarSign className="h-8 w-8 text-slate-400" />
+                <DollarSign className="h-8 w-8 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -337,7 +337,7 @@ export function LpaManagementView() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-slate-500">Monthly Cap Total</p>
+                  <p className="text-sm text-muted-foreground">Monthly Cap Total</p>
                   <p className="text-2xl font-bold">{formatCurrency(summary.totalMonthlyCap)}</p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-emerald-500" />
@@ -348,7 +348,7 @@ export function LpaManagementView() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-slate-500">Monthly Spend</p>
+                  <p className="text-sm text-muted-foreground">Monthly Spend</p>
                   <p className="text-2xl font-bold">{formatCurrency(summary.totalMonthlySpend)}</p>
                 </div>
                 <TrendingDown className="h-8 w-8 text-amber-500" />
@@ -359,7 +359,7 @@ export function LpaManagementView() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-slate-500">Current Month</p>
+                  <p className="text-sm text-muted-foreground">Current Month</p>
                   <p className="text-lg font-bold flex items-center gap-1">
                     <Calendar className="h-4 w-4" />
                     {summary.currentMonth}
@@ -375,7 +375,7 @@ export function LpaManagementView() {
       <Card>
         <CardContent className="p-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search by workshop ID or name..."
               value={searchTerm}
@@ -400,7 +400,7 @@ export function LpaManagementView() {
               <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
             </div>
           ) : filteredConfigs.length === 0 ? (
-            <div className="text-center py-12 text-slate-500">
+            <div className="text-center py-12 text-muted-foreground">
               No LPA configurations found
             </div>
           ) : (
@@ -423,7 +423,7 @@ export function LpaManagementView() {
                       <TableCell>
                         <div>
                           <p className="font-medium">{config.workshopName}</p>
-                          <p className="text-xs text-slate-500">{config.workshopId}</p>
+                          <p className="text-xs text-muted-foreground">{config.workshopId}</p>
                         </div>
                       </TableCell>
                       <TableCell className="text-right font-mono">
@@ -447,7 +447,7 @@ export function LpaManagementView() {
                             value={usagePercent} 
                             className="h-2"
                           />
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-muted-foreground">
                             Remaining: {formatCurrency(config.remainingBudget)}
                           </p>
                         </div>
@@ -513,7 +513,7 @@ export function LpaManagementView() {
                 value={editForm.emergencyLpaLimit}
                 onChange={(e) => setEditForm(prev => ({ ...prev, emergencyLpaLimit: parseFloat(e.target.value) || 0 }))}
               />
-              <p className="text-xs text-slate-500">Typically 1.5x the standard limit</p>
+              <p className="text-xs text-muted-foreground">Typically 1.5x the standard limit</p>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Monthly Cap</label>
@@ -553,7 +553,7 @@ export function LpaManagementView() {
           </DialogHeader>
           <div className="py-4">
             {history.length === 0 ? (
-              <div className="text-center py-8 text-slate-500">
+              <div className="text-center py-8 text-muted-foreground">
                 No change history available
               </div>
             ) : (
@@ -591,7 +591,7 @@ export function LpaManagementView() {
                       <TableCell className="text-sm">
                         <div>
                           <p>{h.changedByName}</p>
-                          <p className="text-xs text-slate-500">{h.changedByEmail}</p>
+                          <p className="text-xs text-muted-foreground">{h.changedByEmail}</p>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -656,9 +656,9 @@ export function LpaManagementView() {
                 onChange={(e) => setCreateForm(prev => ({ ...prev, monthlyCap: parseFloat(e.target.value) || 0 }))}
               />
             </div>
-            <div className="bg-slate-50 rounded-lg p-3 text-sm">
+            <div className="bg-muted/50 rounded-lg p-3 text-sm">
               <p className="font-medium mb-2">Default LPA Limits by Role:</p>
-              <ul className="space-y-1 text-slate-600">
+              <ul className="space-y-1 text-muted-foreground">
                 <li>• Workshop Supervisor: {formatCurrency(25000)} / Emergency: {formatCurrency(37500)}</li>
                 <li>• Procurement Officer: {formatCurrency(100000)} / Emergency: {formatCurrency(150000)}</li>
                 <li>• Workshop Manager: {formatCurrency(250000)} / Emergency: {formatCurrency(375000)}</li>

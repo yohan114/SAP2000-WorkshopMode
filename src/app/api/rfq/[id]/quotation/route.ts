@@ -8,7 +8,7 @@ const createQuotationSchema = z.object({
   quotationNumber: z.string().min(1, 'Quotation number is required'),
   quotationDate: z.string().min(1, 'Quotation date is required'),
   validUntil: z.string().optional(),
-  currency: z.string().default('USD'),
+  currency: z.string().default('LKR'),
   terms: z.string().optional(),
   notes: z.string().optional(),
   lines: z.array(z.object({

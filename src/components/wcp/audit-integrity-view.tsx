@@ -103,13 +103,13 @@ const actionColors: Record<string, string> = {
   'UPDATE': 'bg-blue-100 text-blue-700',
   'DELETE': 'bg-red-100 text-red-700',
   'LOGIN': 'bg-purple-100 text-purple-700',
-  'LOGOUT': 'bg-slate-100 text-slate-700',
+  'LOGOUT': 'bg-slate-100 text-foreground',
   'APPROVE': 'bg-amber-100 text-amber-700',
   'STATUS_CHANGE': 'bg-cyan-100 text-cyan-700',
 };
 
 const statusColors: Record<string, string> = {
-  'UNVERIFIED': 'bg-slate-100 text-slate-700',
+  'UNVERIFIED': 'bg-slate-100 text-foreground',
   'VERIFIED': 'bg-emerald-100 text-emerald-700',
   'TAMPERED': 'bg-red-100 text-red-700',
 };
@@ -281,8 +281,8 @@ export function AuditIntegrityView() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Audit Integrity Dashboard</h1>
-          <p className="text-slate-500 text-sm">Cryptographic hash chain verification for tamper detection</p>
+          <h1 className="text-2xl font-bold text-foreground">Audit Integrity Dashboard</h1>
+          <p className="text-muted-foreground text-sm">Cryptographic hash chain verification for tamper detection</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={fetchData} disabled={loading}>
@@ -314,7 +314,7 @@ export function AuditIntegrityView() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats?.totalBlocks || 0}</p>
-                <p className="text-xs text-slate-500">Total Blocks</p>
+                <p className="text-xs text-muted-foreground">Total Blocks</p>
               </div>
             </div>
           </CardContent>
@@ -327,7 +327,7 @@ export function AuditIntegrityView() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats?.verifiedBlocks || 0}</p>
-                <p className="text-xs text-slate-500">Verified Blocks</p>
+                <p className="text-xs text-muted-foreground">Verified Blocks</p>
               </div>
             </div>
           </CardContent>
@@ -336,11 +336,11 @@ export function AuditIntegrityView() {
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-slate-100 rounded-lg">
-                <Clock className="h-5 w-5 text-slate-600" />
+                <Clock className="h-5 w-5 text-muted-foreground" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats?.unverifiedBlocks || 0}</p>
-                <p className="text-xs text-slate-500">Unverified Blocks</p>
+                <p className="text-xs text-muted-foreground">Unverified Blocks</p>
               </div>
             </div>
           </CardContent>
@@ -353,7 +353,7 @@ export function AuditIntegrityView() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats?.tamperedBlocks || 0}</p>
-                <p className="text-xs text-slate-500">Tampered Blocks</p>
+                <p className="text-xs text-muted-foreground">Tampered Blocks</p>
               </div>
             </div>
           </CardContent>
@@ -386,7 +386,7 @@ export function AuditIntegrityView() {
             </div>
             <Progress value={verificationProgress} className="h-2" />
             {stats?.lastVerifiedAt && (
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted-foreground">
                 Last verified: {formatDate(stats.lastVerifiedAt)}
               </p>
             )}
@@ -459,7 +459,7 @@ export function AuditIntegrityView() {
               ) : blocks.length === 0 ? (
                 <div className="text-center py-12">
                   <Blocks className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                  <p className="text-slate-500">No blocks found</p>
+                  <p className="text-muted-foreground">No blocks found</p>
                 </div>
               ) : (
                 <Table>
@@ -540,8 +540,8 @@ export function AuditIntegrityView() {
               {tamperedRecords.length === 0 ? (
                 <div className="text-center py-12">
                   <CheckCircle2 className="h-12 w-12 text-emerald-300 mx-auto mb-4" />
-                  <p className="text-slate-500">No tampered records detected</p>
-                  <p className="text-xs text-slate-400 mt-1">All audit records maintain their integrity</p>
+                  <p className="text-muted-foreground">No tampered records detected</p>
+                  <p className="text-xs text-muted-foreground mt-1">All audit records maintain their integrity</p>
                 </div>
               ) : (
                 <Table>
@@ -602,38 +602,38 @@ export function AuditIntegrityView() {
             <div className="space-y-4 py-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-slate-500">Action</p>
+                  <p className="text-sm text-muted-foreground">Action</p>
                   <Badge className={actionColors[selectedBlock.action] || 'bg-slate-100'}>
                     {selectedBlock.action}
                   </Badge>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">Entity Type</p>
+                  <p className="text-sm text-muted-foreground">Entity Type</p>
                   <p className="font-medium">{selectedBlock.entityType}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">Entity ID</p>
+                  <p className="text-sm text-muted-foreground">Entity ID</p>
                   <p className="font-mono text-sm">{selectedBlock.entityId}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">Actor</p>
+                  <p className="text-sm text-muted-foreground">Actor</p>
                   <p className="font-medium">{selectedBlock.actor?.name || 'System'}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">Verification Status</p>
+                  <p className="text-sm text-muted-foreground">Verification Status</p>
                   <Badge className={statusColors[selectedBlock.verificationStatus || 'UNVERIFIED']}>
                     {selectedBlock.verificationStatus || 'UNVERIFIED'}
                   </Badge>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">Created At</p>
+                  <p className="text-sm text-muted-foreground">Created At</p>
                   <p className="font-medium">{formatDate(selectedBlock.createdAt)}</p>
                 </div>
               </div>
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm text-slate-500">Current Hash</p>
+                  <p className="text-sm text-muted-foreground">Current Hash</p>
                   {selectedBlock.currentHash && (
                     <Button
                       variant="ghost"
@@ -656,7 +656,7 @@ export function AuditIntegrityView() {
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm text-slate-500">Previous Hash</p>
+                  <p className="text-sm text-muted-foreground">Previous Hash</p>
                   {selectedBlock.previousHash && (
                     <Button
                       variant="ghost"
@@ -679,7 +679,7 @@ export function AuditIntegrityView() {
 
               {selectedBlock.verifiedAt && (
                 <div>
-                  <p className="text-sm text-slate-500">Verified At</p>
+                  <p className="text-sm text-muted-foreground">Verified At</p>
                   <p className="font-medium">{formatDate(selectedBlock.verifiedAt)}</p>
                 </div>
               )}
@@ -715,13 +715,13 @@ export function AuditIntegrityView() {
                   <div className="text-emerald-600">
                     <Shield className="h-16 w-16 mx-auto mb-2" />
                     <p className="font-medium">Chain Integrity Valid</p>
-                    <p className="text-sm text-slate-500">All blocks verified successfully</p>
+                    <p className="text-sm text-muted-foreground">All blocks verified successfully</p>
                   </div>
                 ) : (
                   <div className="text-red-600">
                     <AlertTriangle className="h-16 w-16 mx-auto mb-2" />
                     <p className="font-medium">Chain Integrity Compromised</p>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-muted-foreground">
                       {verificationResult.tamperedBlocks.length} block(s) tampered
                     </p>
                   </div>
@@ -731,17 +731,17 @@ export function AuditIntegrityView() {
               <div className="grid grid-cols-2 gap-4 text-center">
                 <div>
                   <p className="text-2xl font-bold">{verificationResult.totalBlocks}</p>
-                  <p className="text-xs text-slate-500">Total Blocks</p>
+                  <p className="text-xs text-muted-foreground">Total Blocks</p>
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-emerald-600">{verificationResult.verifiedBlocks}</p>
-                  <p className="text-xs text-slate-500">Verified</p>
+                  <p className="text-xs text-muted-foreground">Verified</p>
                 </div>
               </div>
 
               {verificationResult.tamperedBlocks.length > 0 && (
                 <div>
-                  <p className="text-sm text-slate-500 mb-2">Tampered Block Numbers:</p>
+                  <p className="text-sm text-muted-foreground mb-2">Tampered Block Numbers:</p>
                   <div className="flex flex-wrap gap-1">
                     {verificationResult.tamperedBlocks.slice(0, 20).map((num) => (
                       <Badge key={num} variant="destructive" className="text-xs">
@@ -749,7 +749,7 @@ export function AuditIntegrityView() {
                       </Badge>
                     ))}
                     {verificationResult.tamperedBlocks.length > 20 && (
-                      <span className="text-xs text-slate-500">
+                      <span className="text-xs text-muted-foreground">
                         +{verificationResult.tamperedBlocks.length - 20} more
                       </span>
                     )}

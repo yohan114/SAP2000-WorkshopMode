@@ -276,7 +276,7 @@ export function KpiSlaView() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium">Total KPIs</CardTitle>
-                <Activity className="h-5 w-5 text-slate-500" />
+                <Activity className="h-5 w-5 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{summary.totalKpis}</div>
@@ -383,11 +383,11 @@ export function KpiSlaView() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center p-4 bg-slate-50 rounded-lg">
+                <div className="text-center p-4 bg-muted/50 rounded-lg">
                   <p className="text-2xl font-bold text-blue-600">{summary.activeSla}</p>
                   <p className="text-xs text-muted-foreground">Active SLAs</p>
                 </div>
-                <div className="text-center p-4 bg-slate-50 rounded-lg">
+                <div className="text-center p-4 bg-muted/50 rounded-lg">
                   <p className="text-2xl font-bold text-emerald-600">{slaTracking.filter(s => s.status === 'MET').length}</p>
                   <p className="text-xs text-muted-foreground">Met SLAs</p>
                 </div>

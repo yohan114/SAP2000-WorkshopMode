@@ -20,7 +20,7 @@ const createSupplierSchema = z.object({
   country: z.string().optional(),
   taxId: z.string().optional(),
   paymentTerms: z.string().optional(),
-  currency: z.string().default('USD'),
+  currency: z.string().default('LKR'),
   notes: z.string().optional(),
 });
 
@@ -112,7 +112,7 @@ export async function POST(request: Request) {
         country: data.country || null,
         taxId: data.taxId || null,
         paymentTerms: data.paymentTerms || null,
-        currency: data.currency || 'USD',
+        currency: data.currency || 'LKR',
         notes: data.notes || null,
         status: 'ACTIVE',
       },

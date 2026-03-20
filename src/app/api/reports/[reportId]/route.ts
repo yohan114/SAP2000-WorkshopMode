@@ -136,17 +136,17 @@ async function getMonthlyClosedJobs(startDate: Date, endDate: Date) {
     period: { start: startDate.toISOString().split('T')[0], end: endDate.toISOString().split('T')[0] },
     summary: {
       'Total Closed': jobCards.length,
-      'Total Estimated Cost': `$${totalEstimated.toLocaleString()}`,
-      'Total Actual Cost': `$${totalActual.toLocaleString()}`,
-      'Variance': `$${(totalActual - totalEstimated).toLocaleString()}`,
+      'Total Estimated Cost': `LKR ${totalEstimated.toLocaleString()}`,
+      'Total Actual Cost': `LKR ${totalActual.toLocaleString()}`,
+      'Variance': `LKR ${(totalActual - totalEstimated).toLocaleString()}`,
     },
     data: jobCards.map((jc, idx) => ({
       no: idx + 1,
       jobCardNumber: jc.jobCardNumber,
       asset: jc.asset ? `${jc.asset.assetNumber} - ${jc.asset.name}` : '-',
       priority: jc.priority,
-      estimatedCost: `$${(jc.estimatedCost || 0).toLocaleString()}`,
-      actualCost: `$${(jc.actualCost || 0).toLocaleString()}`,
+      estimatedCost: `LKR ${(jc.estimatedCost || 0).toLocaleString()}`,
+      actualCost: `LKR ${(jc.actualCost || 0).toLocaleString()}`,
       closedAt: jc.closedAt ? new Date(jc.closedAt).toLocaleDateString() : '-',
     })),
     columns: [
@@ -201,7 +201,7 @@ async function getMaterialUsage(startDate: Date, endDate: Date) {
       itemName: line.item?.name || '-',
       quantity: Number(line.issuedQty),
       unit: line.item?.unitOfMeasure || '-',
-      value: `$${((Number(line.issuedQty) * Number(line.unitCost || 0))).toLocaleString()}`,
+      value: `LKR ${((Number(line.issuedQty) * Number(line.unitCost || 0))).toLocaleString()}`,
     }))
   );
 
@@ -214,7 +214,7 @@ async function getMaterialUsage(startDate: Date, endDate: Date) {
     summary: {
       'Total Issues': issues.length,
       'Total Line Items': lines.length,
-      'Total Value': `$${totalValue.toLocaleString()}`,
+      'Total Value': `LKR ${totalValue.toLocaleString()}`,
     },
     data: lines.slice(0, 100),
     columns: [
@@ -257,7 +257,7 @@ async function getExternalCosts(startDate: Date, endDate: Date) {
       'Total Repairs': externalRepairs.length,
       'Completed': completed,
       'In Progress': externalRepairs.length - completed,
-      'Total Cost': `$${totalCost.toLocaleString()}`,
+      'Total Cost': `LKR ${totalCost.toLocaleString()}`,
     },
     data: externalRepairs.map((er, idx) => ({
       no: idx + 1,
@@ -265,8 +265,8 @@ async function getExternalCosts(startDate: Date, endDate: Date) {
       asset: er.jobCard?.asset ? `${er.jobCard.asset.assetNumber}` : '-',
       supplier: er.supplier?.name || '-',
       status: er.status,
-      estimatedCost: `$${(er.estimatedCost || 0).toLocaleString()}`,
-      actualCost: `$${(er.actualCost || 0).toLocaleString()}`,
+      estimatedCost: `LKR ${(er.estimatedCost || 0).toLocaleString()}`,
+      actualCost: `LKR ${(er.actualCost || 0).toLocaleString()}`,
     })),
     columns: [
       { key: 'no', label: '#' },
@@ -386,7 +386,7 @@ async function getProcurementSpend(startDate: Date, endDate: Date) {
     period: { start: startDate.toISOString().split('T')[0], end: endDate.toISOString().split('T')[0] },
     summary: {
       'Total POs': purchaseOrders.length,
-      'Total Spend': `$${totalValue.toLocaleString()}`,
+      'Total Spend': `LKR ${totalValue.toLocaleString()}`,
     },
     data: purchaseOrders.slice(0, 100).map((po, idx) => ({
       no: idx + 1,
@@ -394,7 +394,7 @@ async function getProcurementSpend(startDate: Date, endDate: Date) {
       supplier: po.supplier?.name || '-',
       orderDate: new Date(po.orderDate).toLocaleDateString(),
       status: po.status,
-      totalValue: `$${(po.totalValue || 0).toLocaleString()}`,
+      totalValue: `LKR ${(po.totalValue || 0).toLocaleString()}`,
     })),
     columns: [
       { key: 'no', label: '#' },
@@ -590,13 +590,13 @@ async function getJobCardCostReport(startDate: Date, endDate: Date) {
   // Format data for display
   const formattedData = reportData.map(r => ({
     ...r,
-    materialCost: `$${r.materialCost.toLocaleString()}`,
+    materialCost: `LKR ${r.materialCost.toLocaleString()}`,
     labourHours: `${r.labourHours.toFixed(1)}h`,
-    labourCost: `$${r.labourCost.toLocaleString()}`,
-    externalCost: `$${r.externalCost.toLocaleString()}`,
-    subtotal: `$${r.subtotal.toLocaleString()}`,
-    sundry: `$${r.sundry.toFixed(2)}`,
-    totalBill: `$${r.totalBill.toLocaleString()}`,
+    labourCost: `LKR ${r.labourCost.toLocaleString()}`,
+    externalCost: `LKR ${r.externalCost.toLocaleString()}`,
+    subtotal: `LKR ${r.subtotal.toLocaleString()}`,
+    sundry: `LKR ${r.sundry.toFixed(2)}`,
+    totalBill: `LKR ${r.totalBill.toLocaleString()}`,
   }));
 
   // Chart data: Cost distribution pie chart
@@ -681,12 +681,12 @@ async function getJobCardCostReport(startDate: Date, endDate: Date) {
     period: { start: startDate.toISOString().split('T')[0], end: endDate.toISOString().split('T')[0] },
     summary: {
       'Total Job Cards': jobCards.length,
-      'Total Material Cost': `$${totalMaterialCost.toLocaleString()}`,
+      'Total Material Cost': `LKR ${totalMaterialCost.toLocaleString()}`,
       'Total Labour Hours': `${totalLabourHours.toFixed(1)}h`,
-      'Total Labour Cost': `$${totalLabourCost.toLocaleString()}`,
-      'Total External Cost': `$${totalExternalCost.toLocaleString()}`,
-      'Total Sundry (10%)': `$${totalSundry.toFixed(2)}`,
-      'Grand Total': `$${grandTotal.toLocaleString()}`,
+      'Total Labour Cost': `LKR ${totalLabourCost.toLocaleString()}`,
+      'Total External Cost': `LKR ${totalExternalCost.toLocaleString()}`,
+      'Total Sundry (10%)': `LKR ${totalSundry.toFixed(2)}`,
+      'Grand Total': `LKR ${grandTotal.toLocaleString()}`,
     },
     data: formattedData,
     columns: [
@@ -760,8 +760,8 @@ async function getStockValuation() {
     period: { start: '-', end: new Date().toISOString().split('T')[0] },
     summary: {
       'Total Items': totalItems,
-      'Total Value': `$${totalValue.toLocaleString()}`,
-      'Average WAC': `$${avgWAC.toFixed(2)}`,
+      'Total Value': `LKR ${totalValue.toLocaleString()}`,
+      'Average WAC': `LKR ${avgWAC.toFixed(2)}`,
     },
     data: itemsWithValue.slice(0, 100).map((item, idx) => ({
       no: idx + 1,
@@ -770,8 +770,8 @@ async function getStockValuation() {
       store: item.store,
       quantity: item.quantity,
       unit: item.unit,
-      wac: `$${item.wac.toFixed(2)}`,
-      value: `$${item.value.toLocaleString()}`,
+      wac: `LKR ${item.wac.toFixed(2)}`,
+      value: `LKR ${item.value.toLocaleString()}`,
     })),
     columns: [
       { key: 'no', label: '#' },

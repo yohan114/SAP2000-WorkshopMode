@@ -356,7 +356,7 @@ export function ImportWizard() {
 
             {entityType && template && (
               <div className="mt-6 space-y-4">
-                <Card className="bg-slate-50">
+                <Card className="bg-muted/50">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm">Template Fields</CardTitle>
                   </CardHeader>
@@ -367,7 +367,7 @@ export function ImportWizard() {
                           {field.required ? (
                             <span className="text-red-500">*</span>
                           ) : (
-                            <span className="text-slate-400">○</span>
+                            <span className="text-muted-foreground">○</span>
                           )}
                           <span>{field.label}</span>
                         </div>
@@ -448,7 +448,7 @@ export function ImportWizard() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <Upload className="h-12 w-12 mx-auto text-slate-400" />
+                  <Upload className="h-12 w-12 mx-auto text-muted-foreground" />
                   <p className="font-medium">Drop your file here or click to browse</p>
                   <p className="text-sm text-muted-foreground">
                     Supports CSV, XLSX, XLS files
@@ -516,7 +516,7 @@ export function ImportWizard() {
             <div className="border rounded-lg overflow-hidden">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-slate-50">
+                  <TableRow className="bg-muted/50">
                     <TableHead className="w-1/3">File Column</TableHead>
                     <TableHead className="w-1/3">System Field</TableHead>
                     <TableHead className="w-1/3">Status</TableHead>
@@ -557,7 +557,7 @@ export function ImportWizard() {
                               Mapped
                             </Badge>
                           ) : (
-                            <Badge variant="outline" className="bg-slate-50 text-slate-500">
+                            <Badge variant="outline" className="bg-muted/50 text-muted-foreground">
                               Not Mapped
                             </Badge>
                           )}
@@ -615,7 +615,7 @@ export function ImportWizard() {
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <Card>
                 <CardContent className="pt-4 text-center">
-                  <div className="text-2xl font-bold text-slate-900">{validationResult.totalRows}</div>
+                  <div className="text-2xl font-bold text-foreground">{validationResult.totalRows}</div>
                   <div className="text-xs text-muted-foreground">Total Rows</div>
                 </CardContent>
               </Card>
@@ -650,7 +650,7 @@ export function ImportWizard() {
               <div className="max-h-96 overflow-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-slate-50 sticky top-0">
+                    <TableRow className="bg-muted/50 sticky top-0">
                       <TableHead className="w-16">#</TableHead>
                       <TableHead className="w-24">Status</TableHead>
                       <TableHead className="w-24">Action</TableHead>
@@ -678,7 +678,7 @@ export function ImportWizard() {
                           <Badge variant="outline" className={
                             row.action === 'create' ? 'text-emerald-600' :
                             row.action === 'update' ? 'text-blue-600' :
-                            'text-slate-400'
+                            'text-muted-foreground'
                           }>
                             {row.action}
                           </Badge>

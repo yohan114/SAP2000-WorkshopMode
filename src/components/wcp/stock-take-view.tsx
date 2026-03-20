@@ -423,12 +423,12 @@ export function StockTakeView() {
               <tbody>
                 ${(st.lines || []).map((line: StockTakeLine, idx: number) => `
                   <tr>
-                    <td>${idx + 1}</td>
-                    <td>${line.item?.itemCode || '-'}</td>
-                    <td>${line.item?.name || '-'}</td>
-                    <td>${line.location || '-'}</td>
-                    <td>${line.item?.unitOfMeasure || '-'}</td>
-                    <td class="count-col">${blindedMode ? '***' : line.systemQty}</td>
+                    <td>LKR {idx + 1}</td>
+                    <td>LKR {line.item?.itemCode || '-'}</td>
+                    <td>LKR {line.item?.name || '-'}</td>
+                    <td>LKR {line.location || '-'}</td>
+                    <td>LKR {line.item?.unitOfMeasure || '-'}</td>
+                    <td class="count-col">LKR {blindedMode ? '***' : line.systemQty}</td>
                     <td class="count-col"></td>
                     <td class="count-col"></td>
                     <td class="count-col"></td>
@@ -490,8 +490,8 @@ export function StockTakeView() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Stock Take</h1>
-          <p className="text-slate-500 text-sm">Manage inventory stock counts</p>
+          <h1 className="text-2xl font-bold text-foreground">Stock Take</h1>
+          <p className="text-muted-foreground text-sm">Manage inventory stock counts</p>
         </div>
         <Button onClick={() => setShowCreateDialog(true)} className="bg-emerald-600 hover:bg-emerald-700">
           <Plus className="h-4 w-4 mr-2" />New Stock Take
@@ -508,7 +508,7 @@ export function StockTakeView() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats?.total || 0}</p>
-                <p className="text-xs text-slate-500">Total Stock Takes</p>
+                <p className="text-xs text-muted-foreground">Total Stock Takes</p>
               </div>
             </div>
           </CardContent>
@@ -521,7 +521,7 @@ export function StockTakeView() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats?.inProgress || 0}</p>
-                <p className="text-xs text-slate-500">In Progress</p>
+                <p className="text-xs text-muted-foreground">In Progress</p>
               </div>
             </div>
           </CardContent>
@@ -537,8 +537,8 @@ export function StockTakeView() {
                 )}
               </div>
               <div>
-                <p className="text-2xl font-bold">${Math.abs(stats?.totalVarianceValue || 0).toLocaleString()}</p>
-                <p className="text-xs text-slate-500">Total Variance Value</p>
+                <p className="text-2xl font-bold">LKR {Math.abs(stats?.totalVarianceValue || 0).toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">Total Variance Value</p>
               </div>
             </div>
           </CardContent>
@@ -551,7 +551,7 @@ export function StockTakeView() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats?.accuracyRate || 0}%</p>
-                <p className="text-xs text-slate-500">Count Accuracy</p>
+                <p className="text-xs text-muted-foreground">Count Accuracy</p>
               </div>
             </div>
           </CardContent>
@@ -562,7 +562,7 @@ export function StockTakeView() {
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Search stock takes..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -583,7 +583,7 @@ export function StockTakeView() {
           {loading ? (
             <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-emerald-600" /></div>
           ) : filteredStockTakes.length === 0 ? (
-            <div className="text-center py-12"><ClipboardCheck className="h-12 w-12 text-slate-300 mx-auto mb-4" /><p className="text-slate-500">No stock takes found</p></div>
+            <div className="text-center py-12"><ClipboardCheck className="h-12 w-12 text-slate-300 mx-auto mb-4" /><p className="text-muted-foreground">No stock takes found</p></div>
           ) : (
             <Table>
               <TableHeader>
@@ -610,7 +610,7 @@ export function StockTakeView() {
                     <TableCell>
                       <div className="flex items-center gap-2 w-32">
                         <Progress value={getCompletionPercentage(st)} className="h-2" />
-                        <span className="text-xs text-slate-500">{getCompletionPercentage(st)}%</span>
+                        <span className="text-xs text-muted-foreground">{getCompletionPercentage(st)}%</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
@@ -713,21 +713,21 @@ export function StockTakeView() {
                   <>
                     <div className="text-center">
                       <p className="text-lg font-bold">{stats.counted}/{stats.total}</p>
-                      <p className="text-xs text-slate-500">Items Counted</p>
+                      <p className="text-xs text-muted-foreground">Items Counted</p>
                     </div>
                     <div className="text-center">
                       <p className="text-lg font-bold text-emerald-600">{stats.positiveVariance}</p>
-                      <p className="text-xs text-slate-500">Positive Variance</p>
+                      <p className="text-xs text-muted-foreground">Positive Variance</p>
                     </div>
                     <div className="text-center">
                       <p className="text-lg font-bold text-red-600">{stats.negativeVariance}</p>
-                      <p className="text-xs text-slate-500">Negative Variance</p>
+                      <p className="text-xs text-muted-foreground">Negative Variance</p>
                     </div>
                     <div className="text-center">
                       <p className={`text-lg font-bold ${stats.totalVarianceValue >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                         ${Math.abs(stats.totalVarianceValue).toLocaleString()}
                       </p>
-                      <p className="text-xs text-slate-500">Variance Value</p>
+                      <p className="text-xs text-muted-foreground">Variance Value</p>
                     </div>
                   </>
                 );
@@ -754,7 +754,7 @@ export function StockTakeView() {
                     <TableCell>
                       <div>
                         <p>{line.item?.name}</p>
-                        <p className="text-xs text-slate-500">{line.item?.unitOfMeasure}</p>
+                        <p className="text-xs text-muted-foreground">{line.item?.unitOfMeasure}</p>
                       </div>
                     </TableCell>
                     <TableCell className="text-right">{blindedMode ? '***' : line.systemQty}</TableCell>
@@ -846,7 +846,7 @@ export function StockTakeView() {
                 <Card className="bg-blue-50 border-blue-200">
                   <CardContent className="p-4 text-center">
                     <BarChart3 className="h-6 w-6 text-blue-600 mx-auto mb-2" />
-                    <p className="text-2xl font-bold text-blue-600">${varianceSummary.netValue?.toLocaleString()}</p>
+                    <p className="text-2xl font-bold text-blue-600">LKR {varianceSummary.netValue?.toLocaleString()}</p>
                     <p className="text-xs text-blue-700">Net Variance Value</p>
                   </CardContent>
                 </Card>
@@ -876,7 +876,7 @@ export function StockTakeView() {
                           <TableCell className="text-right">{v.systemQty}</TableCell>
                           <TableCell className="text-right">{v.countedQty}</TableCell>
                           <TableCell className={`text-right font-medium ${v.variance > 0 ? 'text-emerald-600' : 'text-red-600'}`}>{v.variance}</TableCell>
-                          <TableCell className="text-right">${v.varianceValue?.toLocaleString()}</TableCell>
+                          <TableCell className="text-right">LKR {v.varianceValue?.toLocaleString()}</TableCell>
                           <TableCell>{v.varianceReason || '-'}</TableCell>
                         </TableRow>
                       ))}

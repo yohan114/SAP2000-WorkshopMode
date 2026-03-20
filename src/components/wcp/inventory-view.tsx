@@ -644,8 +644,8 @@ export function InventoryView() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Inventory Management</h2>
-          <p className="text-slate-500">Track stock levels, manage reservations, and perform stock takes</p>
+          <h2 className="text-2xl font-bold text-foreground">Inventory Management</h2>
+          <p className="text-muted-foreground">Track stock levels, manage reservations, and perform stock takes</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setActiveTab('transactions')}>
@@ -685,10 +685,10 @@ export function InventoryView() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-500">Total Items</p>
+                <p className="text-sm text-muted-foreground">Total Items</p>
                 <p className="text-2xl font-bold">{stockItems.length}</p>
               </div>
-              <Package className="h-8 w-8 text-slate-400" />
+              <Package className="h-8 w-8 text-muted-foreground" />
             </div>
           </CardContent>
         </Card>
@@ -696,7 +696,7 @@ export function InventoryView() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-500">Total Value</p>
+                <p className="text-sm text-muted-foreground">Total Value</p>
                 <p className="text-2xl font-bold">LKR {totalValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
               </div>
             </div>
@@ -760,7 +760,7 @@ export function InventoryView() {
             <CardContent className="p-4">
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search by item code or name..."
                     value={searchTerm}
@@ -795,7 +795,7 @@ export function InventoryView() {
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-slate-50">
+                    <TableRow className="bg-muted/50">
                       <TableHead className="w-12">
                         <Checkbox
                           checked={allSelected}
@@ -823,7 +823,7 @@ export function InventoryView() {
                       ))
                     ) : stockItems.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={9} className="h-32 text-center text-slate-500">
+                        <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
                           <div className="flex flex-col items-center gap-2">
                             <Package className="h-8 w-8 text-slate-300" />
                             <p>No inventory items found</p>
@@ -839,7 +839,7 @@ export function InventoryView() {
                           : 100;
                         
                         return (
-                          <TableRow key={item.id} className={`hover:bg-slate-50 ${selectedIds.has(item.id) ? 'bg-emerald-50' : ''}`}>
+                          <TableRow key={item.id} className={`hover:bg-muted/50 ${selectedIds.has(item.id) ? 'bg-emerald-50' : ''}`}>
                             <TableCell>
                               <Checkbox
                                 checked={selectedIds.has(item.id)}
@@ -849,10 +849,10 @@ export function InventoryView() {
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-3">
-                                <div className="p-2 bg-slate-100 rounded"><Package className="h-4 w-4 text-slate-600" /></div>
+                                <div className="p-2 bg-slate-100 rounded"><Package className="h-4 w-4 text-muted-foreground" /></div>
                                 <div>
                                   <div className="font-medium">{item.item.name}</div>
-                                  <div className="text-xs text-slate-500">{item.item.itemCode}</div>
+                                  <div className="text-xs text-muted-foreground">{item.item.itemCode}</div>
                                 </div>
                               </div>
                             </TableCell>
@@ -862,14 +862,14 @@ export function InventoryView() {
                             <TableCell className="text-center">
                               <div>
                                 <span className="font-semibold">{item.availableQty}</span>
-                                <span className="text-xs text-slate-500 ml-1">{item.item.unitOfMeasure}</span>
+                                <span className="text-xs text-muted-foreground ml-1">{item.item.unitOfMeasure}</span>
                               </div>
                               <div className="w-full mt-1"><Progress value={stockLevel} className="h-1" /></div>
                             </TableCell>
                             <TableCell className="text-center hidden sm:table-cell">
                               {item.reservedQty > 0 ? (
                                 <Badge variant="outline" className="bg-amber-50 text-amber-700">{item.reservedQty}</Badge>
-                              ) : <span className="text-slate-400">-</span>}
+                              ) : <span className="text-muted-foreground">-</span>}
                             </TableCell>
                             <TableCell className="text-right font-medium">LKR {Number(item.wac).toFixed(2)}</TableCell>
                             <TableCell className="text-right font-medium">LKR {itemValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}</TableCell>
@@ -916,7 +916,7 @@ export function InventoryView() {
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-slate-50">
+                    <TableRow className="bg-muted/50">
                       <TableHead className="font-semibold">Item Code</TableHead>
                       <TableHead className="font-semibold">Name</TableHead>
                       <TableHead className="font-semibold hidden md:table-cell">Class</TableHead>
@@ -937,7 +937,7 @@ export function InventoryView() {
                       ))
                     ) : items.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="h-32 text-center text-slate-500">
+                        <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
                           <div className="flex flex-col items-center gap-2">
                             <Package className="h-8 w-8 text-slate-300" />
                             <p>No items found</p>
@@ -949,13 +949,13 @@ export function InventoryView() {
                       </TableRow>
                     ) : (
                       items.map((item) => (
-                        <TableRow key={item.id} className="hover:bg-slate-50">
+                        <TableRow key={item.id} className="hover:bg-muted/50">
                           <TableCell className="font-mono font-medium">{item.itemCode}</TableCell>
                           <TableCell>
                             <div>
                               <div className="font-medium">{item.name}</div>
                               {item.description && (
-                                <div className="text-xs text-slate-500 truncate max-w-xs">{item.description}</div>
+                                <div className="text-xs text-muted-foreground truncate max-w-xs">{item.description}</div>
                               )}
                             </div>
                           </TableCell>
@@ -1007,7 +1007,7 @@ export function InventoryView() {
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-slate-50">
+                    <TableRow className="bg-muted/50">
                       <TableHead className="font-semibold">Alert</TableHead>
                       <TableHead className="font-semibold">Item</TableHead>
                       <TableHead className="font-semibold text-center">Available</TableHead>
@@ -1020,7 +1020,7 @@ export function InventoryView() {
                   <TableBody>
                     {alerts.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="h-32 text-center text-slate-500">
+                        <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
                           <div className="flex flex-col items-center gap-2">
                             <CheckCircle className="h-8 w-8 text-emerald-500" />
                             <p>All stock levels are healthy</p>
@@ -1038,7 +1038,7 @@ export function InventoryView() {
                           <TableCell>
                             <div>
                               <div className="font-medium">{alert.item.name}</div>
-                              <div className="text-xs text-slate-500">{alert.item.itemCode}</div>
+                              <div className="text-xs text-muted-foreground">{alert.item.itemCode}</div>
                             </div>
                           </TableCell>
                           <TableCell className="text-center">
@@ -1079,7 +1079,7 @@ export function InventoryView() {
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-slate-50">
+                    <TableRow className="bg-muted/50">
                       <TableHead className="font-semibold">MR Number</TableHead>
                       <TableHead className="font-semibold">Item</TableHead>
                       <TableHead className="font-semibold text-center">Reserved Qty</TableHead>
@@ -1091,7 +1091,7 @@ export function InventoryView() {
                   <TableBody>
                     {reservations.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="h-32 text-center text-slate-500">
+                        <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
                           <div className="flex flex-col items-center gap-2">
                             <Unlock className="h-8 w-8 text-slate-300" />
                             <p>No active reservations</p>
@@ -1100,12 +1100,12 @@ export function InventoryView() {
                       </TableRow>
                     ) : (
                       reservations.map((res) => (
-                        <TableRow key={res.id} className="hover:bg-slate-50">
+                        <TableRow key={res.id} className="hover:bg-muted/50">
                           <TableCell className="font-medium">{res.mrNumber}</TableCell>
                           <TableCell>
                             <div>
                               <div className="font-medium">{res.item.name}</div>
-                              <div className="text-xs text-slate-500">{res.item.itemCode}</div>
+                              <div className="text-xs text-muted-foreground">{res.item.itemCode}</div>
                             </div>
                           </TableCell>
                           <TableCell className="text-center">
@@ -1115,7 +1115,7 @@ export function InventoryView() {
                           </TableCell>
                           <TableCell>{res.requestor || '-'}</TableCell>
                           <TableCell className="hidden md:table-cell">{res.jobCardNumber || '-'}</TableCell>
-                          <TableCell className="text-slate-600">{new Date(res.createdAt).toLocaleDateString()}</TableCell>
+                          <TableCell className="text-muted-foreground">{new Date(res.createdAt).toLocaleDateString()}</TableCell>
                         </TableRow>
                       ))
                     )}
@@ -1139,7 +1139,7 @@ export function InventoryView() {
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-slate-50">
+                    <TableRow className="bg-muted/50">
                       <TableHead className="font-semibold">Type</TableHead>
                       <TableHead className="font-semibold">Item</TableHead>
                       <TableHead className="font-semibold text-center">Quantity</TableHead>
@@ -1153,7 +1153,7 @@ export function InventoryView() {
                   <TableBody>
                     {transactions.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="h-32 text-center text-slate-500">
+                        <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
                           <div className="flex flex-col items-center gap-2">
                             <History className="h-8 w-8 text-slate-300" />
                             <p>No recent transactions</p>
@@ -1162,7 +1162,7 @@ export function InventoryView() {
                       </TableRow>
                     ) : (
                       transactions.map((tx) => (
-                        <TableRow key={tx.id} className="hover:bg-slate-50">
+                        <TableRow key={tx.id} className="hover:bg-muted/50">
                           <TableCell>
                             <Badge className={transactionTypeColors[tx.transactionType] || 'bg-slate-100'}>
                               {tx.transactionType}
@@ -1171,7 +1171,7 @@ export function InventoryView() {
                           <TableCell>
                             <div>
                               <div className="font-medium">{tx.item.name}</div>
-                              <div className="text-xs text-slate-500">{tx.item.itemCode}</div>
+                              <div className="text-xs text-muted-foreground">{tx.item.itemCode}</div>
                             </div>
                           </TableCell>
                           <TableCell className="text-center font-medium">{tx.quantity} {tx.item.unitOfMeasure}</TableCell>
@@ -1181,7 +1181,7 @@ export function InventoryView() {
                             <Badge variant="outline">{tx.store.name}</Badge>
                           </TableCell>
                           <TableCell className="hidden lg:table-cell">{tx.performedBy || '-'}</TableCell>
-                          <TableCell className="text-slate-600">{new Date(tx.createdAt).toLocaleDateString()}</TableCell>
+                          <TableCell className="text-muted-foreground">{new Date(tx.createdAt).toLocaleDateString()}</TableCell>
                         </TableRow>
                       ))
                     )}
@@ -1196,7 +1196,7 @@ export function InventoryView() {
       {/* Pagination */}
       {pagination.totalPages > 1 && activeTab === 'stock' && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted-foreground">
             Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} items
           </p>
           <div className="flex items-center gap-2">
@@ -1221,10 +1221,10 @@ export function InventoryView() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             {selectedStock && (
-              <div className="p-3 bg-slate-50 rounded-lg">
-                <div className="text-sm text-slate-500">Current Stock</div>
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <div className="text-sm text-muted-foreground">Current Stock</div>
                 <div className="text-2xl font-bold">{selectedStock.availableQty} {selectedStock.item.unitOfMeasure}</div>
-                <div className="text-sm text-slate-500">WAC: LKR {Number(selectedStock.wac).toFixed(2)}</div>
+                <div className="text-sm text-muted-foreground">WAC: LKR {Number(selectedStock.wac).toFixed(2)}</div>
               </div>
             )}
             <div className="space-y-2">

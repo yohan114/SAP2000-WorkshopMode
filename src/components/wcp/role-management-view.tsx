@@ -149,7 +149,7 @@ const PRIVILEGE_CATEGORIES: Record<string, string> = {
 };
 
 const LEVEL_COLORS: Record<number, string> = {
-  1: 'bg-slate-100 text-slate-700',
+  1: 'bg-slate-100 text-foreground',
   2: 'bg-blue-100 text-blue-700',
   3: 'bg-cyan-100 text-cyan-700',
   4: 'bg-amber-100 text-amber-700',
@@ -587,8 +587,8 @@ export function RoleManagementView() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Role Management</h1>
-          <p className="text-slate-500 text-sm">Manage roles and their privileges</p>
+          <h1 className="text-2xl font-bold text-foreground">Role Management</h1>
+          <p className="text-muted-foreground text-sm">Manage roles and their privileges</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={openMatrixDialog}>
@@ -608,11 +608,11 @@ export function RoleManagementView() {
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-slate-100 rounded-lg">
-                <Shield className="h-5 w-5 text-slate-600" />
+                <Shield className="h-5 w-5 text-muted-foreground" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-slate-900">{summaryStats.total}</div>
-                <div className="text-sm text-slate-500">Total Roles</div>
+                <div className="text-2xl font-bold text-foreground">{summaryStats.total}</div>
+                <div className="text-sm text-muted-foreground">Total Roles</div>
               </div>
             </div>
           </CardContent>
@@ -625,7 +625,7 @@ export function RoleManagementView() {
               </div>
               <div>
                 <div className="text-2xl font-bold text-emerald-600">{summaryStats.active}</div>
-                <div className="text-sm text-slate-500">Active</div>
+                <div className="text-sm text-muted-foreground">Active</div>
               </div>
             </div>
           </CardContent>
@@ -634,11 +634,11 @@ export function RoleManagementView() {
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-slate-100 rounded-lg">
-                <X className="h-5 w-5 text-slate-400" />
+                <X className="h-5 w-5 text-muted-foreground" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-slate-500">{summaryStats.inactive}</div>
-                <div className="text-sm text-slate-500">Inactive</div>
+                <div className="text-2xl font-bold text-muted-foreground">{summaryStats.inactive}</div>
+                <div className="text-sm text-muted-foreground">Inactive</div>
               </div>
             </div>
           </CardContent>
@@ -651,7 +651,7 @@ export function RoleManagementView() {
               </div>
               <div>
                 <div className="text-2xl font-bold text-blue-600">{summaryStats.totalUsers}</div>
-                <div className="text-sm text-slate-500">Total Users</div>
+                <div className="text-sm text-muted-foreground">Total Users</div>
               </div>
             </div>
           </CardContent>
@@ -663,7 +663,7 @@ export function RoleManagementView() {
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search by name or code..."
                 value={searchTerm}
@@ -699,7 +699,7 @@ export function RoleManagementView() {
           ) : filteredRoles.length === 0 ? (
             <div className="text-center py-12">
               <Shield className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-              <p className="text-slate-500">No roles found</p>
+              <p className="text-muted-foreground">No roles found</p>
               <Button variant="outline" className="mt-4" onClick={openCreateDialog}>
                 Create your first role
               </Button>
@@ -707,7 +707,7 @@ export function RoleManagementView() {
           ) : (
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50">
+                <TableRow className="bg-muted/50">
                   <TableHead className="font-semibold">Code</TableHead>
                   <TableHead className="font-semibold">Name</TableHead>
                   <TableHead className="font-semibold">Level</TableHead>
@@ -719,7 +719,7 @@ export function RoleManagementView() {
               </TableHeader>
               <TableBody>
                 {filteredRoles.map((role) => (
-                  <TableRow key={role.id} className="hover:bg-slate-50">
+                  <TableRow key={role.id} className="hover:bg-muted/50">
                     <TableCell>
                       <code className="text-xs bg-slate-100 px-2 py-1 rounded font-mono">
                         {role.code}
@@ -729,7 +729,7 @@ export function RoleManagementView() {
                       <div>
                         <div className="font-medium">{role.name}</div>
                         {role.description && (
-                          <div className="text-xs text-slate-500 mt-0.5 line-clamp-1">
+                          <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
                             {role.description}
                           </div>
                         )}
@@ -743,18 +743,18 @@ export function RoleManagementView() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        <Users className="h-4 w-4 text-slate-400" />
+                        <Users className="h-4 w-4 text-muted-foreground" />
                         <span>{role.userCount}</span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        <Key className="h-4 w-4 text-slate-400" />
+                        <Key className="h-4 w-4 text-muted-foreground" />
                         <span>{role.grantedPrivilegeCount} / {role.privilegeCount}</span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge className={role.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}>
+                      <Badge className={role.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-muted-foreground'}>
                         {role.isActive ? 'Active' : 'Inactive'}
                       </Badge>
                     </TableCell>
@@ -818,7 +818,7 @@ export function RoleManagementView() {
                 disabled={isEditing}
               />
               {isEditing && (
-                <p className="text-xs text-slate-500">Code cannot be changed after creation</p>
+                <p className="text-xs text-muted-foreground">Code cannot be changed after creation</p>
               )}
             </div>
             <div className="space-y-2">
@@ -923,14 +923,14 @@ export function RoleManagementView() {
                     return (
                       <div key={category.category} className="border rounded-lg">
                         <button
-                          className="w-full flex items-center justify-between p-3 hover:bg-slate-50 transition-colors"
+                          className="w-full flex items-center justify-between p-3 hover:bg-muted/50 transition-colors"
                           onClick={() => toggleCategory(category.category)}
                         >
                           <div className="flex items-center gap-2">
                             {isExpanded ? (
-                              <ChevronDown className="h-4 w-4 text-slate-400" />
+                              <ChevronDown className="h-4 w-4 text-muted-foreground" />
                             ) : (
-                              <ChevronRight className="h-4 w-4 text-slate-400" />
+                              <ChevronRight className="h-4 w-4 text-muted-foreground" />
                             )}
                             <span className="font-medium">
                               {PRIVILEGE_CATEGORIES[category.category] || category.category}
@@ -945,7 +945,7 @@ export function RoleManagementView() {
                           <div className="border-t">
                             <Table>
                               <TableHeader>
-                                <TableRow className="bg-slate-50/50">
+                                <TableRow className="bg-muted/50/50">
                                   <TableHead className="w-12">Grant</TableHead>
                                   <TableHead>Privilege</TableHead>
                                   <TableHead className="w-32">Max Amount</TableHead>
@@ -954,7 +954,7 @@ export function RoleManagementView() {
                               </TableHeader>
                               <TableBody>
                                 {category.privileges.map((privilege) => (
-                                  <TableRow key={privilege.privilegeId} className="hover:bg-slate-50/50">
+                                  <TableRow key={privilege.privilegeId} className="hover:bg-muted/50/50">
                                     <TableCell>
                                       <Checkbox
                                         checked={privilege.isGranted}
@@ -972,7 +972,7 @@ export function RoleManagementView() {
                                           </code>
                                         </div>
                                         {privilege.description && (
-                                          <span className="text-xs text-slate-500">
+                                          <span className="text-xs text-muted-foreground">
                                             {privilege.description}
                                           </span>
                                         )}
@@ -1047,14 +1047,14 @@ export function RoleManagementView() {
                     <div key={category.category} className="border rounded-lg overflow-hidden">
                       <div className="bg-slate-100 px-4 py-2 font-medium">
                         {PRIVILEGE_CATEGORIES[category.category] || category.category}
-                        <span className="ml-2 text-sm font-normal text-slate-500">
+                        <span className="ml-2 text-sm font-normal text-muted-foreground">
                           ({category.privileges.length} privileges)
                         </span>
                       </div>
                       <Table>
                         <TableHeader>
-                          <TableRow className="bg-slate-50">
-                            <TableHead className="sticky left-0 bg-white min-w-48">Privilege</TableHead>
+                          <TableRow className="bg-muted/50">
+                            <TableHead className="sticky left-0 bg-card min-w-48">Privilege</TableHead>
                             {matrixRoles.map(role => (
                               <TableHead key={role.id} className="text-center min-w-24">
                                 <div className="flex flex-col items-center">
@@ -1064,7 +1064,7 @@ export function RoleManagementView() {
                                   >
                                     {role.code}
                                   </Badge>
-                                  <span className="text-xs text-slate-500 mt-1">L{role.level}</span>
+                                  <span className="text-xs text-muted-foreground mt-1">L{role.level}</span>
                                 </div>
                               </TableHead>
                             ))}
@@ -1072,11 +1072,11 @@ export function RoleManagementView() {
                         </TableHeader>
                         <TableBody>
                           {category.privileges.map((privilege) => (
-                            <TableRow key={privilege.id} className="hover:bg-slate-50">
-                              <TableCell className="sticky left-0 bg-white font-medium">
+                            <TableRow key={privilege.id} className="hover:bg-muted/50">
+                              <TableCell className="sticky left-0 bg-card font-medium">
                                 <div className="flex flex-col">
                                   <span>{privilege.name}</span>
-                                  <code className="text-xs text-slate-400">{privilege.code}</code>
+                                  <code className="text-xs text-muted-foreground">{privilege.code}</code>
                                 </div>
                               </TableCell>
                               {matrixRoles.map(role => {
@@ -1131,17 +1131,17 @@ export function RoleManagementView() {
           </DialogHeader>
           <div className="py-4">
             {selectedRole && (
-              <div className="bg-slate-50 rounded-lg p-4 space-y-2">
+              <div className="bg-muted/50 rounded-lg p-4 space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Code:</span>
+                  <span className="text-muted-foreground">Code:</span>
                   <code className="font-mono">{selectedRole.code}</code>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Name:</span>
+                  <span className="text-muted-foreground">Name:</span>
                   <span className="font-medium">{selectedRole.name}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Users assigned:</span>
+                  <span className="text-muted-foreground">Users assigned:</span>
                   <span className={selectedRole.userCount > 0 ? 'text-red-600 font-medium' : ''}>
                     {selectedRole.userCount}
                   </span>

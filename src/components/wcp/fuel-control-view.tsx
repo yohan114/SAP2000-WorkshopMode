@@ -134,7 +134,7 @@ const FUEL_TYPE_COLORS: Record<string, string> = {
 };
 
 const SEVERITY_COLORS: Record<string, string> = {
-  LOW: 'bg-slate-100 text-slate-700',
+  LOW: 'bg-slate-100 text-foreground',
   MEDIUM: 'bg-amber-100 text-amber-700',
   HIGH: 'bg-orange-100 text-orange-700',
   CRITICAL: 'bg-red-100 text-red-700',
@@ -492,8 +492,8 @@ export function FuelControlView() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Fuel Control</h2>
-          <p className="text-slate-500">Manage fuel tanks, issues, and consumption tracking</p>
+          <h2 className="text-2xl font-bold text-foreground">Fuel Control</h2>
+          <p className="text-muted-foreground">Manage fuel tanks, issues, and consumption tracking</p>
         </div>
         <div className="flex gap-2">
           <Dialog open={isReadingDialogOpen} onOpenChange={setIsReadingDialogOpen}>
@@ -619,7 +619,7 @@ export function FuelControlView() {
                   </div>
                 </div>
                 <div className="border-t pt-4">
-                  <Label className="text-sm text-slate-500">Meter Readings (for consumption tracking)</Label>
+                  <Label className="text-sm text-muted-foreground">Meter Readings (for consumption tracking)</Label>
                   <div className="grid grid-cols-3 gap-3 mt-2">
                     <div className="space-y-2">
                       <Label className="text-xs">Previous</Label>
@@ -764,7 +764,7 @@ export function FuelControlView() {
                 <Fuel className="h-5 w-5 text-emerald-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-500">Total Tanks</p>
+                <p className="text-sm text-muted-foreground">Total Tanks</p>
                 <p className="text-xl font-bold">{tanks.filter(t => t.isActive).length}</p>
               </div>
             </div>
@@ -777,7 +777,7 @@ export function FuelControlView() {
                 <Droplet className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-500">Total Fuel</p>
+                <p className="text-sm text-muted-foreground">Total Fuel</p>
                 <p className="text-xl font-bold">{totalCurrentLevel.toFixed(0)} L</p>
               </div>
             </div>
@@ -790,7 +790,7 @@ export function FuelControlView() {
                 <Gauge className="h-5 w-5 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-500">Fill Level</p>
+                <p className="text-sm text-muted-foreground">Fill Level</p>
                 <p className="text-xl font-bold">{overallFillPercent.toFixed(1)}%</p>
               </div>
             </div>
@@ -803,7 +803,7 @@ export function FuelControlView() {
                 <Truck className="h-5 w-5 text-amber-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-500">Today Issues</p>
+                <p className="text-sm text-muted-foreground">Today Issues</p>
                 <p className="text-xl font-bold">{todayIssuesCount}</p>
               </div>
             </div>
@@ -813,10 +813,10 @@ export function FuelControlView() {
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className={`p-2 rounded-lg ${openAbnormalsCount > 0 ? 'bg-red-100' : 'bg-slate-100'}`}>
-                <AlertTriangle className={`h-5 w-5 ${openAbnormalsCount > 0 ? 'text-red-600' : 'text-slate-600'}`} />
+                <AlertTriangle className={`h-5 w-5 ${openAbnormalsCount > 0 ? 'text-red-600' : 'text-muted-foreground'}`} />
               </div>
               <div>
-                <p className="text-sm text-slate-500">Open Alerts</p>
+                <p className="text-sm text-muted-foreground">Open Alerts</p>
                 <p className="text-xl font-bold">{openAbnormalsCount}</p>
               </div>
             </div>
@@ -854,7 +854,7 @@ export function FuelControlView() {
                   <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
                 </div>
               ) : tanks.length === 0 ? (
-                <div className="text-center py-12 text-slate-500">
+                <div className="text-center py-12 text-muted-foreground">
                   <Fuel className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>No fuel tanks found. Add your first tank to get started.</p>
                 </div>
@@ -869,7 +869,7 @@ export function FuelControlView() {
                           <div className="flex justify-between items-start">
                             <div>
                               <CardTitle className="text-lg">{tank.name}</CardTitle>
-                              <p className="text-sm text-slate-500">{tank.tankNumber}</p>
+                              <p className="text-sm text-muted-foreground">{tank.tankNumber}</p>
                             </div>
                             <Badge className={FUEL_TYPE_COLORS[tank.fuelType] || ''}>
                               {tank.fuelType}
@@ -880,7 +880,7 @@ export function FuelControlView() {
                           <div className="space-y-3">
                             <div>
                               <div className="flex justify-between text-sm mb-1">
-                                <span className="text-slate-500">Level</span>
+                                <span className="text-muted-foreground">Level</span>
                                 <span className={status.color}>
                                   {tank.currentLevel?.toFixed(0) || 0} / {tank.capacity?.toFixed(0) || 0} L
                                 </span>
@@ -888,11 +888,11 @@ export function FuelControlView() {
                               <Progress value={fillPercent} className="h-2" />
                             </div>
                             <div className="flex justify-between text-sm">
-                              <span className="text-slate-500">Fill</span>
+                              <span className="text-muted-foreground">Fill</span>
                               <span className={status.color}>{fillPercent.toFixed(1)}%</span>
                             </div>
                             {tank.location && (
-                              <p className="text-xs text-slate-500">📍 {tank.location}</p>
+                              <p className="text-xs text-muted-foreground">📍 {tank.location}</p>
                             )}
                             <div className="flex justify-end gap-2 pt-2 border-t">
                               <Button 
@@ -953,7 +953,7 @@ export function FuelControlView() {
                   <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
                 </div>
               ) : issues.length === 0 ? (
-                <div className="text-center py-12 text-slate-500">
+                <div className="text-center py-12 text-muted-foreground">
                   <Droplet className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>No fuel issues recorded</p>
                 </div>
@@ -987,15 +987,15 @@ export function FuelControlView() {
                               {issue.asset ? (
                                 <div>
                                   <div className="font-medium">{issue.asset.assetNumber}</div>
-                                  <div className="text-xs text-slate-500">{issue.asset.name}</div>
+                                  <div className="text-xs text-muted-foreground">{issue.asset.name}</div>
                                 </div>
-                              ) : <span className="text-slate-400">-</span>}
+                              ) : <span className="text-muted-foreground">-</span>}
                             </TableCell>
                             <TableCell>{issue.quantity} L</TableCell>
                             <TableCell>
                               <div>
                                 <div className="font-medium">{issue.issuedTo?.name}</div>
-                                <div className="text-xs text-slate-500">{issue.issuedTo?.employeeNumber}</div>
+                                <div className="text-xs text-muted-foreground">{issue.issuedTo?.employeeNumber}</div>
                               </div>
                             </TableCell>
                             <TableCell>
@@ -1065,12 +1065,12 @@ export function FuelControlView() {
             </CardHeader>
             <CardContent className="p-0">
               {!selectedTank ? (
-                <div className="text-center py-12 text-slate-500">
+                <div className="text-center py-12 text-muted-foreground">
                   <Gauge className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>Select a tank to view readings</p>
                 </div>
               ) : readings.length === 0 ? (
-                <div className="text-center py-12 text-slate-500">
+                <div className="text-center py-12 text-muted-foreground">
                   <Gauge className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>No readings recorded for this tank</p>
                 </div>
@@ -1121,7 +1121,7 @@ export function FuelControlView() {
           <Card>
             <CardContent className="p-0">
               {abnormals.length === 0 ? (
-                <div className="text-center py-12 text-slate-500">
+                <div className="text-center py-12 text-muted-foreground">
                   <CheckCircle className="h-12 w-12 mx-auto mb-4 text-emerald-500" />
                   <p>No abnormal detections - All consumption is within normal range</p>
                 </div>
@@ -1143,7 +1143,7 @@ export function FuelControlView() {
                         <TableRow key={abnormal.id}>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              <AlertCircle className={`h-4 w-4 ${abnormal.status === 'OPEN' ? 'text-red-500' : 'text-slate-400'}`} />
+                              <AlertCircle className={`h-4 w-4 ${abnormal.status === 'OPEN' ? 'text-red-500' : 'text-muted-foreground'}`} />
                               {abnormal.detectionType.replace(/_/g, ' ')}
                             </div>
                           </TableCell>
@@ -1203,29 +1203,29 @@ export function FuelControlView() {
             <div className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-slate-500">Issue Number</p>
+                  <p className="text-sm text-muted-foreground">Issue Number</p>
                   <p className="font-medium">{selectedIssue.issueNumber}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">Tank</p>
+                  <p className="text-sm text-muted-foreground">Tank</p>
                   <p className="font-medium">{selectedIssue.tank?.name} ({selectedIssue.tank?.tankNumber})</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">Quantity</p>
+                  <p className="text-sm text-muted-foreground">Quantity</p>
                   <p className="font-medium">{selectedIssue.quantity} Liters</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">Issued To</p>
+                  <p className="text-sm text-muted-foreground">Issued To</p>
                   <p className="font-medium">{selectedIssue.issuedTo?.name}</p>
                 </div>
                 {selectedIssue.asset && (
                   <div>
-                    <p className="text-sm text-slate-500">Asset</p>
+                    <p className="text-sm text-muted-foreground">Asset</p>
                     <p className="font-medium">{selectedIssue.asset.assetNumber} - {selectedIssue.asset.name}</p>
                   </div>
                 )}
                 <div>
-                  <p className="text-sm text-slate-500">Date</p>
+                  <p className="text-sm text-muted-foreground">Date</p>
                   <p className="font-medium">{new Date(selectedIssue.issuedAt).toLocaleString()}</p>
                 </div>
               </div>
@@ -1240,15 +1240,15 @@ export function FuelControlView() {
                   <p className="text-sm font-medium mb-2">Meter Readings</p>
                   <div className="grid grid-cols-3 gap-4 text-sm">
                     <div>
-                      <p className="text-slate-500">Previous</p>
+                      <p className="text-muted-foreground">Previous</p>
                       <p className="font-medium">{selectedIssue.previousMeterReading?.toLocaleString() || '-'}</p>
                     </div>
                     <div>
-                      <p className="text-slate-500">Current</p>
+                      <p className="text-muted-foreground">Current</p>
                       <p className="font-medium">{selectedIssue.currentMeterReading?.toLocaleString() || '-'}</p>
                     </div>
                     <div>
-                      <p className="text-slate-500">Norm</p>
+                      <p className="text-muted-foreground">Norm</p>
                       <p className="font-medium">{selectedIssue.consumptionNorm || '-'}</p>
                     </div>
                   </div>
@@ -1256,7 +1256,7 @@ export function FuelControlView() {
               )}
               {selectedIssue.notes && (
                 <div>
-                  <p className="text-sm text-slate-500">Notes</p>
+                  <p className="text-sm text-muted-foreground">Notes</p>
                   <p className="font-medium">{selectedIssue.notes}</p>
                 </div>
               )}
@@ -1276,9 +1276,9 @@ export function FuelControlView() {
           </DialogHeader>
           {selectedAbnormal && (
             <div className="space-y-4 mt-4">
-              <div className="p-3 bg-slate-50 rounded-lg">
+              <div className="p-3 bg-muted/50 rounded-lg">
                 <p className="text-sm font-medium">{selectedAbnormal.detectionType.replace(/_/g, ' ')}</p>
-                <p className="text-sm text-slate-600">{selectedAbnormal.description}</p>
+                <p className="text-sm text-muted-foreground">{selectedAbnormal.description}</p>
               </div>
               <div className="space-y-2">
                 <Label>Resolution Notes *</Label>

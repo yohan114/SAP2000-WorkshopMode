@@ -89,7 +89,7 @@ export function generateReportEmailHTML(data: ReportEmailData): string {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${reportName}</title>
+  <title>LKR {reportName}</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #334155; }
     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -121,15 +121,15 @@ export function generateReportEmailHTML(data: ReportEmailData): string {
       <div class="info-card">
         <div class="info-row">
           <span class="label">Report Type</span>
-          <span class="value">${reportType}</span>
+          <span class="value">LKR {reportType}</span>
         </div>
         <div class="info-row">
           <span class="label">Generated At</span>
-          <span class="value">${new Date(executedAt).toLocaleString()}</span>
+          <span class="value">LKR {new Date(executedAt).toLocaleString()}</span>
         </div>
         <div class="info-row">
           <span class="label">Records</span>
-          <span class="value">${recordCount.toLocaleString()} records</span>
+          <span class="value">LKR {recordCount.toLocaleString()} records</span>
         </div>
         <div class="info-row">
           <span class="label">Status</span>

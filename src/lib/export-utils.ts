@@ -39,7 +39,7 @@ function formatCurrency(value: unknown): string {
   if (isNaN(num)) return String(value);
   return num.toLocaleString('en-US', { 
     style: 'currency', 
-    currency: 'USD',
+    currency: 'LKR',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2 
   });

@@ -242,8 +242,8 @@ export async function GET(
           l.itemName,
           l.quantity.toFixed(2),
           l.unit,
-          `$${l.unitCost.toFixed(2)}`,
-          `$${l.totalCost.toFixed(2)}`,
+          `LKR ${l.unitCost.toFixed(2)}`,
+          `LKR ${l.totalCost.toFixed(2)}`,
         ]),
         styles: { fontSize: 8 },
         headStyles: { fillColor: [16, 185, 129] },
@@ -271,8 +271,8 @@ export async function GET(
           l.date,
           l.employee,
           l.hours.toFixed(2),
-          `$${l.hourlyRate.toFixed(2)}`,
-          `$${l.totalCost.toFixed(2)}`,
+          `LKR ${l.hourlyRate.toFixed(2)}`,
+          `LKR ${l.totalCost.toFixed(2)}`,
         ]),
         styles: { fontSize: 8 },
         headStyles: { fillColor: [59, 130, 246] },
@@ -300,8 +300,8 @@ export async function GET(
           l.jobNumber,
           l.subcontractor,
           l.jobType,
-          `$${l.estimatedCost.toFixed(2)}`,
-          `$${l.actualCost.toFixed(2)}`,
+          `LKR ${l.estimatedCost.toFixed(2)}`,
+          `LKR ${l.actualCost.toFixed(2)}`,
         ]),
         styles: { fontSize: 8 },
         headStyles: { fillColor: [245, 158, 11] },
@@ -344,7 +344,7 @@ export async function GET(
         doc.setFont('helvetica', 'normal');
       }
       doc.text(line.label, 20, yPos);
-      doc.text(`$${line.value.toFixed(2)}`, 150, yPos, { align: 'right' });
+      doc.text(`LKR ${line.value.toFixed(2)}`, 150, yPos, { align: 'right' });
       yPos += 6;
     }
 

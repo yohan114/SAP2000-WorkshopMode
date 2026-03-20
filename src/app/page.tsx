@@ -236,10 +236,10 @@ export default function Home() {
   // Show loading while checking auth
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <Loader2 className="h-10 w-10 animate-spin text-emerald-600 mx-auto mb-4" />
-          <p className="text-slate-600">Loading...</p>
+          <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
@@ -298,11 +298,11 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-background flex">
       {/* Desktop Sidebar */}
       <aside 
         className={cn(
-          "hidden md:flex flex-col bg-white border-r transition-all duration-300 h-screen sticky top-0 relative",
+          "hidden md:flex flex-col bg-card border-r transition-all duration-300 h-screen sticky top-0 relative",
           sidebarOpen ? "w-56" : "w-16"
         )}
       >
@@ -341,7 +341,7 @@ export default function Home() {
       {/* Mobile Sidebar */}
       <aside 
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-56 bg-white border-r transform transition-transform duration-300 md:hidden",
+          "fixed inset-y-0 left-0 z-50 w-56 bg-card border-r transform transition-transform duration-300 md:hidden",
           mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -360,24 +360,16 @@ export default function Home() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-h-screen">
         {/* Top Header Bar */}
-        <header className="bg-white border-b sticky top-0 z-30 shadow-sm">
+        <header className="bg-card border-b sticky top-0 z-30 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.1)]">
           <div className="px-4 sm:px-6 py-3">
             <div className="flex items-center justify-between">
               {/* Left side - Mobile menu & Title */}
               <div className="flex items-center gap-3">
-                {/* Mobile menu button */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="md:hidden"
-                  onClick={() => setMobileSidebarOpen(true)}
-                >
-                  <Menu className="h-5 w-5" />
-                </Button>
+                {/* Mobile menu button removed in favor of bottom nav */}
 
                 {/* Page Title */}
                 <div>
-                  <h2 className="text-lg font-semibold text-slate-900">
+                  <h2 className="text-lg font-semibold text-foreground">
                     {navigationItems.find(item => item.id === activeTab)?.label || 'Dashboard'}
                   </h2>
                 </div>
@@ -484,13 +476,13 @@ export default function Home() {
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto pb-24 md:pb-8">
           {renderContent()}
         </main>
 
         {/* Footer */}
-        <footer className="bg-white border-t py-3 px-4 sm:px-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-sm text-slate-500">
+        <footer className="bg-card border-t py-3 px-4 sm:px-6 hidden md:block">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-sm text-muted-foreground">
             <div>WCP v2.0 • Workshop Control Platform</div>
             <div className="flex items-center gap-4">
               <span className="flex items-center gap-1">
@@ -502,6 +494,22 @@ export default function Home() {
             </div>
           </div>
         </footer>
+
+        {/* 2026 Mobile Bottom Navigation */}
+        <div className="md:hidden fixed bottom-4 left-4 right-4 h-16 bg-card/90 backdrop-blur-2xl border border-black/5 dark:border-white/10 rounded-[1.5rem] z-50 flex items-center justify-between px-2 shadow-[0_8px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.2)]">
+          <button onClick={() => { setActiveTab('dashboard'); setMobileSidebarOpen(false); }} className={cn("p-3 rounded-[1rem] transition-all duration-300 active:scale-95", activeTab === 'dashboard' ? "bg-primary/20 text-primary shadow-inner" : "text-muted-foreground hover:text-foreground")}>
+            <LayoutDashboard className="w-6 h-6" />
+          </button>
+          <button onClick={() => { setActiveTab('jobcards'); setMobileSidebarOpen(false); }} className={cn("p-3 rounded-[1rem] transition-all duration-300 active:scale-95", activeTab === 'jobcards' ? "bg-primary/20 text-primary shadow-inner" : "text-muted-foreground hover:text-foreground")}>
+            <Wrench className="w-6 h-6" />
+          </button>
+          <button onClick={() => { setActiveTab('inventory'); setMobileSidebarOpen(false); }} className={cn("p-3 rounded-[1rem] transition-all duration-300 active:scale-95", activeTab === 'inventory' ? "bg-primary/20 text-primary shadow-inner" : "text-muted-foreground hover:text-foreground")}>
+            <Package className="w-6 h-6" />
+          </button>
+          <button onClick={() => setMobileSidebarOpen(true)} className="p-3 rounded-[1rem] transition-all duration-300 active:scale-95 text-muted-foreground hover:text-foreground">
+            <Menu className="w-6 h-6" />
+          </button>
+        </div>
       </div>
     </div>
   );

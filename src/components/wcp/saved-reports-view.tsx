@@ -368,11 +368,11 @@ export function SavedReportsView() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <FileText className="h-6 w-6 text-emerald-600" />
             Saved Reports
           </h1>
-          <p className="text-slate-500 mt-1">
+          <p className="text-muted-foreground mt-1">
             Manage and schedule your saved report configurations
           </p>
         </div>
@@ -396,7 +396,7 @@ export function SavedReportsView() {
             <CardContent className="pt-4">
               <div className="flex flex-wrap gap-4">
                 <div className="flex items-center gap-2">
-                  <Search className="h-4 w-4 text-slate-400" />
+                  <Search className="h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search reports..."
                     value={searchQuery}
@@ -445,7 +445,7 @@ export function SavedReportsView() {
                   <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
                 </div>
               ) : filteredReports.length === 0 ? (
-                <div className="text-center py-8 text-slate-500">
+                <div className="text-center py-8 text-muted-foreground">
                   <FileText className="h-12 w-12 mx-auto mb-4 text-slate-300" />
                   <p>No saved reports found. Click &quot;New Saved Report&quot; to create one.</p>
                 </div>
@@ -471,7 +471,7 @@ export function SavedReportsView() {
                             <div>
                               <div className="font-medium">{report.name}</div>
                               {report.recipients && report.recipients.length > 0 && (
-                                <div className="text-xs text-slate-500 flex items-center gap-1 mt-1">
+                                <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                                   <Mail className="h-3 w-3" />
                                   {report.recipients.length} recipient(s)
                                 </div>
@@ -490,10 +490,10 @@ export function SavedReportsView() {
                               <span className="text-sm">{report.format}</span>
                             </div>
                           </TableCell>
-                          <TableCell className="text-sm text-slate-600">
+                          <TableCell className="text-sm text-muted-foreground">
                             {formatDate(report.lastRunAt)}
                           </TableCell>
-                          <TableCell className="text-sm text-slate-600">
+                          <TableCell className="text-sm text-muted-foreground">
                             {formatDate(report.nextRunAt)}
                           </TableCell>
                           <TableCell>
@@ -574,19 +574,19 @@ export function SavedReportsView() {
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="flex items-center gap-2 text-sm">
-                      <Clock className="h-4 w-4 text-slate-400" />
-                      <span className="text-slate-600">Next run:</span>
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">Next run:</span>
                       <span className="font-medium">{formatDate(report.nextRunAt)}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="h-4 w-4 text-slate-400" />
-                      <span className="text-slate-600">Last run:</span>
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">Last run:</span>
                       <span>{formatDate(report.lastRunAt)}</span>
                     </div>
                     {report.recipients && report.recipients.length > 0 && (
                       <div className="flex items-center gap-2 text-sm">
-                        <Mail className="h-4 w-4 text-slate-400" />
-                        <span className="text-slate-600">Recipients:</span>
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">Recipients:</span>
                         <span>{report.recipients.length}</span>
                       </div>
                     )}
@@ -617,7 +617,7 @@ export function SavedReportsView() {
                 </Card>
               ))}
             {filteredReports.filter(r => r.schedule && r.isActive).length === 0 && (
-              <div className="col-span-full text-center py-8 text-slate-500">
+              <div className="col-span-full text-center py-8 text-muted-foreground">
                 <Clock className="h-12 w-12 mx-auto mb-4 text-slate-300" />
                 <p>No scheduled reports. Create a report with a schedule to see it here.</p>
               </div>
@@ -641,7 +641,7 @@ export function SavedReportsView() {
                       </div>
                       <div>
                         <div className="font-medium">{report.name}</div>
-                        <div className="text-sm text-slate-500">
+                        <div className="text-sm text-muted-foreground">
                           {getReportTypeLabel(report.reportType)} • Executed {formatDate(report.lastRunAt)}
                         </div>
                       </div>
@@ -657,7 +657,7 @@ export function SavedReportsView() {
                 </Card>
               ))}
             {filteredReports.filter(r => r.lastRunAt).length === 0 && (
-              <div className="text-center py-8 text-slate-500">
+              <div className="text-center py-8 text-muted-foreground">
                 <FileText className="h-12 w-12 mx-auto mb-4 text-slate-300" />
                 <p>No reports have been executed yet.</p>
               </div>
@@ -780,7 +780,7 @@ export function SavedReportsView() {
                   placeholder="Enter email addresses separated by commas"
                   rows={2}
                 />
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-muted-foreground">
                   Reports will be sent to these email addresses when scheduled
                 </p>
               </div>
@@ -789,7 +789,7 @@ export function SavedReportsView() {
             <div className="flex items-center justify-between rounded-lg border p-3">
               <div className="space-y-0.5">
                 <Label htmlFor="isActive">Active</Label>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-muted-foreground">
                   Inactive reports won&apos;t run on schedule
                 </p>
               </div>
@@ -826,7 +826,7 @@ export function SavedReportsView() {
           </DialogHeader>
           <ScrollArea className="h-[60vh]">
             <div className="p-4">
-              <pre className="text-sm bg-slate-50 p-4 rounded-lg overflow-auto">
+              <pre className="text-sm bg-muted/50 p-4 rounded-lg overflow-auto">
                 {JSON.stringify(previewData?.data, null, 2)}
               </pre>
             </div>

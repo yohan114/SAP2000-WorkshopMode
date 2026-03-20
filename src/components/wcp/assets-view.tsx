@@ -99,14 +99,14 @@ const statusColors: Record<string, string> = {
   'UNDER_REPAIR': 'bg-amber-100 text-amber-700',
   'OUT_OF_SERVICE': 'bg-red-100 text-red-700',
   'STANDBY': 'bg-blue-100 text-blue-700',
-  'DISPOSED': 'bg-slate-100 text-slate-500',
+  'DISPOSED': 'bg-slate-100 text-muted-foreground',
 };
 
 const criticalityColors: Record<string, string> = {
   'CRITICAL': 'bg-red-100 text-red-700 border-red-200',
   'HIGH': 'bg-amber-100 text-amber-700 border-amber-200',
   'MEDIUM': 'bg-blue-100 text-blue-700 border-blue-200',
-  'LOW': 'bg-slate-100 text-slate-700 border-slate-200',
+  'LOW': 'bg-slate-100 text-foreground border-slate-200',
 };
 
 export function AssetsView() {
@@ -422,8 +422,8 @@ export function AssetsView() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Asset Management</h2>
-          <p className="text-slate-500">Manage and track all workshop assets</p>
+          <h2 className="text-2xl font-bold text-foreground">Asset Management</h2>
+          <p className="text-muted-foreground">Manage and track all workshop assets</p>
         </div>
         <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
           {canCreateAsset && (
@@ -581,7 +581,7 @@ export function AssetsView() {
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search by asset number, name, or make..."
                 value={searchTerm}
@@ -617,7 +617,7 @@ export function AssetsView() {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50">
+                <TableRow className="bg-muted/50">
                   <TableHead className="font-semibold">Asset Number</TableHead>
                   <TableHead className="font-semibold">Name</TableHead>
                   <TableHead className="font-semibold hidden md:table-cell">Category</TableHead>
@@ -638,7 +638,7 @@ export function AssetsView() {
                   ))
                 ) : assets.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="h-32 text-center text-slate-500">
+                    <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
                       <div className="flex flex-col items-center gap-2">
                         <Truck className="h-8 w-8 text-slate-300" />
                         <p>No assets found</p>
@@ -651,11 +651,11 @@ export function AssetsView() {
                   </TableRow>
                 ) : (
                   assets.map((asset) => (
-                    <TableRow key={asset.id} className="hover:bg-slate-50">
+                    <TableRow key={asset.id} className="hover:bg-muted/50">
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
                           <div className="p-1.5 bg-slate-100 rounded">
-                            <Truck className="h-4 w-4 text-slate-600" />
+                            <Truck className="h-4 w-4 text-muted-foreground" />
                           </div>
                           {asset.assetNumber}
                         </div>
@@ -664,14 +664,14 @@ export function AssetsView() {
                         <div>
                           <div className="font-medium">{asset.name}</div>
                           {asset.make && asset.model && (
-                            <div className="text-xs text-slate-500">{asset.make} {asset.model}</div>
+                            <div className="text-xs text-muted-foreground">{asset.make} {asset.model}</div>
                           )}
                         </div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
                         <Badge variant="outline">{asset.category?.name || 'N/A'}</Badge>
                       </TableCell>
-                      <TableCell className="hidden lg:table-cell text-slate-600">
+                      <TableCell className="hidden lg:table-cell text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <MapPin className="h-3 w-3" />
                           {asset.currentLocation || 'N/A'}
@@ -740,7 +740,7 @@ export function AssetsView() {
       {/* Pagination */}
       {pagination.totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted-foreground">
             Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} assets
           </p>
           <div className="flex items-center gap-2">
@@ -773,8 +773,8 @@ export function AssetsView() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-slate-900">{pagination.total}</div>
-            <div className="text-sm text-slate-500">Total Assets</div>
+            <div className="text-2xl font-bold text-foreground">{pagination.total}</div>
+            <div className="text-sm text-muted-foreground">Total Assets</div>
           </CardContent>
         </Card>
         <Card>
@@ -782,7 +782,7 @@ export function AssetsView() {
             <div className="text-2xl font-bold text-emerald-600">
               {assets.filter(a => a.status === 'OPERATIONAL').length}
             </div>
-            <div className="text-sm text-slate-500">Operational</div>
+            <div className="text-sm text-muted-foreground">Operational</div>
           </CardContent>
         </Card>
         <Card>
@@ -790,7 +790,7 @@ export function AssetsView() {
             <div className="text-2xl font-bold text-red-600">
               {assets.filter(a => a.criticality === 'CRITICAL').length}
             </div>
-            <div className="text-sm text-slate-500">Critical Assets</div>
+            <div className="text-sm text-muted-foreground">Critical Assets</div>
           </CardContent>
         </Card>
         <Card>
@@ -798,7 +798,7 @@ export function AssetsView() {
             <div className="text-2xl font-bold text-amber-600">
               {assets.filter(a => a.jobCardCount && a.jobCardCount > 0).length}
             </div>
-            <div className="text-sm text-slate-500">With Active Jobs</div>
+            <div className="text-sm text-muted-foreground">With Active Jobs</div>
           </CardContent>
         </Card>
       </div>
@@ -817,7 +817,7 @@ export function AssetsView() {
           </DialogHeader>
           {qrDialogAsset && (
             <div className="flex flex-col items-center py-6">
-              <div className="bg-white p-6 rounded-xl shadow-lg border">
+              <div className="bg-card p-6 rounded-xl shadow-lg border">
                 <QRCodeSVG 
                   value={qrDialogAsset.qrCode || `WCP-${qrDialogAsset.assetNumber}`}
                   size={200}
@@ -827,8 +827,8 @@ export function AssetsView() {
               </div>
               <div className="mt-6 text-center">
                 <p className="font-semibold text-lg">{qrDialogAsset.assetNumber}</p>
-                <p className="text-slate-500">{qrDialogAsset.name}</p>
-                <p className="text-xs text-slate-400 mt-2 font-mono">
+                <p className="text-muted-foreground">{qrDialogAsset.name}</p>
+                <p className="text-xs text-muted-foreground mt-2 font-mono">
                   {qrDialogAsset.qrCode || `WCP-${qrDialogAsset.assetNumber}`}
                 </p>
               </div>
@@ -851,7 +851,7 @@ export function AssetsView() {
                   variant="outline" 
                   size="sm"
                   onClick={() => {
-                    const svg = document.querySelector('.bg-white svg');
+                    const svg = document.querySelector('.bg-card svg');
                     if (svg) {
                       const svgData = new XMLSerializer().serializeToString(svg);
                       const canvas = document.createElement('canvas');
@@ -1113,7 +1113,7 @@ function AssetDetailDialog({ asset, onViewQr, onCreateJobCard }: {
       <DialogHeader>
         <DialogTitle className="flex items-center gap-3">
           <div className="p-2 bg-slate-100 rounded-lg">
-            <Truck className="h-5 w-5 text-slate-600" />
+            <Truck className="h-5 w-5 text-muted-foreground" />
           </div>
           {asset.name}
         </DialogTitle>
@@ -1126,22 +1126,22 @@ function AssetDetailDialog({ asset, onViewQr, onCreateJobCard }: {
         {/* Basic Info */}
         <div className="space-y-4">
           <div>
-            <h4 className="font-semibold text-sm text-slate-500 mb-2">Basic Information</h4>
-            <div className="bg-slate-50 rounded-lg p-4 space-y-3">
+            <h4 className="font-semibold text-sm text-muted-foreground mb-2">Basic Information</h4>
+            <div className="bg-muted/50 rounded-lg p-4 space-y-3">
               <div className="flex justify-between">
-                <span className="text-slate-600">Make</span>
+                <span className="text-muted-foreground">Make</span>
                 <span className="font-medium">{asset.make || 'N/A'}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-600">Model</span>
+                <span className="text-muted-foreground">Model</span>
                 <span className="font-medium">{asset.model || 'N/A'}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-600">Year</span>
+                <span className="text-muted-foreground">Year</span>
                 <span className="font-medium">{asset.yearOfManufacture || 'N/A'}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-600">Location</span>
+                <span className="text-muted-foreground">Location</span>
                 <span className="font-medium">{asset.currentLocation || 'N/A'}</span>
               </div>
             </div>
@@ -1149,7 +1149,7 @@ function AssetDetailDialog({ asset, onViewQr, onCreateJobCard }: {
 
           {/* Status & Criticality */}
           <div>
-            <h4 className="font-semibold text-sm text-slate-500 mb-2">Status</h4>
+            <h4 className="font-semibold text-sm text-muted-foreground mb-2">Status</h4>
             <div className="flex gap-3">
               <Badge className={statusColors[asset.status] || 'bg-slate-100'}>
                 {asset.status}
@@ -1164,14 +1164,14 @@ function AssetDetailDialog({ asset, onViewQr, onCreateJobCard }: {
         {/* Meter Readings */}
         <div className="space-y-4">
           <div>
-            <h4 className="font-semibold text-sm text-slate-500 mb-2">Meter Readings</h4>
-            <div className="bg-slate-50 rounded-lg p-4">
+            <h4 className="font-semibold text-sm text-muted-foreground mb-2">Meter Readings</h4>
+            <div className="bg-muted/50 rounded-lg p-4">
               {asset.meters && asset.meters.length > 0 ? (
                 asset.meters.map((meter, idx) => (
                   <div key={idx} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Gauge className="h-4 w-4 text-slate-500" />
-                      <span className="text-slate-600">{meter.meterType}</span>
+                      <Gauge className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">{meter.meterType}</span>
                     </div>
                     <span className="font-semibold text-lg">
                       {meter.currentValue.toLocaleString()} {meter.unit}
@@ -1179,14 +1179,14 @@ function AssetDetailDialog({ asset, onViewQr, onCreateJobCard }: {
                   </div>
                 ))
               ) : (
-                <div className="text-slate-500 text-sm">No meters configured</div>
+                <div className="text-muted-foreground text-sm">No meters configured</div>
               )}
             </div>
           </div>
 
           {/* Quick Actions */}
           <div>
-            <h4 className="font-semibold text-sm text-slate-500 mb-2">Quick Actions</h4>
+            <h4 className="font-semibold text-sm text-muted-foreground mb-2">Quick Actions</h4>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={onViewQr}>
                 <QrCode className="h-4 w-4 mr-2" />
@@ -1202,7 +1202,7 @@ function AssetDetailDialog({ asset, onViewQr, onCreateJobCard }: {
       </div>
 
       {/* Created Date */}
-      <div className="mt-4 text-xs text-slate-400">
+      <div className="mt-4 text-xs text-muted-foreground">
         Created: {new Date(asset.createdAt).toLocaleString()}
       </div>
     </>

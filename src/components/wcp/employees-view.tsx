@@ -75,12 +75,12 @@ interface PaginatedResponse {
 
 const statusColors: Record<string, string> = {
   'ACTIVE': 'bg-emerald-100 text-emerald-700',
-  'INACTIVE': 'bg-slate-100 text-slate-500',
+  'INACTIVE': 'bg-slate-100 text-muted-foreground',
   'ON_LEAVE': 'bg-amber-100 text-amber-700',
 };
 
 const skillLevelColors: Record<string, string> = {
-  'TRAINEE': 'bg-slate-100 text-slate-600',
+  'TRAINEE': 'bg-slate-100 text-muted-foreground',
   'JUNIOR': 'bg-blue-100 text-blue-700',
   'INTERMEDIATE': 'bg-cyan-100 text-cyan-700',
   'SENIOR': 'bg-amber-100 text-amber-700',
@@ -268,8 +268,8 @@ export function EmployeesView() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Employee Management</h2>
-          <p className="text-slate-500">Manage workshop technicians and staff</p>
+          <h2 className="text-2xl font-bold text-foreground">Employee Management</h2>
+          <p className="text-muted-foreground">Manage workshop technicians and staff</p>
         </div>
         <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
           <DialogTrigger asChild>
@@ -393,7 +393,7 @@ export function EmployeesView() {
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search by employee number or name..."
                 value={searchTerm}
@@ -429,7 +429,7 @@ export function EmployeesView() {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50">
+                <TableRow className="bg-muted/50">
                   <TableHead className="font-semibold">Employee #</TableHead>
                   <TableHead className="font-semibold">Name</TableHead>
                   <TableHead className="font-semibold hidden md:table-cell">Department</TableHead>
@@ -448,7 +448,7 @@ export function EmployeesView() {
                   ))
                 ) : employees.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="h-32 text-center text-slate-500">
+                    <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
                       <div className="flex flex-col items-center gap-2">
                         <Users className="h-8 w-8 text-slate-300" />
                         <p>No employees found</p>
@@ -457,27 +457,27 @@ export function EmployeesView() {
                   </TableRow>
                 ) : (
                   employees.map((employee) => (
-                    <TableRow key={employee.id} className="hover:bg-slate-50">
+                    <TableRow key={employee.id} className="hover:bg-muted/50">
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
-                          <div className="p-1.5 bg-slate-100 rounded"><Users className="h-4 w-4 text-slate-600" /></div>
+                          <div className="p-1.5 bg-slate-100 rounded"><Users className="h-4 w-4 text-muted-foreground" /></div>
                           {employee.employeeNumber}
                         </div>
                       </TableCell>
                       <TableCell>
                         <div>
                           <div className="font-medium">{employee.name}</div>
-                          {employee.designation && <div className="text-xs text-slate-500">{employee.designation}</div>}
+                          {employee.designation && <div className="text-xs text-muted-foreground">{employee.designation}</div>}
                         </div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
                         <Badge variant="outline">{employee.department || 'N/A'}</Badge>
                       </TableCell>
-                      <TableCell className="hidden lg:table-cell text-slate-600">{employee.designation || 'N/A'}</TableCell>
+                      <TableCell className="hidden lg:table-cell text-muted-foreground">{employee.designation || 'N/A'}</TableCell>
                       <TableCell>
                         {employee.skillLevel ? (
                           <Badge className={skillLevelColors[employee.skillLevel] || 'bg-slate-100'}>{employee.skillLevel}</Badge>
-                        ) : <span className="text-slate-400">N/A</span>}
+                        ) : <span className="text-muted-foreground">N/A</span>}
                       </TableCell>
                       <TableCell>
                         <Badge className={statusColors[employee.status] || 'bg-slate-100'}>{employee.status}</Badge>
@@ -500,7 +500,7 @@ export function EmployeesView() {
       {/* Pagination */}
       {pagination.totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted-foreground">
             Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} employees
           </p>
           <div className="flex items-center gap-2">
@@ -517,10 +517,10 @@ export function EmployeesView() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card><CardContent className="p-4 text-center"><div className="text-2xl font-bold text-slate-900">{pagination.total}</div><div className="text-sm text-slate-500">Total Employees</div></CardContent></Card>
-        <Card><CardContent className="p-4 text-center"><div className="text-2xl font-bold text-emerald-600">{employees.filter(e => e.status === 'ACTIVE').length}</div><div className="text-sm text-slate-500">Active</div></CardContent></Card>
-        <Card><CardContent className="p-4 text-center"><div className="text-2xl font-bold text-amber-600">{employees.filter(e => e.status === 'ON_LEAVE').length}</div><div className="text-sm text-slate-500">On Leave</div></CardContent></Card>
-        <Card><CardContent className="p-4 text-center"><div className="text-2xl font-bold text-purple-600">{employees.filter(e => e.skillLevel === 'SENIOR' || e.skillLevel === 'EXPERT' || e.skillLevel === 'MASTER').length}</div><div className="text-sm text-slate-500">Senior+ Level</div></CardContent></Card>
+        <Card><CardContent className="p-4 text-center"><div className="text-2xl font-bold text-foreground">{pagination.total}</div><div className="text-sm text-muted-foreground">Total Employees</div></CardContent></Card>
+        <Card><CardContent className="p-4 text-center"><div className="text-2xl font-bold text-emerald-600">{employees.filter(e => e.status === 'ACTIVE').length}</div><div className="text-sm text-muted-foreground">Active</div></CardContent></Card>
+        <Card><CardContent className="p-4 text-center"><div className="text-2xl font-bold text-amber-600">{employees.filter(e => e.status === 'ON_LEAVE').length}</div><div className="text-sm text-muted-foreground">On Leave</div></CardContent></Card>
+        <Card><CardContent className="p-4 text-center"><div className="text-2xl font-bold text-purple-600">{employees.filter(e => e.skillLevel === 'SENIOR' || e.skillLevel === 'EXPERT' || e.skillLevel === 'MASTER').length}</div><div className="text-sm text-muted-foreground">Senior+ Level</div></CardContent></Card>
       </div>
 
       {/* Edit Dialog */}
@@ -596,7 +596,7 @@ export function EmployeesView() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3">
-              <div className="p-2 bg-slate-100 rounded-lg"><Users className="h-5 w-5 text-slate-600" /></div>
+              <div className="p-2 bg-slate-100 rounded-lg"><Users className="h-5 w-5 text-muted-foreground" /></div>
               {selectedEmployee?.name}
             </DialogTitle>
             <DialogDescription>{selectedEmployee?.employeeNumber}</DialogDescription>
@@ -605,15 +605,15 @@ export function EmployeesView() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
               <div className="space-y-4">
                 <div>
-                  <h4 className="font-semibold text-sm text-slate-500 mb-2">Basic Information</h4>
-                  <div className="bg-slate-50 rounded-lg p-4 space-y-3">
-                    <div className="flex justify-between"><span className="text-slate-600">Department</span><span className="font-medium">{selectedEmployee.department || 'N/A'}</span></div>
-                    <div className="flex justify-between"><span className="text-slate-600">Designation</span><span className="font-medium">{selectedEmployee.designation || 'N/A'}</span></div>
-                    <div className="flex justify-between"><span className="text-slate-600">Hire Date</span><span className="font-medium">{selectedEmployee.hireDate ? new Date(selectedEmployee.hireDate).toLocaleDateString() : 'N/A'}</span></div>
+                  <h4 className="font-semibold text-sm text-muted-foreground mb-2">Basic Information</h4>
+                  <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                    <div className="flex justify-between"><span className="text-muted-foreground">Department</span><span className="font-medium">{selectedEmployee.department || 'N/A'}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Designation</span><span className="font-medium">{selectedEmployee.designation || 'N/A'}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Hire Date</span><span className="font-medium">{selectedEmployee.hireDate ? new Date(selectedEmployee.hireDate).toLocaleDateString() : 'N/A'}</span></div>
                   </div>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-sm text-slate-500 mb-2">Status</h4>
+                  <h4 className="font-semibold text-sm text-muted-foreground mb-2">Status</h4>
                   <div className="flex gap-3">
                     <Badge className={statusColors[selectedEmployee.status] || 'bg-slate-100'}>{selectedEmployee.status}</Badge>
                     {selectedEmployee.skillLevel && <Badge className={skillLevelColors[selectedEmployee.skillLevel] || 'bg-slate-100'}><Award className="h-3 w-3 mr-1" />{selectedEmployee.skillLevel}</Badge>}
@@ -622,23 +622,23 @@ export function EmployeesView() {
               </div>
               <div className="space-y-4">
                 <div>
-                  <h4 className="font-semibold text-sm text-slate-500 mb-2">Rates</h4>
-                  <div className="bg-slate-50 rounded-lg p-4 space-y-3">
-                    <div className="flex items-center justify-between"><div className="flex items-center gap-2 text-slate-600"><DollarSign className="h-4 w-4" />Hourly Rate</div><span className="font-semibold text-lg">LKR {selectedEmployee.hourlyRate?.toFixed(2) || '0.00'}</span></div>
-                    <div className="flex items-center justify-between"><div className="flex items-center gap-2 text-slate-600"><DollarSign className="h-4 w-4" />Overtime Rate</div><span className="font-semibold text-lg">LKR {selectedEmployee.overtimeRate?.toFixed(2) || '0.00'}</span></div>
+                  <h4 className="font-semibold text-sm text-muted-foreground mb-2">Rates</h4>
+                  <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                    <div className="flex items-center justify-between"><div className="flex items-center gap-2 text-muted-foreground"><DollarSign className="h-4 w-4" />Hourly Rate</div><span className="font-semibold text-lg">LKR {selectedEmployee.hourlyRate?.toFixed(2) || '0.00'}</span></div>
+                    <div className="flex items-center justify-between"><div className="flex items-center gap-2 text-muted-foreground"><DollarSign className="h-4 w-4" />Overtime Rate</div><span className="font-semibold text-lg">LKR {selectedEmployee.overtimeRate?.toFixed(2) || '0.00'}</span></div>
                   </div>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-sm text-slate-500 mb-2">Activity</h4>
+                  <h4 className="font-semibold text-sm text-muted-foreground mb-2">Activity</h4>
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-slate-50 rounded-lg p-3 text-center"><Clock className="h-5 w-5 text-slate-400 mx-auto mb-1" /><div className="font-semibold">{selectedEmployee._count?.timeLogs || 0}</div><div className="text-xs text-slate-500">Time Logs</div></div>
-                    <div className="bg-slate-50 rounded-lg p-3 text-center"><Award className="h-5 w-5 text-slate-400 mx-auto mb-1" /><div className="font-semibold">{selectedEmployee._count?.technicianSkills || 0}</div><div className="text-xs text-slate-500">Skills</div></div>
+                    <div className="bg-muted/50 rounded-lg p-3 text-center"><Clock className="h-5 w-5 text-muted-foreground mx-auto mb-1" /><div className="font-semibold">{selectedEmployee._count?.timeLogs || 0}</div><div className="text-xs text-muted-foreground">Time Logs</div></div>
+                    <div className="bg-muted/50 rounded-lg p-3 text-center"><Award className="h-5 w-5 text-muted-foreground mx-auto mb-1" /><div className="font-semibold">{selectedEmployee._count?.technicianSkills || 0}</div><div className="text-xs text-muted-foreground">Skills</div></div>
                   </div>
                 </div>
               </div>
             </div>
           )}
-          <div className="mt-4 text-xs text-slate-400">Created: {selectedEmployee?.createdAt ? new Date(selectedEmployee.createdAt).toLocaleString() : 'N/A'}</div>
+          <div className="mt-4 text-xs text-muted-foreground">Created: {selectedEmployee?.createdAt ? new Date(selectedEmployee.createdAt).toLocaleString() : 'N/A'}</div>
         </DialogContent>
       </Dialog>
     </div>

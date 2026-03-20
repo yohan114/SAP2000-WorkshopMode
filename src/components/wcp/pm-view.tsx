@@ -568,8 +568,8 @@ export function PmView() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Preventive Maintenance</h2>
-          <p className="text-slate-500">Manage PM templates, schedules, and executions</p>
+          <h2 className="text-2xl font-bold text-foreground">Preventive Maintenance</h2>
+          <p className="text-muted-foreground">Manage PM templates, schedules, and executions</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => { fetchSchedules(); fetchExecutions(); }}>
@@ -589,7 +589,7 @@ export function PmView() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{schedules.length}</p>
-                <p className="text-sm text-slate-500">Active Schedules</p>
+                <p className="text-sm text-muted-foreground">Active Schedules</p>
               </div>
             </div>
           </CardContent>
@@ -602,7 +602,7 @@ export function PmView() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-red-600">{overdueCount}</p>
-                <p className="text-sm text-slate-500">Overdue</p>
+                <p className="text-sm text-muted-foreground">Overdue</p>
               </div>
             </div>
           </CardContent>
@@ -615,7 +615,7 @@ export function PmView() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-yellow-600">{upcomingCount}</p>
-                <p className="text-sm text-slate-500">Due This Week</p>
+                <p className="text-sm text-muted-foreground">Due This Week</p>
               </div>
             </div>
           </CardContent>
@@ -628,7 +628,7 @@ export function PmView() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{executions.filter(e => e.status === 'COMPLETED').length}</p>
-                <p className="text-sm text-slate-500">Completed</p>
+                <p className="text-sm text-muted-foreground">Completed</p>
               </div>
             </div>
           </CardContent>
@@ -663,7 +663,7 @@ export function PmView() {
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       placeholder="Search schedules..."
                       value={searchTerm}
@@ -774,7 +774,7 @@ export function PmView() {
 
                         <div className="space-y-2">
                           <Label className="text-base font-medium">Trigger Intervals</Label>
-                          <p className="text-sm text-slate-500">Set one or more triggers for when PM should be performed</p>
+                          <p className="text-sm text-muted-foreground">Set one or more triggers for when PM should be performed</p>
                         </div>
 
                         <div className="grid grid-cols-3 gap-4">
@@ -856,7 +856,7 @@ export function PmView() {
                     <TableBody>
                       {filteredSchedules.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={8} className="text-center py-8 text-slate-500">
+                          <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                             No schedules found
                           </TableCell>
                         </TableRow>
@@ -866,10 +866,10 @@ export function PmView() {
                             <TableCell className="font-medium">{schedule.scheduleNumber}</TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
-                                <Truck className="h-4 w-4 text-slate-400" />
+                                <Truck className="h-4 w-4 text-muted-foreground" />
                                 <div>
                                   <p className="font-medium">{schedule.asset?.name || 'Unknown'}</p>
-                                  <p className="text-xs text-slate-500">{schedule.asset?.assetNumber || '-'}</p>
+                                  <p className="text-xs text-muted-foreground">{schedule.asset?.assetNumber || '-'}</p>
                                 </div>
                               </div>
                             </TableCell>
@@ -980,7 +980,7 @@ export function PmView() {
                     <TableBody>
                       {filteredExecutions.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={7} className="text-center py-8 text-slate-500">
+                          <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                             No executions found
                           </TableCell>
                         </TableRow>
@@ -990,7 +990,7 @@ export function PmView() {
                             <TableCell className="font-medium">{execution.executionNumber}</TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
-                                <Truck className="h-4 w-4 text-slate-400" />
+                                <Truck className="h-4 w-4 text-muted-foreground" />
                                 <span>{execution.schedule?.asset?.name || 'Unknown'}</span>
                               </div>
                             </TableCell>
@@ -1110,7 +1110,7 @@ export function PmView() {
                         <div className="flex items-center justify-between">
                           <div>
                             <Label className="text-base font-medium">Checklist Items</Label>
-                            <p className="text-sm text-slate-500">Define the tasks for this PM template</p>
+                            <p className="text-sm text-muted-foreground">Define the tasks for this PM template</p>
                           </div>
                           <Button type="button" variant="outline" size="sm" onClick={addChecklistItem}>
                             <Plus className="h-4 w-4 mr-2" />
@@ -1120,7 +1120,7 @@ export function PmView() {
 
                         <ScrollArea className="h-64 border rounded-lg p-4">
                           {checklistItems.length === 0 ? (
-                            <div className="text-center py-8 text-slate-500">
+                            <div className="text-center py-8 text-muted-foreground">
                               <ListChecks className="h-8 w-8 mx-auto mb-2 opacity-50" />
                               <p>No checklist items added yet</p>
                               <Button type="button" variant="link" onClick={addChecklistItem}>
@@ -1130,7 +1130,7 @@ export function PmView() {
                           ) : (
                             <div className="space-y-3">
                               {checklistItems.map((item, index) => (
-                                <div key={index} className="flex items-start gap-3 p-3 bg-slate-50 rounded-lg">
+                                <div key={index} className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
                                   <div className="flex-shrink-0 w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center text-sm font-medium">
                                     {item.sequence}
                                   </div>
@@ -1192,7 +1192,7 @@ export function PmView() {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {templates.length === 0 ? (
-                  <div className="col-span-full text-center py-8 text-slate-500">
+                  <div className="col-span-full text-center py-8 text-muted-foreground">
                     No templates found. Create one to get started.
                   </div>
                 ) : (
@@ -1208,11 +1208,11 @@ export function PmView() {
                         </div>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-sm text-slate-500 mb-4 line-clamp-2">
+                        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
                           {template.description || 'No description'}
                         </p>
                         <div className="flex items-center justify-between text-sm">
-                          <div className="flex items-center gap-4 text-slate-500">
+                          <div className="flex items-center gap-4 text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <ListChecks className="h-4 w-4" />
                               {template._count?.checklistItems || 0} items
@@ -1316,7 +1316,7 @@ export function PmView() {
                   <TableBody>
                     {executionItems.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center py-8 text-slate-500">
+                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                           No checklist items
                         </TableCell>
                       </TableRow>
@@ -1327,7 +1327,7 @@ export function PmView() {
                           <TableCell>
                             <div>
                               <p className="font-medium">{item.checklistItem?.description || 'Unknown task'}</p>
-                              <p className="text-xs text-slate-500">{item.checklistItem?.itemType || ''}</p>
+                              <p className="text-xs text-muted-foreground">{item.checklistItem?.itemType || ''}</p>
                             </div>
                           </TableCell>
                           <TableCell>

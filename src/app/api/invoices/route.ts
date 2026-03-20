@@ -33,7 +33,7 @@ const createInvoiceSchema = z.object({
   invoiceNumber: z.string().min(1),
   invoiceDate: z.string(),
   dueDate: z.string().optional(),
-  currency: z.string().default('USD'),
+  currency: z.string().default('LKR'),
   totalValue: z.number().nonnegative(),
   taxAmount: z.number().optional(),
   invoicePdfPath: z.string().optional(),

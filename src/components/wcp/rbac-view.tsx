@@ -242,8 +242,8 @@ export function RbacView() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Role-Based Access Control</h1>
-          <p className="text-slate-500 text-sm">Manage roles, permissions, and user access</p>
+          <h1 className="text-2xl font-bold text-foreground">Role-Based Access Control</h1>
+          <p className="text-muted-foreground text-sm">Manage roles, permissions, and user access</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => { resetUserRoleForm(); setShowUserDialog(true); }}>
@@ -260,7 +260,7 @@ export function RbacView() {
       <Card>
         <CardContent className="p-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search roles or users..."
               value={searchTerm}
@@ -311,7 +311,7 @@ export function RbacView() {
                         </TableCell>
                         <TableCell>{role._count?.users || 0}</TableCell>
                         <TableCell>
-                          <Badge className={role.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700'}>
+                          <Badge className={role.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-foreground'}>
                             {role.isActive ? 'Active' : 'Inactive'}
                           </Badge>
                         </TableCell>
@@ -363,7 +363,7 @@ export function RbacView() {
                               <Badge key={r.role?.id} variant="outline" className="text-xs">
                                 {r.role?.name}
                               </Badge>
-                            )) || <span className="text-slate-400 text-sm">No roles assigned</span>}
+                            )) || <span className="text-muted-foreground text-sm">No roles assigned</span>}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -534,7 +534,7 @@ export function RbacView() {
                       }}
                     />
                     <span>{role.name}</span>
-                    <code className="text-xs text-slate-400 ml-auto">{role.code}</code>
+                    <code className="text-xs text-muted-foreground ml-auto">{role.code}</code>
                   </label>
                 ))}
               </div>

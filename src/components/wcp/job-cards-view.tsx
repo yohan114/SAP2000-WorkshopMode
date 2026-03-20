@@ -219,12 +219,12 @@ const escalationColors: Record<EscalationLevel, string> = {
 };
 
 const statusColors: Record<string, string> = {
-  'DRAFT': 'bg-slate-100 text-slate-700',
+  'DRAFT': 'bg-slate-100 text-foreground',
   'PENDING': 'bg-amber-100 text-amber-700',
   'APPROVED': 'bg-blue-100 text-blue-700',
   'IN_PROGRESS': 'bg-purple-100 text-purple-700',
   'COMPLETED': 'bg-emerald-100 text-emerald-700',
-  'CLOSED': 'bg-slate-100 text-slate-500',
+  'CLOSED': 'bg-slate-100 text-muted-foreground',
   'CANCELLED': 'bg-red-100 text-red-700',
   'ON_HOLD': 'bg-amber-100 text-amber-700',
   'REJECTED': 'bg-red-100 text-red-700',
@@ -235,7 +235,7 @@ const priorityColors: Record<string, string> = {
   'EMERGENCY': 'bg-red-200 text-red-800 border-red-300',
   'HIGH': 'bg-amber-100 text-amber-700 border-amber-200',
   'NORMAL': 'bg-blue-100 text-blue-700 border-blue-200',
-  'LOW': 'bg-slate-100 text-slate-700 border-slate-200',
+  'LOW': 'bg-slate-100 text-foreground border-slate-200',
 };
 
 const jobTypeColors: Record<string, string> = {
@@ -311,7 +311,7 @@ function SlaCountdownTimer({
 }) {
   if (minutesRemaining === undefined || minutesRemaining === null) {
     return (
-      <div className="text-xs text-slate-400">
+      <div className="text-xs text-muted-foreground">
         {label}: N/A
       </div>
     );
@@ -336,7 +336,7 @@ function SlaCountdownTimer({
   };
 
   return (
-    <div className={`flex items-center gap-1 text-xs ${isOverdue ? 'text-red-600' : status === 'AT_RISK' ? 'text-amber-600' : 'text-slate-600'}`}>
+    <div className={`flex items-center gap-1 text-xs ${isOverdue ? 'text-red-600' : status === 'AT_RISK' ? 'text-amber-600' : 'text-muted-foreground'}`}>
       <Clock className={`h-3 w-3 ${isOverdue ? 'animate-pulse' : ''}`} />
       <span className="font-medium">{label}:</span>
       <span className={isOverdue ? 'font-bold' : ''}>{formatTime()}</span>
@@ -961,7 +961,7 @@ export function JobCardsView() {
                 <CheckCircle className="h-5 w-5 text-emerald-500" />
                 <div>
                   <div className="text-2xl font-bold text-emerald-600">{slaStats.statistics.onTrack}</div>
-                  <div className="text-xs text-slate-500">On Track</div>
+                  <div className="text-xs text-muted-foreground">On Track</div>
                 </div>
               </div>
             </CardContent>
@@ -972,7 +972,7 @@ export function JobCardsView() {
                 <AlertTriangle className="h-5 w-5 text-amber-500" />
                 <div>
                   <div className="text-2xl font-bold text-amber-600">{slaStats.statistics.atRisk}</div>
-                  <div className="text-xs text-slate-500">At Risk</div>
+                  <div className="text-xs text-muted-foreground">At Risk</div>
                 </div>
               </div>
             </CardContent>
@@ -983,7 +983,7 @@ export function JobCardsView() {
                 <AlertCircle className="h-5 w-5 text-red-500" />
                 <div>
                   <div className="text-2xl font-bold text-red-600">{slaStats.statistics.breached}</div>
-                  <div className="text-xs text-slate-500">Breached</div>
+                  <div className="text-xs text-muted-foreground">Breached</div>
                 </div>
               </div>
             </CardContent>
@@ -994,7 +994,7 @@ export function JobCardsView() {
                 <TrendingUp className="h-5 w-5 text-orange-500" />
                 <div>
                   <div className="text-2xl font-bold text-orange-600">{slaStats.statistics.escalated}</div>
-                  <div className="text-xs text-slate-500">Escalated</div>
+                  <div className="text-xs text-muted-foreground">Escalated</div>
                 </div>
               </div>
             </CardContent>
@@ -1005,7 +1005,7 @@ export function JobCardsView() {
                 <ShieldAlert className="h-5 w-5 text-blue-500" />
                 <div>
                   <div className="text-2xl font-bold text-blue-600">{slaStats.compliance.rate.toFixed(0)}%</div>
-                  <div className="text-xs text-slate-500">SLA Compliance</div>
+                  <div className="text-xs text-muted-foreground">SLA Compliance</div>
                 </div>
               </div>
             </CardContent>
@@ -1052,7 +1052,7 @@ export function JobCardsView() {
                       >
                         <div>
                           <div className="font-medium">{option.label}</div>
-                          <div className="text-xs text-slate-500">{option.description}</div>
+                          <div className="text-xs text-muted-foreground">{option.description}</div>
                         </div>
                       </DropdownMenuItem>
                     ))}
@@ -1092,8 +1092,8 @@ export function JobCardsView() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Job Cards</h2>
-          <p className="text-slate-500">Manage maintenance work orders with SLA tracking</p>
+          <h2 className="text-2xl font-bold text-foreground">Job Cards</h2>
+          <p className="text-muted-foreground">Manage maintenance work orders with SLA tracking</p>
         </div>
         <div className="flex items-center gap-2">
           <ExportButton
@@ -1236,7 +1236,7 @@ export function JobCardsView() {
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search by job card number, asset, or description..."
                 value={searchTerm}
@@ -1292,7 +1292,7 @@ export function JobCardsView() {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50">
+                <TableRow className="bg-muted/50">
                   <TableHead className="w-12">
                     <Checkbox
                       checked={allSelected}
@@ -1323,7 +1323,7 @@ export function JobCardsView() {
                   ))
                 ) : jobCards.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="h-32 text-center text-slate-500">
+                    <TableCell colSpan={10} className="h-32 text-center text-muted-foreground">
                       <div className="flex flex-col items-center gap-2">
                         <Wrench className="h-8 w-8 text-slate-300" />
                         <p>No job cards found</p>
@@ -1336,7 +1336,7 @@ export function JobCardsView() {
                   </TableRow>
                 ) : (
                   jobCards.map((jc) => (
-                    <TableRow key={jc.id} className={`hover:bg-slate-50 ${selectedIds.has(jc.id) ? 'bg-emerald-50' : ''}`}>
+                    <TableRow key={jc.id} className={`hover:bg-muted/50 ${selectedIds.has(jc.id) ? 'bg-emerald-50' : ''}`}>
                       <TableCell>
                         <Checkbox
                           checked={selectedIds.has(jc.id)}
@@ -1347,7 +1347,7 @@ export function JobCardsView() {
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
                           <div className={`p-1.5 rounded ${jc.sla?.status === 'BREACHED' ? 'bg-red-100' : jc.sla?.status === 'AT_RISK' ? 'bg-amber-100' : 'bg-slate-100'}`}>
-                            <Wrench className={`h-4 w-4 ${jc.sla?.status === 'BREACHED' ? 'text-red-600' : jc.sla?.status === 'AT_RISK' ? 'text-amber-600' : 'text-slate-600'}`} />
+                            <Wrench className={`h-4 w-4 ${jc.sla?.status === 'BREACHED' ? 'text-red-600' : jc.sla?.status === 'AT_RISK' ? 'text-amber-600' : 'text-muted-foreground'}`} />
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
@@ -1356,7 +1356,7 @@ export function JobCardsView() {
                                 <EscalationBadge level={jc.sla.escalationLevel} />
                               )}
                             </div>
-                            <div className="text-xs text-slate-500 truncate max-w-[200px]">
+                            <div className="text-xs text-muted-foreground truncate max-w-[200px]">
                               {jc.faultDescription}
                             </div>
                           </div>
@@ -1365,7 +1365,7 @@ export function JobCardsView() {
                       <TableCell>
                         <div>
                           <div className="font-medium">{jc.asset?.name || 'N/A'}</div>
-                          <div className="text-xs text-slate-500">{jc.asset?.assetNumber}</div>
+                          <div className="text-xs text-muted-foreground">{jc.asset?.assetNumber}</div>
                         </div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
@@ -1379,7 +1379,7 @@ export function JobCardsView() {
                             <Flag className="h-3 w-3 mr-1" />
                             {jc.priority}
                           </Badge>
-                          <span className="text-xs text-slate-400">
+                          <span className="text-xs text-muted-foreground">
                             {slaTargetsByPriority[jc.priority]?.firstResponse}m resp
                           </span>
                         </div>
@@ -1402,7 +1402,7 @@ export function JobCardsView() {
                             />
                           </div>
                         ) : (
-                          <span className="text-xs text-slate-400">-</span>
+                          <span className="text-xs text-muted-foreground">-</span>
                         )}
                       </TableCell>
                       <TableCell className="hidden lg:table-cell">
@@ -1420,10 +1420,10 @@ export function JobCardsView() {
                             />
                           </div>
                         ) : (
-                          <span className="text-xs text-slate-400">-</span>
+                          <span className="text-xs text-muted-foreground">-</span>
                         )}
                       </TableCell>
-                      <TableCell className="hidden lg:table-cell text-slate-600">
+                      <TableCell className="hidden lg:table-cell text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
                           {new Date(jc.createdAt).toLocaleDateString()}
@@ -1557,7 +1557,7 @@ export function JobCardsView() {
       {/* Pagination */}
       {pagination.totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted-foreground">
             Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} job cards
           </p>
           <div className="flex items-center gap-2">
@@ -1593,7 +1593,7 @@ export function JobCardsView() {
             <div className="text-2xl font-bold text-amber-600">
               {jobCards.filter(jc => ['DRAFT', 'PENDING', 'APPROVED'].includes(jc.status)).length}
             </div>
-            <div className="text-sm text-slate-500">Pending</div>
+            <div className="text-sm text-muted-foreground">Pending</div>
           </CardContent>
         </Card>
         <Card>
@@ -1601,7 +1601,7 @@ export function JobCardsView() {
             <div className="text-2xl font-bold text-purple-600">
               {jobCards.filter(jc => jc.status === 'IN_PROGRESS').length}
             </div>
-            <div className="text-sm text-slate-500">In Progress</div>
+            <div className="text-sm text-muted-foreground">In Progress</div>
           </CardContent>
         </Card>
         <Card>
@@ -1609,7 +1609,7 @@ export function JobCardsView() {
             <div className="text-2xl font-bold text-emerald-600">
               {jobCards.filter(jc => jc.status === 'COMPLETED').length}
             </div>
-            <div className="text-sm text-slate-500">Completed</div>
+            <div className="text-sm text-muted-foreground">Completed</div>
           </CardContent>
         </Card>
         <Card>
@@ -1617,7 +1617,7 @@ export function JobCardsView() {
             <div className="text-2xl font-bold text-red-600">
               {jobCards.filter(jc => ['CRITICAL', 'EMERGENCY'].includes(jc.priority) && !['COMPLETED', 'CLOSED', 'CANCELLED'].includes(jc.status)).length}
             </div>
-            <div className="text-sm text-slate-500">Critical</div>
+            <div className="text-sm text-muted-foreground">Critical</div>
           </CardContent>
         </Card>
       </div>
@@ -1769,7 +1769,7 @@ export function JobCardsView() {
               {transitionDialog.action === 'RETURN' && <><RotateCcw className="h-5 w-5 text-amber-500" /> Return to Draft</>}
               {transitionDialog.action === 'START' && <><Play className="h-5 w-5 text-blue-500" /> Start Work</>}
               {transitionDialog.action === 'COMPLETE' && <><CheckCircle className="h-5 w-5 text-emerald-500" /> Complete Job Card</>}
-              {transitionDialog.action === 'CLOSE' && <><FileCheck className="h-5 w-5 text-slate-500" /> Close Job Card</>}
+              {transitionDialog.action === 'CLOSE' && <><FileCheck className="h-5 w-5 text-muted-foreground" /> Close Job Card</>}
               {transitionDialog.action === 'CANCEL' && <><XCircle className="h-5 w-5 text-red-500" /> Cancel Job Card</>}
               {transitionDialog.action === 'HOLD' && <><Pause className="h-5 w-5 text-amber-500" /> Put on Hold</>}
               {transitionDialog.action === 'RESUME' && <><Play className="h-5 w-5 text-blue-500" /> Resume Work</>}
@@ -1976,7 +1976,7 @@ function JobCardDetailDialog({
       <DialogHeader>
         <DialogTitle className="flex items-center gap-3">
           <div className={`p-2 rounded-lg ${jobCard.sla?.status === 'BREACHED' ? 'bg-red-100' : jobCard.sla?.status === 'AT_RISK' ? 'bg-amber-100' : 'bg-slate-100'}`}>
-            <Wrench className={`h-5 w-5 ${jobCard.sla?.status === 'BREACHED' ? 'text-red-600' : jobCard.sla?.status === 'AT_RISK' ? 'text-amber-600' : 'text-slate-600'}`} />
+            <Wrench className={`h-5 w-5 ${jobCard.sla?.status === 'BREACHED' ? 'text-red-600' : jobCard.sla?.status === 'AT_RISK' ? 'text-amber-600' : 'text-muted-foreground'}`} />
           </div>
           {jobCard.jobCardNumber}
         </DialogTitle>
@@ -2015,8 +2015,8 @@ function JobCardDetailDialog({
 
               {/* Fault Description */}
               <div>
-                <h4 className="font-semibold text-sm text-slate-500 mb-2">Fault Description</h4>
-                <div className="bg-slate-50 rounded-lg p-4 text-sm">
+                <h4 className="font-semibold text-sm text-muted-foreground mb-2">Fault Description</h4>
+                <div className="bg-muted/50 rounded-lg p-4 text-sm">
                   {jobCard.faultDescription}
                 </div>
               </div>
@@ -2024,7 +2024,7 @@ function JobCardDetailDialog({
               {/* Diagnosis */}
               {jobCard.diagnosisNotes && (
                 <div>
-                  <h4 className="font-semibold text-sm text-slate-500 mb-2">Diagnosis Notes</h4>
+                  <h4 className="font-semibold text-sm text-muted-foreground mb-2">Diagnosis Notes</h4>
                   <div className="bg-amber-50 rounded-lg p-4 text-sm border border-amber-200">
                     {jobCard.diagnosisNotes}
                   </div>
@@ -2034,7 +2034,7 @@ function JobCardDetailDialog({
               {/* Work Performed */}
               {jobCard.workPerformed && (
                 <div>
-                  <h4 className="font-semibold text-sm text-slate-500 mb-2">Work Performed</h4>
+                  <h4 className="font-semibold text-sm text-muted-foreground mb-2">Work Performed</h4>
                   <div className="bg-emerald-50 rounded-lg p-4 text-sm border border-emerald-200">
                     {jobCard.workPerformed}
                   </div>
@@ -2046,12 +2046,12 @@ function JobCardDetailDialog({
             <div className="space-y-4">
               {/* Cost & Duration */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-slate-50 rounded-lg p-4">
-                  <div className="text-sm text-slate-500">Estimated Cost</div>
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <div className="text-sm text-muted-foreground">Estimated Cost</div>
                   <div className="text-xl font-bold">LKR {jobCard.estimatedCost?.toLocaleString() || 'N/A'}</div>
                 </div>
-                <div className="bg-slate-50 rounded-lg p-4">
-                  <div className="text-sm text-slate-500">Actual Cost</div>
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <div className="text-sm text-muted-foreground">Actual Cost</div>
                   <div className="text-xl font-bold">LKR {jobCard.actualCost?.toLocaleString() || 'N/A'}</div>
                 </div>
               </div>
@@ -2059,7 +2059,7 @@ function JobCardDetailDialog({
               {/* Technicians */}
               {jobCard.technicians && jobCard.technicians.length > 0 && (
                 <div>
-                  <h4 className="font-semibold text-sm text-slate-500 mb-2">Assigned Technicians</h4>
+                  <h4 className="font-semibold text-sm text-muted-foreground mb-2">Assigned Technicians</h4>
                   <div className="flex flex-wrap gap-2">
                     {jobCard.technicians.map((tech) => (
                       <Badge key={tech.id} variant="outline" className="flex items-center gap-1">
@@ -2074,24 +2074,24 @@ function JobCardDetailDialog({
               {/* Dates */}
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Created:</span>
+                  <span className="text-muted-foreground">Created:</span>
                   <span>{new Date(jobCard.createdAt).toLocaleString()}</span>
                 </div>
                 {jobCard.scheduledStart && (
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Scheduled Start:</span>
+                    <span className="text-muted-foreground">Scheduled Start:</span>
                     <span>{new Date(jobCard.scheduledStart).toLocaleString()}</span>
                   </div>
                 )}
                 {jobCard.actualStart && (
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Actual Start:</span>
+                    <span className="text-muted-foreground">Actual Start:</span>
                     <span>{new Date(jobCard.actualStart).toLocaleString()}</span>
                   </div>
                 )}
                 {jobCard.actualEnd && (
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Actual End:</span>
+                    <span className="text-muted-foreground">Actual End:</span>
                     <span>{new Date(jobCard.actualEnd).toLocaleString()}</span>
                   </div>
                 )}
@@ -2116,7 +2116,7 @@ function JobCardDetailDialog({
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <Card>
                   <CardContent className="p-4">
-                    <div className="text-sm text-slate-500">SLA Status</div>
+                    <div className="text-sm text-muted-foreground">SLA Status</div>
                     <Badge variant="outline" className={`mt-2 ${slaStatusColors[jobCard.sla.status]}`}>
                       {jobCard.sla.status.replace('_', ' ')}
                     </Badge>
@@ -2124,10 +2124,10 @@ function JobCardDetailDialog({
                 </Card>
                 <Card>
                   <CardContent className="p-4">
-                    <div className="text-sm text-slate-500">Escalation Level</div>
+                    <div className="text-sm text-muted-foreground">Escalation Level</div>
                     <div className="mt-2 font-semibold">
                       {jobCard.sla.escalationLevel === 'NONE' ? (
-                        <span className="text-slate-400">None</span>
+                        <span className="text-muted-foreground">None</span>
                       ) : (
                         <span className={escalationColors[jobCard.sla.escalationLevel]}>
                           {jobCard.sla.escalationLevel}
@@ -2138,7 +2138,7 @@ function JobCardDetailDialog({
                 </Card>
                 <Card>
                   <CardContent className="p-4">
-                    <div className="text-sm text-slate-500">Time to First Response</div>
+                    <div className="text-sm text-muted-foreground">Time to First Response</div>
                     <div className="mt-2 font-semibold">
                       {slaData?.sla?.timeRemaining?.firstResponseDisplay || 'N/A'}
                     </div>
@@ -2146,7 +2146,7 @@ function JobCardDetailDialog({
                 </Card>
                 <Card>
                   <CardContent className="p-4">
-                    <div className="text-sm text-slate-500">Time to Completion</div>
+                    <div className="text-sm text-muted-foreground">Time to Completion</div>
                     <div className="mt-2 font-semibold">
                       {slaData?.sla?.timeRemaining?.completionDisplay || 'N/A'}
                     </div>
@@ -2210,7 +2210,7 @@ function JobCardDetailDialog({
                       )}
                       <div>
                         <div className="font-medium">First Response</div>
-                        <div className="text-sm text-slate-500">
+                        <div className="text-sm text-muted-foreground">
                           {slaData.sla.milestones.firstResponse 
                             ? new Date(slaData.sla.milestones.firstResponse).toLocaleString()
                             : 'Pending'
@@ -2230,7 +2230,7 @@ function JobCardDetailDialog({
                       )}
                       <div>
                         <div className="font-medium">Completion</div>
-                        <div className="text-sm text-slate-500">
+                        <div className="text-sm text-muted-foreground">
                           {slaData.sla.milestones.completed 
                             ? new Date(slaData.sla.milestones.completed).toLocaleString()
                             : 'Pending'
@@ -2258,7 +2258,7 @@ function JobCardDetailDialog({
                     </TableHeader>
                     <TableBody>
                       {Object.entries(slaTargetsByPriority).map(([priority, targets]) => (
-                        <TableRow key={priority} className={priority === jobCard.priority ? 'bg-slate-50' : ''}>
+                        <TableRow key={priority} className={priority === jobCard.priority ? 'bg-muted/50' : ''}>
                           <TableCell>
                             <Badge variant="outline" className={priorityColors[priority]}>
                               {priority}
@@ -2281,7 +2281,7 @@ function JobCardDetailDialog({
             {/* Available Actions */}
             {transitions.length > 0 && (
               <div>
-                <h4 className="font-semibold text-sm text-slate-500 mb-4">Available Actions</h4>
+                <h4 className="font-semibold text-sm text-muted-foreground mb-4">Available Actions</h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {transitions.map((t) => {
                     const guard = guardConditions?.validTransitions?.find(g => g.type === t.action);
@@ -2316,7 +2316,7 @@ function JobCardDetailDialog({
                 
                 {/* Guard Conditions Info */}
                 {guardConditions && (
-                  <div className="mt-4 p-4 bg-slate-50 rounded-lg">
+                  <div className="mt-4 p-4 bg-muted/50 rounded-lg">
                     <h5 className="font-medium text-sm mb-2">Requirements Check</h5>
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div className="flex items-center gap-2">
@@ -2361,25 +2361,25 @@ function JobCardDetailDialog({
             {guardConditions?.context && (
               <Card>
                 <CardContent className="p-4">
-                  <h4 className="font-semibold text-sm text-slate-500 mb-4">Job Card Context</h4>
+                  <h4 className="font-semibold text-sm text-muted-foreground mb-4">Job Card Context</h4>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                     <div>
                       <div className="text-2xl font-bold">{guardConditions.context.taskCount}</div>
-                      <div className="text-sm text-slate-500">Tasks</div>
+                      <div className="text-sm text-muted-foreground">Tasks</div>
                     </div>
                     <div>
                       <div className="text-2xl font-bold text-emerald-600">{guardConditions.context.completedTaskCount}</div>
-                      <div className="text-sm text-slate-500">Completed</div>
+                      <div className="text-sm text-muted-foreground">Completed</div>
                     </div>
                     <div>
                       <div className="text-2xl font-bold text-amber-600">{guardConditions.context.openMaterialRequestCount}</div>
-                      <div className="text-sm text-slate-500">Open MRs</div>
+                      <div className="text-sm text-muted-foreground">Open MRs</div>
                     </div>
                     <div>
                       <div className={`text-2xl font-bold ${guardConditions.context.hasTechnician ? 'text-emerald-600' : 'text-red-600'}`}>
                         {guardConditions.context.hasTechnician ? 'Yes' : 'No'}
                       </div>
-                      <div className="text-sm text-slate-500">Technician</div>
+                      <div className="text-sm text-muted-foreground">Technician</div>
                     </div>
                   </div>
                 </CardContent>

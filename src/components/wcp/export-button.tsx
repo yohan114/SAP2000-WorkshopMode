@@ -200,7 +200,7 @@ export function ExportButton({
           {showDateRange && (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuLabel className="text-xs text-slate-500">With Date Range</DropdownMenuLabel>
+              <DropdownMenuLabel className="text-xs text-muted-foreground">With Date Range</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => handleDateRangeExport('xlsx')} disabled={exporting}>
                 <Calendar className="h-4 w-4 mr-2 text-amber-600" />
                 Excel (Date Range)

@@ -969,9 +969,9 @@ export function JobCardPhotos({
                           {bulkMode && (
                             <div className="absolute top-2 left-2 z-10">
                               {isSelected ? (
-                                <CheckSquare className="h-6 w-6 text-emerald-600 bg-white rounded" />
+                                <CheckSquare className="h-6 w-6 text-emerald-600 bg-card rounded" />
                               ) : (
-                                <Square className="h-6 w-6 text-gray-400 bg-white rounded" />
+                                <Square className="h-6 w-6 text-gray-400 bg-card rounded" />
                               )}
                             </div>
                           )}
@@ -1298,7 +1298,7 @@ export function JobCardPhotos({
       </Dialog>
 
       {/* Upload requirements summary */}
-      <Card className="bg-slate-50">
+      <Card className="bg-muted/50">
         <CardContent className="pt-4">
           <div className="flex items-center gap-4 text-sm flex-wrap">
             <div className="flex items-center gap-2">

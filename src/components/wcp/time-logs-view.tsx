@@ -323,8 +323,8 @@ export function TimeLogsView() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Time Logs</h2>
-          <p className="text-slate-500">Track employee work hours and labor costs</p>
+          <h2 className="text-2xl font-bold text-foreground">Time Logs</h2>
+          <p className="text-muted-foreground">Track employee work hours and labor costs</p>
         </div>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
@@ -441,7 +441,7 @@ export function TimeLogsView() {
                 <Clock className="h-5 w-5 text-emerald-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-500">Total Entries</p>
+                <p className="text-sm text-muted-foreground">Total Entries</p>
                 <p className="text-xl font-bold">{total}</p>
               </div>
             </div>
@@ -454,7 +454,7 @@ export function TimeLogsView() {
                 <User className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-500">Active Employees</p>
+                <p className="text-sm text-muted-foreground">Active Employees</p>
                 <p className="text-xl font-bold">{employees.length}</p>
               </div>
             </div>
@@ -467,7 +467,7 @@ export function TimeLogsView() {
                 <Wrench className="h-5 w-5 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-500">Open Job Cards</p>
+                <p className="text-sm text-muted-foreground">Open Job Cards</p>
                 <p className="text-xl font-bold">{jobCards.length}</p>
               </div>
             </div>
@@ -480,7 +480,7 @@ export function TimeLogsView() {
                 <DollarSign className="h-5 w-5 text-amber-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-500">Labor Cost</p>
+                <p className="text-sm text-muted-foreground">Labor Cost</p>
                 <p className="text-xl font-bold">
                   LKR {timeLogs.reduce((sum, tl) => sum + (tl.totalCost || 0), 0).toFixed(2)}
                 </p>
@@ -495,7 +495,7 @@ export function TimeLogsView() {
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search time logs..."
                 value={search}
@@ -515,7 +515,7 @@ export function TimeLogsView() {
               <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
             </div>
           ) : timeLogs.length === 0 ? (
-            <div className="text-center py-12 text-slate-500">
+            <div className="text-center py-12 text-muted-foreground">
               <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>No time logs found</p>
             </div>
@@ -540,17 +540,17 @@ export function TimeLogsView() {
                       <TableCell>
                         <div>
                           <div className="font-medium">{log.employee.name}</div>
-                          <div className="text-xs text-slate-500">{log.employee.employeeNumber}</div>
+                          <div className="text-xs text-muted-foreground">{log.employee.employeeNumber}</div>
                         </div>
                       </TableCell>
                       <TableCell>
                         {log.jobCard ? (
                           <div>
                             <div className="font-medium">{log.jobCard.jobCardNumber}</div>
-                            <div className="text-xs text-slate-500">{log.jobCard.asset?.name || 'Unknown'}</div>
+                            <div className="text-xs text-muted-foreground">{log.jobCard.asset?.name || 'Unknown'}</div>
                           </div>
                         ) : (
-                          <span className="text-slate-400">-</span>
+                          <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
                       <TableCell>
@@ -605,7 +605,7 @@ export function TimeLogsView() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted-foreground">
             Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, total)} of {total}
           </p>
           <div className="flex gap-2">
@@ -639,41 +639,41 @@ export function TimeLogsView() {
             <div className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-slate-500">Employee</p>
+                  <p className="text-sm text-muted-foreground">Employee</p>
                   <p className="font-medium">{selectedLog.employee.name}</p>
-                  <p className="text-xs text-slate-500">{selectedLog.employee.employeeNumber}</p>
+                  <p className="text-xs text-muted-foreground">{selectedLog.employee.employeeNumber}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">Date</p>
+                  <p className="text-sm text-muted-foreground">Date</p>
                   <p className="font-medium">{new Date(selectedLog.logDate).toLocaleDateString()}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">Time</p>
+                  <p className="text-sm text-muted-foreground">Time</p>
                   <p className="font-medium">{formatTime(selectedLog.startTime)} - {formatTime(selectedLog.endTime)}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">Duration</p>
+                  <p className="text-sm text-muted-foreground">Duration</p>
                   <p className="font-medium">{formatDuration(selectedLog.totalMinutes)}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">Break</p>
+                  <p className="text-sm text-muted-foreground">Break</p>
                   <p className="font-medium">{selectedLog.breakMinutes} minutes</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">Cost</p>
+                  <p className="text-sm text-muted-foreground">Cost</p>
                   <p className="font-medium">{selectedLog.totalCost ? `LKR ${selectedLog.totalCost.toFixed(2)}` : '-'}</p>
                 </div>
               </div>
               {selectedLog.jobCard && (
                 <div>
-                  <p className="text-sm text-slate-500">Job Card</p>
+                  <p className="text-sm text-muted-foreground">Job Card</p>
                   <p className="font-medium">{selectedLog.jobCard.jobCardNumber}</p>
-                  <p className="text-xs text-slate-500">{selectedLog.jobCard.asset?.name || 'Unknown'}</p>
+                  <p className="text-xs text-muted-foreground">{selectedLog.jobCard.asset?.name || 'Unknown'}</p>
                 </div>
               )}
               {selectedLog.notes && (
                 <div>
-                  <p className="text-sm text-slate-500">Notes</p>
+                  <p className="text-sm text-muted-foreground">Notes</p>
                   <p className="font-medium">{selectedLog.notes}</p>
                 </div>
               )}
@@ -796,9 +796,9 @@ export function TimeLogsView() {
           </DialogHeader>
           {selectedLog && (
             <div className="py-4">
-              <div className="p-4 bg-slate-50 rounded-lg">
+              <div className="p-4 bg-muted/50 rounded-lg">
                 <p className="font-medium">{selectedLog.employee.name}</p>
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-muted-foreground">
                   {new Date(selectedLog.logDate).toLocaleDateString()} • {formatDuration(selectedLog.totalMinutes)}
                 </p>
               </div>

@@ -68,7 +68,7 @@ const categoryColors: Record<string, string> = {
   'MANUAL': 'bg-emerald-100 text-emerald-700',
   'CERTIFICATE': 'bg-amber-100 text-amber-700',
   'CONTRACT': 'bg-red-100 text-red-700',
-  'REPORT': 'bg-slate-100 text-slate-700',
+  'REPORT': 'bg-slate-100 text-foreground',
   'OTHER': 'bg-gray-100 text-gray-700',
 };
 
@@ -250,8 +250,8 @@ export function DocumentsView() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Documents</h1>
-          <p className="text-slate-500 text-sm">Manage workshop documents and files</p>
+          <h1 className="text-2xl font-bold text-foreground">Documents</h1>
+          <p className="text-muted-foreground text-sm">Manage workshop documents and files</p>
         </div>
         <Button onClick={() => setShowUploadDialog(true)} className="bg-emerald-600 hover:bg-emerald-700">
           <Upload className="h-4 w-4 mr-2" />
@@ -264,7 +264,7 @@ export function DocumentsView() {
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search documents..."
                 value={searchTerm}
@@ -301,8 +301,8 @@ export function DocumentsView() {
           ) : filteredDocuments.length === 0 ? (
             <div className="text-center py-12">
               <FolderOpen className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-              <p className="text-slate-500">No documents found</p>
-              <p className="text-sm text-slate-400 mt-1">Upload your first document to get started</p>
+              <p className="text-muted-foreground">No documents found</p>
+              <p className="text-sm text-muted-foreground mt-1">Upload your first document to get started</p>
             </div>
           ) : (
             <Table>
@@ -323,11 +323,11 @@ export function DocumentsView() {
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className="p-2 bg-slate-100 rounded">
-                            <FileIcon className="h-4 w-4 text-slate-600" />
+                            <FileIcon className="h-4 w-4 text-muted-foreground" />
                           </div>
                           <div>
                             <p className="font-medium">{doc.name}</p>
-                            <p className="text-xs text-slate-500">{doc.fileName}</p>
+                            <p className="text-xs text-muted-foreground">{doc.fileName}</p>
                           </div>
                         </div>
                       </TableCell>
@@ -400,8 +400,8 @@ export function DocumentsView() {
                     </div>
                   ) : (
                     <div>
-                      <Upload className="h-8 w-8 mx-auto text-slate-400 mb-2" />
-                      <p className="text-sm text-slate-500">Click to select a file</p>
+                      <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">Click to select a file</p>
                     </div>
                   )}
                 </label>

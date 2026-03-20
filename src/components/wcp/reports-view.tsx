@@ -261,7 +261,7 @@ interface ReportData {
 function Sparkline({ data, color = '#10b981', height = 30 }: { data: number[]; color?: string; height?: number }) {
   if (!data || data.length < 2) {
     return (
-      <div className="flex items-center gap-1 text-xs text-slate-400">
+      <div className="flex items-center gap-1 text-xs text-muted-foreground">
         <Minus className="h-3 w-3" />
         <span>No trend</span>
       </div>
@@ -641,7 +641,7 @@ export function ReportsView() {
       doc.setFont('helvetica', 'bold');
       doc.text('TOTALS:', 14, finalY + 10);
       Object.entries(data.totals).forEach(([key, value], idx) => {
-        doc.text(`${key}: $${(value as number).toLocaleString()}`, 14, finalY + 16 + (idx * 5));
+        doc.text(`${key}: LKR ${(value as number).toLocaleString()}`, 14, finalY + 16 + (idx * 5));
       });
     }
 
@@ -682,8 +682,8 @@ export function ReportsView() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Reports</h1>
-          <p className="text-slate-500 text-sm">Generate and export workshop reports</p>
+          <h1 className="text-2xl font-bold text-foreground">Reports</h1>
+          <p className="text-muted-foreground text-sm">Generate and export workshop reports</p>
         </div>
         <div className="flex gap-2">
           <Button 
@@ -706,7 +706,7 @@ export function ReportsView() {
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
             <div className="grid grid-cols-2 gap-4 flex-1">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-600">From Date</label>
+                <label className="text-sm font-medium text-muted-foreground">From Date</label>
                 <Input
                   type="date"
                   value={dateFrom}
@@ -714,7 +714,7 @@ export function ReportsView() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-600">To Date</label>
+                <label className="text-sm font-medium text-muted-foreground">To Date</label>
                 <Input
                   type="date"
                   value={dateTo}
@@ -755,7 +755,7 @@ export function ReportsView() {
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <Star className="h-5 w-5 text-amber-500" />
-          <h2 className="text-lg font-semibold text-slate-900">Recommended Reports</h2>
+          <h2 className="text-lg font-semibold text-foreground">Recommended Reports</h2>
         </div>
         
         {/* Featured Job Card Cost Report */}
@@ -774,10 +774,10 @@ export function ReportsView() {
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <h3 className="text-xl font-bold text-slate-900">{report.name}</h3>
+                        <h3 className="text-xl font-bold text-foreground">{report.name}</h3>
                         <Badge className="bg-emerald-500 text-white">Most Popular</Badge>
                       </div>
-                      <p className="text-slate-600 mt-1">{report.description}</p>
+                      <p className="text-muted-foreground mt-1">{report.description}</p>
                       <div className="flex flex-wrap gap-2 mt-3">
                         <Badge variant="outline" className="text-xs">
                           Material Costs
@@ -844,8 +844,8 @@ export function ReportsView() {
                       <Icon className={`h-5 w-5 ${report.color}`} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-slate-900 truncate">{report.name}</h3>
-                      <p className="text-xs text-slate-500 mt-1 line-clamp-2">
+                      <h3 className="font-medium text-foreground truncate">{report.name}</h3>
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                         {report.description}
                       </p>
                     </div>
@@ -891,7 +891,7 @@ export function ReportsView() {
       {/* All Reports Section */}
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <h2 className="text-lg font-semibold text-slate-900">All Reports</h2>
+          <h2 className="text-lg font-semibold text-foreground">All Reports</h2>
           <Select value={activeCategory} onValueChange={setActiveCategory}>
             <SelectTrigger className="w-48">
               <SelectValue placeholder="Filter by category" />
@@ -922,10 +922,10 @@ export function ReportsView() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <h3 className="font-medium text-slate-900 truncate">{report.name}</h3>
+                        <h3 className="font-medium text-foreground truncate">{report.name}</h3>
                         <ColorIndicator value={Math.random() * 100} thresholds={{ green: 30, amber: 70 }} />
                       </div>
-                      <p className="text-xs text-slate-500 mt-1 line-clamp-2">
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                         {report.description}
                       </p>
                       <Badge variant="outline" className="text-xs mt-2">
@@ -980,7 +980,7 @@ export function ReportsView() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-600">Report Name</label>
+              <label className="text-sm font-medium text-muted-foreground">Report Name</label>
               <Input
                 placeholder="e.g., Monthly Maintenance Report"
                 value={saveName}
@@ -988,7 +988,7 @@ export function ReportsView() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-600">Schedule (Optional)</label>
+              <label className="text-sm font-medium text-muted-foreground">Schedule (Optional)</label>
               <Select value={saveSchedule} onValueChange={setSaveSchedule}>
                 <SelectTrigger>
                   <SelectValue placeholder="No schedule" />
@@ -1001,7 +1001,7 @@ export function ReportsView() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="bg-slate-50 rounded-lg p-3 text-sm text-slate-600">
+            <div className="bg-muted/50 rounded-lg p-3 text-sm text-muted-foreground">
               <p><strong>Report Type:</strong> {REPORT_TYPES.find(r => r.id === selectedReport)?.name}</p>
               <p><strong>Date Range:</strong> {dateFrom} to {dateTo}</p>
             </div>
@@ -1037,7 +1037,7 @@ export function ReportsView() {
                 {savedReports.map((saved) => (
                   <div
                     key={saved.id}
-                    className="flex items-center justify-between p-3 rounded-lg border hover:bg-slate-50 cursor-pointer"
+                    className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 cursor-pointer"
                   >
                     <div className="flex-1" onClick={() => handleLoadReport(saved)}>
                       <div className="flex items-center gap-2">
@@ -1050,7 +1050,7 @@ export function ReportsView() {
                           </Badge>
                         )}
                       </div>
-                      <p className="text-sm text-slate-500 mt-1">
+                      <p className="text-sm text-muted-foreground mt-1">
                         {REPORT_TYPES.find(r => r.id === saved.reportType)?.name || saved.reportType}
                         {' • '}
                         {saved.filters?.dateFrom} to {saved.filters?.dateTo}
@@ -1071,7 +1071,7 @@ export function ReportsView() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-slate-500">
+              <div className="text-center py-8 text-muted-foreground">
                 <Bookmark className="h-12 w-12 mx-auto mb-4 text-slate-300" />
                 <p>No saved reports yet</p>
                 <p className="text-sm mt-1">Generate a report and click "Save" to add it here</p>
@@ -1112,13 +1112,13 @@ export function ReportsView() {
               {/* Data Tab */}
               <TabsContent value="data" className="flex-1 overflow-hidden flex flex-col mt-4">
                 {/* Summary Section */}
-                <div className="bg-slate-50 rounded-lg p-4 mb-4">
-                  <h4 className="font-medium text-sm text-slate-600 mb-2">Summary</h4>
+                <div className="bg-muted/50 rounded-lg p-4 mb-4">
+                  <h4 className="font-medium text-sm text-muted-foreground mb-2">Summary</h4>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     {Object.entries(previewData.summary).slice(0, 8).map(([key, value]) => (
                       <div key={key}>
-                        <p className="text-xs text-slate-500">{key}</p>
-                        <p className="font-semibold text-slate-900">{String(value)}</p>
+                        <p className="text-xs text-muted-foreground">{key}</p>
+                        <p className="font-semibold text-foreground">{String(value)}</p>
                       </div>
                     ))}
                   </div>
@@ -1159,7 +1159,7 @@ export function ReportsView() {
                       </TableBody>
                     </Table>
                   ) : (
-                    <div className="text-center py-8 text-slate-500">
+                    <div className="text-center py-8 text-muted-foreground">
                       No data available for the selected period
                     </div>
                   )}
@@ -1236,7 +1236,7 @@ export function ReportsView() {
                                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
                                         <span className="text-sm font-medium">{item.name}</span>
                                       </div>
-                                      <span className="text-sm font-bold">${item.value.toLocaleString()}</span>
+                                      <span className="text-sm font-bold">LKR {item.value.toLocaleString()}</span>
                                     </div>
                                   ))}
                                 </div>
@@ -1271,7 +1271,7 @@ export function ReportsView() {
                                   margin={{ left: 80, right: 20 }}
                                 >
                                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                                  <XAxis type="number" tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+                                  <XAxis type="number" tickFormatter={(value) => `LKR ${(value / 1000).toFixed(0)}k`} />
                                   <YAxis type="category" dataKey="name" width={70} tick={{ fontSize: 11 }} />
                                   <ChartTooltip content={<ChartTooltipContent />} />
                                   <Bar dataKey="material" stackId="a" fill={CHART_COLORS.material} radius={[0, 0, 0, 0]} />
@@ -1303,7 +1303,7 @@ export function ReportsView() {
                                 <BarChart data={previewData.charts.costsByAsset.slice(0, 10)}>
                                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                                   <XAxis dataKey="assetNumber" tick={{ fontSize: 10 }} angle={-45} textAnchor="end" height={60} />
-                                  <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+                                  <YAxis tickFormatter={(value) => `LKR ${(value / 1000).toFixed(0)}k`} />
                                   <ChartTooltip content={<ChartTooltipContent />} />
                                   <Bar dataKey="totalBill" fill={CHART_COLORS.total} radius={[4, 4, 0, 0]} />
                                 </BarChart>
@@ -1335,7 +1335,7 @@ export function ReportsView() {
                                 <AreaChart data={previewData.charts.costTrend}>
                                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                                   <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                                  <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+                                  <YAxis tickFormatter={(value) => `LKR ${(value / 1000).toFixed(0)}k`} />
                                   <ChartTooltip content={<ChartTooltipContent />} />
                                   <Area type="monotone" dataKey="material" stackId="1" stroke={CHART_COLORS.material} fill={CHART_COLORS.material} fillOpacity={0.6} />
                                   <Area type="monotone" dataKey="labour" stackId="1" stroke={CHART_COLORS.labour} fill={CHART_COLORS.labour} fillOpacity={0.6} />
@@ -1388,8 +1388,8 @@ export function ReportsView() {
                                         <span className="text-sm font-medium">{item.name}</span>
                                       </div>
                                       <div className="text-right">
-                                        <span className="text-sm font-bold">${item.value.toLocaleString()}</span>
-                                        <span className="text-xs text-slate-500 ml-2">({item.percentage}%)</span>
+                                        <span className="text-sm font-bold">LKR {item.value.toLocaleString()}</span>
+                                        <span className="text-xs text-muted-foreground ml-2">({item.percentage}%)</span>
                                       </div>
                                     </div>
                                   ))}
@@ -1458,7 +1458,7 @@ export function ReportsView() {
                                 <BarChart data={previewData.charts.costsByCategory}>
                                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                                   <XAxis dataKey="category" tick={{ fontSize: 10 }} angle={-45} textAnchor="end" height={60} />
-                                  <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+                                  <YAxis tickFormatter={(value) => `LKR ${(value / 1000).toFixed(0)}k`} />
                                   <ChartTooltip content={<ChartTooltipContent />} />
                                   <Bar dataKey="actualCost" fill={CHART_COLORS.actual} radius={[4, 4, 0, 0]} />
                                 </BarChart>
@@ -1485,7 +1485,7 @@ export function ReportsView() {
                                 <ComposedChart data={previewData.charts.costTrend}>
                                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                                   <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                                  <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+                                  <YAxis tickFormatter={(value) => `LKR ${(value / 1000).toFixed(0)}k`} />
                                   <ChartTooltip content={<ChartTooltipContent />} />
                                   <Legend />
                                   <Bar dataKey="estimated" fill={CHART_COLORS.estimated} radius={[4, 4, 0, 0]} />
@@ -1505,7 +1505,7 @@ export function ReportsView() {
                        !previewData.charts.costsByAsset &&
                        !previewData.charts.priorityDistribution &&
                        !previewData.charts.costsByCategory)) && (
-                      <div className="text-center py-12 text-slate-500">
+                      <div className="text-center py-12 text-muted-foreground">
                         <BarChart3 className="h-12 w-12 mx-auto mb-4 text-slate-300" />
                         <p className="text-lg font-medium">No charts available</p>
                         <p className="text-sm">Charts are available for specific reports with chartable data.</p>
@@ -1513,7 +1513,7 @@ export function ReportsView() {
                     )}
                   </div>
                 ) : (
-                  <div className="text-center py-12 text-slate-500">
+                  <div className="text-center py-12 text-muted-foreground">
                     <BarChart3 className="h-12 w-12 mx-auto mb-4 text-slate-300" />
                     <p className="text-lg font-medium">No chart data available</p>
                     <p className="text-sm">Generate a report to see visualizations here.</p>
@@ -1525,7 +1525,7 @@ export function ReportsView() {
 
           {/* Footer */}
           <div className="flex items-center justify-between pt-4 border-t mt-4">
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-muted-foreground">
               Generated: {previewData?.generatedAt} • {previewData?.data.length || 0} records
             </span>
             <div className="flex gap-2">

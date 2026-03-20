@@ -62,7 +62,7 @@ const getNotificationStyle = (type: NotificationType) => {
       return {
         icon: Bell,
         bgColor: 'bg-slate-100',
-        textColor: 'text-slate-600',
+        textColor: 'text-muted-foreground',
         borderColor: 'border-l-slate-500'
       }
   }
@@ -101,9 +101,9 @@ export function NotificationBell() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
           {isConnected ? (
-            <Bell className="h-5 w-5 text-slate-600" />
+            <Bell className="h-5 w-5 text-muted-foreground" />
           ) : (
-            <BellOff className="h-5 w-5 text-slate-400" />
+            <BellOff className="h-5 w-5 text-muted-foreground" />
           )}
           {unreadCount > 0 && (
             <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-red-500 text-white text-xs animate-pulse">
@@ -147,7 +147,7 @@ export function NotificationBell() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 text-xs text-slate-500 hover:text-slate-700"
+                  className="h-7 text-xs text-muted-foreground hover:text-foreground"
                   onClick={clearAll}
                 >
                   <Trash2 className="h-3 w-3 mr-1" />
@@ -162,8 +162,8 @@ export function NotificationBell() {
         {notifications.length === 0 ? (
           <div className="py-8 text-center">
             <Bell className="h-10 w-10 text-slate-300 mx-auto mb-2" />
-            <p className="text-sm text-slate-500">No notifications yet</p>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-sm text-muted-foreground">No notifications yet</p>
+            <p className="text-xs text-muted-foreground mt-1">
               {isConnected ? 'You&apos;ll be notified when something happens' : 'Connecting to notification service...'}
             </p>
           </div>
@@ -178,9 +178,9 @@ export function NotificationBell() {
                   <div
                     key={notification.id}
                     className={cn(
-                      'px-4 py-3 border-l-4 hover:bg-slate-50 transition-colors cursor-pointer group',
+                      'px-4 py-3 border-l-4 hover:bg-muted/50 transition-colors cursor-pointer group',
                       style.borderColor,
-                      !notification.read && 'bg-slate-50/50'
+                      !notification.read && 'bg-muted/50/50'
                     )}
                     onClick={() => !notification.read && markAsRead(notification.id)}
                   >
@@ -195,8 +195,8 @@ export function NotificationBell() {
                         <div className="flex items-start justify-between gap-2">
                           <p className={cn(
                             'text-sm font-medium leading-tight',
-                            !notification.read && 'text-slate-900',
-                            notification.read && 'text-slate-600'
+                            !notification.read && 'text-foreground',
+                            notification.read && 'text-muted-foreground'
                           )}>
                             {notification.title}
                           </p>
@@ -209,15 +209,15 @@ export function NotificationBell() {
                               deleteNotification(notification.id)
                             }}
                           >
-                            <X className="h-3 w-3 text-slate-400" />
+                            <X className="h-3 w-3 text-muted-foreground" />
                           </Button>
                         </div>
-                        <p className="text-xs text-slate-500 mt-1 line-clamp-2">
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                           {notification.message}
                         </p>
                         <div className="flex items-center gap-2 mt-2">
-                          <Clock className="h-3 w-3 text-slate-400" />
-                          <span className="text-xs text-slate-400">
+                          <Clock className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">
                             {formatRelativeTime(notification.createdAt)}
                           </span>
                           {!notification.read && (
@@ -240,7 +240,7 @@ export function NotificationBell() {
           <>
             <DropdownMenuSeparator />
             <div className="px-4 py-2 flex items-center justify-between">
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-muted-foreground">
                 {notifications.length} notification{notifications.length !== 1 ? 's' : ''}
               </span>
               <Button 

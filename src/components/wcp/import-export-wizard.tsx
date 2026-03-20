@@ -239,7 +239,7 @@ export function ImportWizard() {
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                   step === s ? 'bg-emerald-600 text-white' :
                   ['upload', 'mapping', 'importing', 'results'].indexOf(step) > i ? 'bg-emerald-100 text-emerald-700' :
-                  'bg-slate-100 text-slate-500'
+                  'bg-slate-100 text-muted-foreground'
                 }`}>
                   {i + 1}
                 </div>
@@ -289,7 +289,7 @@ export function ImportWizard() {
                     htmlFor="file-upload"
                     className="cursor-pointer flex flex-col items-center"
                   >
-                    <Upload className="h-10 w-10 text-slate-400 mb-4" />
+                    <Upload className="h-10 w-10 text-muted-foreground mb-4" />
                     {file ? (
                       <div className="flex items-center gap-2">
                         <File className="h-5 w-5 text-emerald-600" />
@@ -298,7 +298,7 @@ export function ImportWizard() {
                     ) : (
                       <>
                         <p className="font-medium">Click to upload or drag and drop</p>
-                        <p className="text-sm text-slate-500">Excel (.xlsx, .xls) or CSV</p>
+                        <p className="text-sm text-muted-foreground">Excel (.xlsx, .xls) or CSV</p>
                       </>
                     )}
                   </label>
@@ -323,10 +323,10 @@ export function ImportWizard() {
                     <p className="text-sm text-red-600">Invalid Records</p>
                   </CardContent>
                 </Card>
-                <Card className="bg-slate-50 border-slate-200">
+                <Card className="bg-muted/50 border-slate-200">
                   <CardContent className="p-4 text-center">
-                    <p className="text-2xl font-bold text-slate-700">{parsedData.valid.length + parsedData.invalid.length}</p>
-                    <p className="text-sm text-slate-600">Total Records</p>
+                    <p className="text-2xl font-bold text-foreground">{parsedData.valid.length + parsedData.invalid.length}</p>
+                    <p className="text-sm text-muted-foreground">Total Records</p>
                   </CardContent>
                 </Card>
               </div>
@@ -362,7 +362,7 @@ export function ImportWizard() {
                     </TableBody>
                   </Table>
                   {parsedData.valid.length > 5 && (
-                    <p className="text-center text-sm text-slate-500 py-2">
+                    <p className="text-center text-sm text-muted-foreground py-2">
                       ...and {parsedData.valid.length - 5} more records
                     </p>
                   )}
@@ -378,7 +378,7 @@ export function ImportWizard() {
                 <Loader2 className="h-12 w-12 animate-spin text-emerald-600" />
               </div>
               <Progress value={importProgress} className="w-full" />
-              <p className="text-center text-slate-500">Processing... {importProgress}%</p>
+              <p className="text-center text-muted-foreground">Processing... {importProgress}%</p>
             </div>
           )}
 

@@ -209,7 +209,7 @@ const PRIVILEGE_CATEGORIES: Record<string, string> = {
 };
 
 const LEVEL_COLORS: Record<number, string> = {
-  1: 'bg-slate-100 text-slate-700',
+  1: 'bg-slate-100 text-foreground',
   2: 'bg-blue-100 text-blue-700',
   3: 'bg-cyan-100 text-cyan-700',
   4: 'bg-amber-100 text-amber-700',
@@ -620,8 +620,8 @@ export function PrivilegeManagementView() {
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <AlertCircle className="h-12 w-12 text-amber-500 mb-4" />
-        <h2 className="text-xl font-semibold text-slate-900">Access Restricted</h2>
-        <p className="text-slate-500 mt-2">You do not have permission to manage privileges.</p>
+        <h2 className="text-xl font-semibold text-foreground">Access Restricted</h2>
+        <p className="text-muted-foreground mt-2">You do not have permission to manage privileges.</p>
       </div>
     );
   }
@@ -631,8 +631,8 @@ export function PrivilegeManagementView() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Privilege Management</h1>
-          <p className="text-slate-500 text-sm">Manage role privileges and user-specific overrides</p>
+          <h1 className="text-2xl font-bold text-foreground">Privilege Management</h1>
+          <p className="text-muted-foreground text-sm">Manage role privileges and user-specific overrides</p>
         </div>
       </div>
 
@@ -657,11 +657,11 @@ export function PrivilegeManagementView() {
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-slate-100 rounded-lg">
-                    <Shield className="h-5 w-5 text-slate-600" />
+                    <Shield className="h-5 w-5 text-muted-foreground" />
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-slate-900">{roleStats.total}</div>
-                    <div className="text-sm text-slate-500">Total Roles</div>
+                    <div className="text-2xl font-bold text-foreground">{roleStats.total}</div>
+                    <div className="text-sm text-muted-foreground">Total Roles</div>
                   </div>
                 </div>
               </CardContent>
@@ -674,7 +674,7 @@ export function PrivilegeManagementView() {
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-emerald-600">{roleStats.active}</div>
-                    <div className="text-sm text-slate-500">Active Roles</div>
+                    <div className="text-sm text-muted-foreground">Active Roles</div>
                   </div>
                 </div>
               </CardContent>
@@ -687,7 +687,7 @@ export function PrivilegeManagementView() {
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-blue-600">{roleStats.totalPrivileges}</div>
-                    <div className="text-sm text-slate-500">Granted Privileges</div>
+                    <div className="text-sm text-muted-foreground">Granted Privileges</div>
                   </div>
                 </div>
               </CardContent>
@@ -701,7 +701,7 @@ export function PrivilegeManagementView() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg">Roles</CardTitle>
                 <div className="relative mt-2">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search roles..."
                     className="pl-9"
@@ -723,14 +723,14 @@ export function PrivilegeManagementView() {
                           key={role.id}
                           onClick={() => handleSelectRole(role)}
                           className={cn(
-                            'w-full p-3 text-left hover:bg-slate-50 transition-colors',
+                            'w-full p-3 text-left hover:bg-muted/50 transition-colors',
                             selectedRole?.id === role.id && 'bg-emerald-50 border-l-2 border-emerald-500'
                           )}
                         >
                           <div className="flex items-center justify-between">
                             <div>
-                              <div className="font-medium text-slate-900">{role.name}</div>
-                              <div className="text-xs text-slate-500 flex items-center gap-2 mt-1">
+                              <div className="font-medium text-foreground">{role.name}</div>
+                              <div className="text-xs text-muted-foreground flex items-center gap-2 mt-1">
                                 <code className="bg-slate-100 px-1.5 py-0.5 rounded">{role.code}</code>
                                 <Badge className={LEVEL_COLORS[role.level] || 'bg-slate-100'}>
                                   L{role.level}
@@ -738,10 +738,10 @@ export function PrivilegeManagementView() {
                               </div>
                             </div>
                             <div className="text-right">
-                              <div className="text-sm font-medium text-slate-700">
+                              <div className="text-sm font-medium text-foreground">
                                 {role.grantedPrivilegeCount}/{role.privilegeCount}
                               </div>
-                              <div className="text-xs text-slate-500">privileges</div>
+                              <div className="text-xs text-muted-foreground">privileges</div>
                             </div>
                           </div>
                         </button>
@@ -781,7 +781,7 @@ export function PrivilegeManagementView() {
                 </div>
                 {selectedRole && (
                   <div className="relative mt-2">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       placeholder="Filter privileges..."
                       className="pl-9"
@@ -799,7 +799,7 @@ export function PrivilegeManagementView() {
                 ) : !selectedRole ? (
                   <div className="text-center py-12">
                     <Key className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                    <p className="text-slate-500">Select a role to manage privileges</p>
+                    <p className="text-muted-foreground">Select a role to manage privileges</p>
                   </div>
                 ) : (
                   <>
@@ -815,14 +815,14 @@ export function PrivilegeManagementView() {
                           return (
                             <div key={category.category} className="border-b">
                               <button
-                                className="w-full flex items-center justify-between p-3 hover:bg-slate-50 transition-colors"
+                                className="w-full flex items-center justify-between p-3 hover:bg-muted/50 transition-colors"
                                 onClick={() => toggleCategory(category.category)}
                               >
                                 <div className="flex items-center gap-2">
                                   {isExpanded ? (
-                                    <ChevronDown className="h-4 w-4 text-slate-400" />
+                                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
                                   ) : (
-                                    <ChevronRight className="h-4 w-4 text-slate-400" />
+                                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
                                   )}
                                   <span className="font-medium">
                                     {PRIVILEGE_CATEGORIES[category.category] || category.category}
@@ -834,7 +834,7 @@ export function PrivilegeManagementView() {
                               </button>
 
                               {isExpanded && (
-                                <div className="border-t bg-slate-50/50">
+                                <div className="border-t bg-muted/50/50">
                                   {category.privileges.map((privilege) => {
                                     const effective = getEffectivePrivilege(privilege);
                                     const isPending = pendingChanges.has(privilege.privilegeId);
@@ -872,7 +872,7 @@ export function PrivilegeManagementView() {
                                               )}
                                             </div>
                                             {privilege.description && (
-                                              <p className="text-xs text-slate-500 truncate">
+                                              <p className="text-xs text-muted-foreground truncate">
                                                 {privilege.description}
                                               </p>
                                             )}
@@ -880,7 +880,7 @@ export function PrivilegeManagementView() {
                                         </div>
                                         <div className="flex items-center gap-4">
                                           <div className="flex items-center gap-2">
-                                            <Label className="text-xs text-slate-500">Max Amount</Label>
+                                            <Label className="text-xs text-muted-foreground">Max Amount</Label>
                                             <Input
                                               type="number"
                                               placeholder="No limit"
@@ -910,9 +910,9 @@ export function PrivilegeManagementView() {
 
                     {/* Action Bar */}
                     {hasChanges && (
-                      <div className="sticky bottom-0 bg-white border-t p-3">
+                      <div className="sticky bottom-0 bg-card border-t p-3">
                         <div className="flex items-center justify-between">
-                          <p className="text-sm text-slate-600">
+                          <p className="text-sm text-muted-foreground">
                             {pendingChanges.size} unsaved change(s)
                           </p>
                           <div className="flex gap-2">
@@ -950,7 +950,7 @@ export function PrivilegeManagementView() {
             </CardHeader>
             <CardContent>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search users..."
                   className="pl-9"
@@ -964,22 +964,22 @@ export function PrivilegeManagementView() {
                   }}
                 />
                 {userSearchLoading && (
-                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-slate-400" />
+                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
                 )}
               </div>
 
               {/* Search Results */}
               {userSearchResults.length > 0 && !selectedUser && (
-                <div className="absolute z-10 mt-1 w-full bg-white border rounded-lg shadow-lg max-h-60 overflow-auto">
+                <div className="absolute z-10 mt-1 w-full bg-card border rounded-lg shadow-lg max-h-60 overflow-auto">
                   {userSearchResults.map((user) => (
                     <button
                       key={user.id}
                       onClick={() => handleSelectUser(user)}
-                      className="w-full px-4 py-2 text-left hover:bg-slate-50 flex items-center justify-between"
+                      className="w-full px-4 py-2 text-left hover:bg-muted/50 flex items-center justify-between"
                     >
                       <div>
                         <div className="font-medium">{user.name}</div>
-                        <div className="text-sm text-slate-500">
+                        <div className="text-sm text-muted-foreground">
                           {user.email} {user.employeeId && `• ${user.employeeId}`}
                         </div>
                       </div>
@@ -1024,40 +1024,40 @@ export function PrivilegeManagementView() {
                         <div className="text-2xl font-bold text-emerald-600">
                           {userData.summary.effectiveCount}
                         </div>
-                        <div className="text-xs text-slate-600">Effective</div>
+                        <div className="text-xs text-muted-foreground">Effective</div>
                       </div>
                       <div className="p-3 bg-red-50 rounded-lg text-center">
                         <div className="text-2xl font-bold text-red-600">
                           {userData.summary.revokedCount}
                         </div>
-                        <div className="text-xs text-slate-600">Revoked</div>
+                        <div className="text-xs text-muted-foreground">Revoked</div>
                       </div>
                       <div className="p-3 bg-blue-50 rounded-lg text-center">
                         <div className="text-2xl font-bold text-blue-600">
                           {userData.summary.overrideCount}
                         </div>
-                        <div className="text-xs text-slate-600">Overrides</div>
+                        <div className="text-xs text-muted-foreground">Overrides</div>
                       </div>
                     </div>
 
                     {/* Roles */}
                     <div>
-                      <h4 className="text-sm font-medium text-slate-700 mb-2">Assigned Roles</h4>
+                      <h4 className="text-sm font-medium text-foreground mb-2">Assigned Roles</h4>
                       <div className="flex flex-wrap gap-2">
                         {selectedUser.roles.map((role) => (
-                          <Badge key={role.id} className="bg-slate-100 text-slate-700">
+                          <Badge key={role.id} className="bg-slate-100 text-foreground">
                             {role.name}
                           </Badge>
                         ))}
                         {selectedUser.roles.length === 0 && (
-                          <span className="text-sm text-slate-500">No roles assigned</span>
+                          <span className="text-sm text-muted-foreground">No roles assigned</span>
                         )}
                       </div>
                     </div>
 
                     {/* Privileges by Category */}
                     <div>
-                      <h4 className="text-sm font-medium text-slate-700 mb-2">
+                      <h4 className="text-sm font-medium text-foreground mb-2">
                         Effective Privileges by Category
                       </h4>
                       <ScrollArea className="h-[300px]">
@@ -1089,7 +1089,7 @@ export function PrivilegeManagementView() {
                                           'text-xs',
                                           p.source === 'override'
                                             ? 'bg-amber-100 text-amber-700'
-                                            : 'bg-slate-100 text-slate-600'
+                                            : 'bg-slate-100 text-muted-foreground'
                                         )}
                                       >
                                         {p.code}
@@ -1136,15 +1136,15 @@ export function PrivilegeManagementView() {
                   ) : userData.overrides.length === 0 ? (
                     <div className="text-center py-8">
                       <UserCog className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                      <p className="text-slate-500">No privilege overrides</p>
-                      <p className="text-sm text-slate-400 mt-1">
+                      <p className="text-muted-foreground">No privilege overrides</p>
+                      <p className="text-sm text-muted-foreground mt-1">
                         Add overrides to grant or revoke specific privileges
                       </p>
                     </div>
                   ) : (
                     <Table>
                       <TableHeader>
-                        <TableRow className="bg-slate-50">
+                        <TableRow className="bg-muted/50">
                           <TableHead>Privilege</TableHead>
                           <TableHead>Type</TableHead>
                           <TableHead>Valid To</TableHead>
@@ -1158,7 +1158,7 @@ export function PrivilegeManagementView() {
                             <TableCell>
                               <div>
                                 <div className="font-medium text-sm">{override.privilegeName}</div>
-                                <code className="text-xs text-slate-500">{override.privilegeCode}</code>
+                                <code className="text-xs text-muted-foreground">{override.privilegeCode}</code>
                               </div>
                             </TableCell>
                             <TableCell>
@@ -1175,15 +1175,15 @@ export function PrivilegeManagementView() {
                             <TableCell>
                               {override.validTo ? (
                                 <div className="flex items-center gap-1 text-sm">
-                                  <Clock className="h-3 w-3 text-slate-400" />
+                                  <Clock className="h-3 w-3 text-muted-foreground" />
                                   {format(new Date(override.validTo), 'PP')}
                                 </div>
                               ) : (
-                                <span className="text-sm text-slate-500">No expiry</span>
+                                <span className="text-sm text-muted-foreground">No expiry</span>
                               )}
                             </TableCell>
                             <TableCell>
-                              <span className="text-sm text-slate-600 line-clamp-1">
+                              <span className="text-sm text-muted-foreground line-clamp-1">
                                 {override.reason || '-'}
                               </span>
                             </TableCell>
@@ -1222,7 +1222,7 @@ export function PrivilegeManagementView() {
               <CardContent className="py-12">
                 <div className="text-center">
                   <UserCog className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                  <p className="text-slate-500">Search for a user to manage their privilege overrides</p>
+                  <p className="text-muted-foreground">Search for a user to manage their privilege overrides</p>
                 </div>
               </CardContent>
             </Card>
@@ -1260,7 +1260,7 @@ export function PrivilegeManagementView() {
                       <SelectItem key={priv.id} value={priv.id}>
                         <div className="flex items-center gap-2">
                           <span>{priv.name}</span>
-                          <code className="text-xs text-slate-500">{priv.code}</code>
+                          <code className="text-xs text-muted-foreground">{priv.code}</code>
                         </div>
                       </SelectItem>
                     ))}

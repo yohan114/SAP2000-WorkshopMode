@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Truck, 
@@ -321,11 +322,11 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 const statusColors: Record<string, string> = {
-  'DRAFT': 'bg-slate-100 text-slate-700',
+  'DRAFT': 'bg-slate-100 text-foreground',
   'APPROVED': 'bg-blue-100 text-blue-700',
   'IN_PROGRESS': 'bg-purple-100 text-purple-700',
   'COMPLETED': 'bg-emerald-100 text-emerald-700',
-  'CLOSED': 'bg-slate-100 text-slate-500',
+  'CLOSED': 'bg-slate-100 text-muted-foreground',
   'CANCELLED': 'bg-red-100 text-red-700',
   'ON_HOLD': 'bg-amber-100 text-amber-700',
 };
@@ -405,26 +406,13 @@ export function DashboardView() {
   if (loading) {
     return (
       <div className="space-y-6 max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-6">
-                <div className="h-20 bg-slate-200 rounded"></div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="animate-pulse">
-            <CardContent className="p-6">
-              <div className="h-[300px] bg-slate-200 rounded"></div>
-            </CardContent>
-          </Card>
-          <Card className="animate-pulse">
-            <CardContent className="p-6">
-              <div className="h-[300px] bg-slate-200 rounded"></div>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-1 md:grid-cols-6 xl:grid-cols-12 gap-6 auto-rows-[120px]">
+          <Skeleton className="col-span-1 md:col-span-3 xl:col-span-6 row-span-2 h-full" />
+          <Skeleton className="col-span-1 md:col-span-3 xl:col-span-3 row-span-1 h-full" />
+          <Skeleton className="col-span-1 md:col-span-3 xl:col-span-3 row-span-1 h-full" />
+          <Skeleton className="col-span-1 md:col-span-3 xl:col-span-6 row-span-1 h-full" />
+          
+          <Skeleton className="col-span-1 md:col-span-6 xl:col-span-12 row-span-3 h-full mt-4" />
         </div>
       </div>
     );
@@ -478,7 +466,7 @@ export function DashboardView() {
     {
       title: 'Low Stock Alerts',
       value: summary?.inventory?.lowStockItems || 0,
-      subtitle: `Total value: $${Number(summary?.inventory?.totalValue || 0).toLocaleString()}`,
+      subtitle: `Total value: LKR ${Number(summary?.inventory?.totalValue || 0).toLocaleString()}`,
       icon: AlertTriangle,
       color: 'text-red-600',
       bgColor: 'bg-red-50',
@@ -567,16 +555,16 @@ export function DashboardView() {
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm text-slate-500">{kpi.title}</p>
+                  <p className="text-sm text-muted-foreground">{kpi.title}</p>
                   <div className="flex items-center gap-2">
-                    <p className="text-3xl font-bold text-slate-900 mt-1">{kpi.value}</p>
+                    <p className="text-3xl font-bold text-foreground mt-1">{kpi.value}</p>
                     {kpi.alert && kpi.alert.count > 0 && (
                       <Badge className="bg-red-500 text-white text-xs animate-pulse">
                         {kpi.alert.count} {kpi.alert.label}
                       </Badge>
                     )}
                   </div>
-                  <p className="text-xs text-slate-400 mt-1">{kpi.subtitle}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{kpi.subtitle}</p>
                 </div>
                 <div className={`p-3 rounded-lg ${kpi.bgColor}`}>
                   <kpi.icon className={`h-6 w-6 ${kpi.color}`} />
@@ -595,9 +583,9 @@ export function DashboardView() {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-slate-500">{card.title}</p>
-                    <p className="text-2xl font-bold text-slate-900 mt-1">{card.value}</p>
-                    <p className="text-xs text-slate-400 mt-1">{card.subtitle}</p>
+                    <p className="text-sm text-muted-foreground">{card.title}</p>
+                    <p className="text-2xl font-bold text-foreground mt-1">{card.value}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{card.subtitle}</p>
                   </div>
                   <div className={`p-2 rounded-lg ${card.bgColor}`}>
                     <card.icon className={`h-5 w-5 ${card.color}`} />
@@ -617,16 +605,16 @@ export function DashboardView() {
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-sm text-slate-500">{kpi.title}</p>
+                    <p className="text-sm text-muted-foreground">{kpi.title}</p>
                     <div className="flex items-center gap-2">
-                      <p className="text-3xl font-bold text-slate-900 mt-1">{kpi.value}</p>
+                      <p className="text-3xl font-bold text-foreground mt-1">{kpi.value}</p>
                       {kpi.trend === 'up' ? (
                         <TrendingUp className="h-4 w-4 text-emerald-500" />
                       ) : (
                         <TrendingDown className="h-4 w-4 text-red-500" />
                       )}
                     </div>
-                    <p className="text-xs text-slate-400 mt-1">{kpi.subtitle}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{kpi.subtitle}</p>
                   </div>
                   <div className={`p-3 rounded-lg ${kpi.bgColor}`}>
                     <kpi.icon className={`h-6 w-6 ${kpi.color}`} />
@@ -662,10 +650,10 @@ export function DashboardView() {
                         if (active && payload && payload.length) {
                           const data = payload[0].payload;
                           return (
-                            <div className="bg-white p-2 border rounded shadow-sm">
+                            <div className="bg-card p-2 border rounded shadow-sm">
                               <p className="font-medium">{data.name}</p>
-                              <p className="text-sm text-slate-600">Jobs: {data.jobsCompleted}</p>
-                              <p className="text-sm text-slate-500">Avg Time: {data.avgCompletionTime}h</p>
+                              <p className="text-sm text-muted-foreground">Jobs: {data.jobsCompleted}</p>
+                              <p className="text-sm text-muted-foreground">Avg Time: {data.avgCompletionTime}h</p>
                             </div>
                           );
                         }
@@ -677,7 +665,7 @@ export function DashboardView() {
                 </ResponsiveContainer>
               </div>
             ) : (
-              <div className="h-[250px] flex items-center justify-center text-slate-500">
+              <div className="h-[250px] flex items-center justify-center text-muted-foreground">
                 No technician data available
               </div>
             )}
@@ -724,15 +712,15 @@ export function DashboardView() {
                         className="w-3 h-3 rounded" 
                         style={{ backgroundColor: STATUS_COLORS[item.status] || COLORS[index % COLORS.length] }}
                       />
-                      <span className="text-slate-600 flex-1">{item.status}</span>
+                      <span className="text-muted-foreground flex-1">{item.status}</span>
                       <span className="font-medium">{item.count}</span>
-                      <span className="text-slate-400 text-xs">({item.percentage}%)</span>
+                      <span className="text-muted-foreground text-xs">({item.percentage}%)</span>
                     </div>
                   ))}
                 </div>
               </div>
             ) : (
-              <div className="h-[250px] flex items-center justify-center text-slate-500">
+              <div className="h-[250px] flex items-center justify-center text-muted-foreground">
                 No fleet data available
               </div>
             )}
@@ -759,7 +747,7 @@ export function DashboardView() {
                       <span className="text-sm font-medium text-red-600">Emergency Jobs ({widgets.alerts.emergencyJobs.length})</span>
                     </div>
                     {widgets.alerts.emergencyJobs.slice(0, 2).map((job) => (
-                      <div key={job.id} className="pl-6 text-xs text-slate-600">
+                      <div key={job.id} className="pl-6 text-xs text-muted-foreground">
                         <span className="font-medium">{job.jobCardNumber}</span> - {job.assetName}
                       </div>
                     ))}
@@ -774,7 +762,7 @@ export function DashboardView() {
                       <span className="text-sm font-medium text-amber-600">Low Stock ({widgets.alerts.lowStock.length})</span>
                     </div>
                     {widgets.alerts.lowStock.slice(0, 2).map((item) => (
-                      <div key={item.id} className="pl-6 text-xs text-slate-600">
+                      <div key={item.id} className="pl-6 text-xs text-muted-foreground">
                         <span className="font-medium">{item.itemCode}</span> - {item.availableQty}/{item.reorderLevel} units
                       </div>
                     ))}
@@ -789,7 +777,7 @@ export function DashboardView() {
                       <span className="text-sm font-medium text-red-600">Overdue Jobs ({widgets.alerts.overdueJobs.length})</span>
                     </div>
                     {widgets.alerts.overdueJobs.slice(0, 2).map((job) => (
-                      <div key={job.id} className="pl-6 text-xs text-slate-600">
+                      <div key={job.id} className="pl-6 text-xs text-muted-foreground">
                         <span className="font-medium">{job.jobCardNumber}</span> - {job.assetName}
                       </div>
                     ))}
@@ -803,7 +791,7 @@ export function DashboardView() {
                       <ClipboardCheck className="h-4 w-4 text-blue-500" />
                       <span className="text-sm font-medium text-blue-600">Pending Approvals ({widgets.alerts.pendingApprovals.total})</span>
                     </div>
-                    <div className="pl-6 text-xs text-slate-600">
+                    <div className="pl-6 text-xs text-muted-foreground">
                       MR: {widgets.alerts.pendingApprovals.materialRequests} | Job Cards: {widgets.alerts.pendingApprovals.jobCards}
                     </div>
                   </div>
@@ -813,14 +801,14 @@ export function DashboardView() {
                  widgets.alerts.lowStock.length === 0 && 
                  widgets.alerts.overdueJobs.length === 0 && 
                  widgets.alerts.pendingApprovals.total === 0 && (
-                  <div className="text-center text-slate-500 py-8">
+                  <div className="text-center text-muted-foreground py-8">
                     <CheckCircle className="h-8 w-8 text-emerald-500 mx-auto mb-2" />
                     No critical alerts
                   </div>
                 )}
               </div>
             ) : (
-              <div className="h-[250px] flex items-center justify-center text-slate-500">
+              <div className="h-[250px] flex items-center justify-center text-muted-foreground">
                 Loading alerts...
               </div>
             )}
@@ -853,7 +841,7 @@ export function DashboardView() {
               </ResponsiveContainer>
             </ChartContainer>
           ) : (
-            <div className="h-[250px] flex items-center justify-center text-slate-500">
+            <div className="h-[250px] flex items-center justify-center text-muted-foreground">
               No weekly activity data available
             </div>
           )}
@@ -979,10 +967,10 @@ export function DashboardView() {
                                   if (active && payload && payload.length) {
                                     const data = payload[0].payload;
                                     return (
-                                      <div className="bg-white p-2 border rounded shadow-sm">
+                                      <div className="bg-card p-2 border rounded shadow-sm">
                                         <p className="font-medium">{data.category}</p>
-                                        <p className="text-sm text-slate-600">MTTR: {data.mttr}h</p>
-                                        <p className="text-sm text-slate-500">Jobs: {data.jobCount}</p>
+                                        <p className="text-sm text-muted-foreground">MTTR: {data.mttr}h</p>
+                                        <p className="text-sm text-muted-foreground">Jobs: {data.jobCount}</p>
                                       </div>
                                     );
                                   }
@@ -994,7 +982,7 @@ export function DashboardView() {
                           </ResponsiveContainer>
                         </ChartContainer>
                       ) : (
-                        <div className="h-[250px] flex items-center justify-center text-slate-500">
+                        <div className="h-[250px] flex items-center justify-center text-muted-foreground">
                           No repair time data available
                         </div>
                       )}
@@ -1023,10 +1011,10 @@ export function DashboardView() {
                                   if (active && payload && payload.length) {
                                     const data = payload[0].payload;
                                     return (
-                                      <div className="bg-white p-2 border rounded shadow-sm">
+                                      <div className="bg-card p-2 border rounded shadow-sm">
                                         <p className="font-medium">{data.category}</p>
-                                        <p className="text-sm text-slate-600">MTBF: {data.mtbf}h</p>
-                                        <p className="text-sm text-slate-500">Breakdowns: {data.breakdownCount}</p>
+                                        <p className="text-sm text-muted-foreground">MTBF: {data.mtbf}h</p>
+                                        <p className="text-sm text-muted-foreground">Breakdowns: {data.breakdownCount}</p>
                                       </div>
                                     );
                                   }
@@ -1038,7 +1026,7 @@ export function DashboardView() {
                           </ResponsiveContainer>
                         </ChartContainer>
                       ) : (
-                        <div className="h-[250px] flex items-center justify-center text-slate-500">
+                        <div className="h-[250px] flex items-center justify-center text-muted-foreground">
                           No breakdown data available
                         </div>
                       )}
@@ -1085,7 +1073,7 @@ export function DashboardView() {
                             <div className="flex-1">
                               <Progress value={item.percentage} className="h-2" />
                             </div>
-                            <span className="text-sm text-slate-600 w-20 text-right">
+                            <span className="text-sm text-muted-foreground w-20 text-right">
                               {item.count} ({item.percentage}%)
                             </span>
                           </div>
@@ -1107,8 +1095,8 @@ export function DashboardView() {
                           <DollarSign className="h-5 w-5 text-blue-600" />
                         </div>
                         <div>
-                          <p className="text-sm text-slate-500">Estimated Cost</p>
-                          <p className="text-xl font-bold">${analytics.costs.totalEstimated.toLocaleString()}</p>
+                          <p className="text-sm text-muted-foreground">Estimated Cost</p>
+                          <p className="text-xl font-bold">LKR {analytics.costs.totalEstimated.toLocaleString()}</p>
                         </div>
                       </div>
                     </CardContent>
@@ -1120,8 +1108,8 @@ export function DashboardView() {
                           <DollarSign className="h-5 w-5 text-emerald-600" />
                         </div>
                         <div>
-                          <p className="text-sm text-slate-500">Actual Cost</p>
-                          <p className="text-xl font-bold">${analytics.costs.totalActual.toLocaleString()}</p>
+                          <p className="text-sm text-muted-foreground">Actual Cost</p>
+                          <p className="text-xl font-bold">LKR {analytics.costs.totalActual.toLocaleString()}</p>
                         </div>
                       </div>
                     </CardContent>
@@ -1137,7 +1125,7 @@ export function DashboardView() {
                           )}
                         </div>
                         <div>
-                          <p className="text-sm text-slate-500">Variance</p>
+                          <p className="text-sm text-muted-foreground">Variance</p>
                           <p className={`text-xl font-bold ${analytics.costs.isOverBudget ? 'text-red-600' : 'text-emerald-600'}`}>
                             {analytics.costs.isOverBudget ? '+' : '-'}{Math.abs(analytics.costs.variance)}%
                           </p>
@@ -1182,8 +1170,8 @@ export function DashboardView() {
                           <TrendingDown className="h-5 w-5 text-emerald-600" />
                         </div>
                         <div>
-                          <p className="text-sm text-slate-500">Total Receipts</p>
-                          <p className="text-xl font-bold">${analytics.inventory.summary.totalReceipts.toLocaleString()}</p>
+                          <p className="text-sm text-muted-foreground">Total Receipts</p>
+                          <p className="text-xl font-bold">LKR {analytics.inventory.summary.totalReceipts.toLocaleString()}</p>
                         </div>
                       </div>
                     </CardContent>
@@ -1195,8 +1183,8 @@ export function DashboardView() {
                           <Package className="h-5 w-5 text-amber-600" />
                         </div>
                         <div>
-                          <p className="text-sm text-slate-500">Total Issues</p>
-                          <p className="text-xl font-bold">${analytics.inventory.summary.totalIssues.toLocaleString()}</p>
+                          <p className="text-sm text-muted-foreground">Total Issues</p>
+                          <p className="text-xl font-bold">LKR {analytics.inventory.summary.totalIssues.toLocaleString()}</p>
                         </div>
                       </div>
                     </CardContent>
@@ -1208,7 +1196,7 @@ export function DashboardView() {
                           <Activity className="h-5 w-5 text-blue-600" />
                         </div>
                         <div>
-                          <p className="text-sm text-slate-500">Avg Turnover Rate</p>
+                          <p className="text-sm text-muted-foreground">Avg Turnover Rate</p>
                           <p className="text-xl font-bold">{analytics.inventory.summary.avgTurnover.toFixed(2)}</p>
                         </div>
                       </div>
@@ -1313,13 +1301,13 @@ export function DashboardView() {
                         className="w-3 h-3 rounded-full" 
                         style={{ backgroundColor: COLORS[index % COLORS.length] }}
                       />
-                      <span className="text-sm text-slate-600">{item.status} ({item.count})</span>
+                      <span className="text-sm text-muted-foreground">{item.status} ({item.count})</span>
                     </div>
                   ))}
                 </div>
               </>
             ) : (
-              <div className="h-[250px] flex items-center justify-center text-slate-500">
+              <div className="h-[250px] flex items-center justify-center text-muted-foreground">
                 No job card data available
               </div>
             )}
@@ -1343,7 +1331,7 @@ export function DashboardView() {
                   <div key={item.priority} className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
                       <span className="font-medium">{item.priority}</span>
-                      <span className="text-slate-500">{item.count} ({percentage.toFixed(0)}%)</span>
+                      <span className="text-muted-foreground">{item.count} ({percentage.toFixed(0)}%)</span>
                     </div>
                     <Progress 
                       value={percentage} 
@@ -1353,7 +1341,7 @@ export function DashboardView() {
                 );
               })
             ) : (
-              <div className="text-center text-slate-500 py-8">
+              <div className="text-center text-muted-foreground py-8">
                 No priority data available
               </div>
             )}
@@ -1383,10 +1371,10 @@ export function DashboardView() {
                 {stats.recent.jobCards.map((jc) => (
                   <div 
                     key={jc.id} 
-                    className="flex items-start gap-3 p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+                    className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg hover:bg-slate-100 transition-colors"
                   >
-                    <div className="p-2 bg-white rounded-lg shadow-sm">
-                      <Wrench className="h-4 w-4 text-slate-600" />
+                    <div className="p-2 bg-card rounded-lg shadow-sm">
+                      <Wrench className="h-4 w-4 text-muted-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
@@ -1395,8 +1383,8 @@ export function DashboardView() {
                           {jc.status}
                         </Badge>
                       </div>
-                      <p className="text-xs text-slate-600 truncate">{jc.asset?.name || 'No asset'}</p>
-                      <p className="text-xs text-slate-400 mt-1">
+                      <p className="text-xs text-muted-foreground truncate">{jc.asset?.name || 'No asset'}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
                         {new Date(jc.createdAt).toLocaleString()}
                       </p>
                     </div>
@@ -1407,7 +1395,7 @@ export function DashboardView() {
                 ))}
               </div>
             ) : (
-              <div className="text-center text-slate-500 py-8">
+              <div className="text-center text-muted-foreground py-8">
                 No recent job cards
               </div>
             )}
@@ -1429,26 +1417,26 @@ export function DashboardView() {
                 {stats.topAssets.map((asset, index) => (
                   <div 
                     key={asset.id}
-                    className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+                    className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg hover:bg-slate-100 transition-colors"
                   >
                     <div className="flex items-center justify-center w-8 h-8 bg-emerald-100 rounded-full">
                       <span className="text-sm font-bold text-emerald-600">#{index + 1}</span>
                     </div>
                     <div className="flex-1">
                       <p className="font-medium text-sm">{asset.name}</p>
-                      <p className="text-xs text-slate-500">{asset.assetNumber}</p>
+                      <p className="text-xs text-muted-foreground">{asset.assetNumber}</p>
                     </div>
                     <div className="text-right">
                       <Badge className={statusColors[asset.status] || 'bg-slate-100'}>
                         {asset.status}
                       </Badge>
-                      <p className="text-sm font-bold text-slate-900 mt-1">{asset.jobCardCount} jobs</p>
+                      <p className="text-sm font-bold text-foreground mt-1">{asset.jobCardCount} jobs</p>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center text-slate-500 py-8">
+              <div className="text-center text-muted-foreground py-8">
                 No asset data available
               </div>
             )}
@@ -1485,7 +1473,7 @@ export function DashboardView() {
 
       {/* Last Updated */}
       {stats?.generatedAt && (
-        <div className="text-xs text-slate-400 text-center">
+        <div className="text-xs text-muted-foreground text-center">
           Last updated: {new Date(stats.generatedAt).toLocaleString()}
         </div>
       )}

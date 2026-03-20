@@ -117,7 +117,7 @@ function TrustScoreBadge({ score }: { score: number | null }) {
 function WarningBadge({ warning }: { warning: ExifWarning }) {
   const color = warning.severity === 'HIGH' ? 'bg-red-100 text-red-800 border-red-200' :
                 warning.severity === 'MEDIUM' ? 'bg-amber-100 text-amber-800 border-amber-200' :
-                'bg-slate-100 text-slate-800 border-slate-200';
+                'bg-slate-100 text-foreground border-slate-200';
 
   return (
     <Badge variant="outline" className={cn('text-xs', color)}>
@@ -418,7 +418,7 @@ export function PhotoValidationView() {
             title="Avg Trust Score"
             value={stats.averageTrustScore !== null ? `${stats.averageTrustScore}%` : '-'}
             icon={Shield}
-            color="bg-slate-100 text-slate-600"
+            color="bg-slate-100 text-muted-foreground"
           />
           <StatsCard
             title="High Trust (80%+)"
@@ -545,7 +545,7 @@ export function PhotoValidationView() {
                   >
                     <Checkbox
                       checked={isSelected}
-                      className="bg-white/80"
+                      className="bg-card/80"
                     />
                   </div>
                   
@@ -558,9 +558,9 @@ export function PhotoValidationView() {
                   {photo.validation.isValid !== null && (
                     <div className="absolute bottom-2 left-2">
                       {photo.validation.isValid ? (
-                        <CheckCircle className="h-5 w-5 text-emerald-600 bg-white rounded-full" />
+                        <CheckCircle className="h-5 w-5 text-emerald-600 bg-card rounded-full" />
                       ) : (
-                        <XCircle className="h-5 w-5 text-red-600 bg-white rounded-full" />
+                        <XCircle className="h-5 w-5 text-red-600 bg-card rounded-full" />
                       )}
                     </div>
                   )}
@@ -746,7 +746,7 @@ export function PhotoValidationView() {
                                 "p-2 rounded-lg text-sm",
                                 warning.severity === 'HIGH' && "bg-red-50 border border-red-200",
                                 warning.severity === 'MEDIUM' && "bg-amber-50 border border-amber-200",
-                                warning.severity === 'LOW' && "bg-slate-50 border border-slate-200"
+                                warning.severity === 'LOW' && "bg-muted/50 border border-slate-200"
                               )}
                             >
                               <div className="flex items-start gap-2">
@@ -755,7 +755,7 @@ export function PhotoValidationView() {
                                 ) : warning.severity === 'MEDIUM' ? (
                                   <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5" />
                                 ) : (
-                                  <Info className="h-4 w-4 text-slate-500 mt-0.5" />
+                                  <Info className="h-4 w-4 text-muted-foreground mt-0.5" />
                                 )}
                                 <div>
                                   <WarningBadge warning={warning} />

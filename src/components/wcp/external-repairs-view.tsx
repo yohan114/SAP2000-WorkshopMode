@@ -127,7 +127,7 @@ interface JobCard {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  DRAFT: 'bg-slate-100 text-slate-700',
+  DRAFT: 'bg-slate-100 text-foreground',
   QUOTATION_PENDING: 'bg-amber-100 text-amber-700',
   APPROVED: 'bg-blue-100 text-blue-700',
   IN_PROGRESS: 'bg-cyan-100 text-cyan-700',
@@ -233,7 +233,7 @@ export function ExternalRepairsView() {
   const [quotationForm, setQuotationForm] = useState({
     quotationNumber: '',
     amount: '',
-    currency: 'USD',
+    currency: 'LKR',
     validUntil: '',
     notes: '',
   });
@@ -456,7 +456,7 @@ export function ExternalRepairsView() {
       if (data.success) {
         toast({ title: 'Success', description: 'Quotation added successfully' });
         setIsQuotationDialogOpen(false);
-        setQuotationForm({ quotationNumber: '', amount: '', currency: 'USD', validUntil: '', notes: '' });
+        setQuotationForm({ quotationNumber: '', amount: '', currency: 'LKR', validUntil: '', notes: '' });
         fetchJobs();
         // Refresh selected job
         const jobRes = await fetch(`/api/external-jobs/${selectedJob.id}`);
@@ -565,8 +565,8 @@ export function ExternalRepairsView() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">External Repairs</h2>
-          <p className="text-slate-500">Manage subcontractor repairs and external job costing</p>
+          <h2 className="text-2xl font-bold text-foreground">External Repairs</h2>
+          <p className="text-muted-foreground">Manage subcontractor repairs and external job costing</p>
         </div>
         <div className="flex gap-2">
           <Dialog open={isSubcontractorDialogOpen} onOpenChange={setIsSubcontractorDialogOpen}>
@@ -798,7 +798,7 @@ export function ExternalRepairsView() {
                 <ExternalLink className="h-5 w-5 text-emerald-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-500">Total Jobs</p>
+                <p className="text-sm text-muted-foreground">Total Jobs</p>
                 <p className="text-xl font-bold">{totalJobs}</p>
               </div>
             </div>
@@ -811,7 +811,7 @@ export function ExternalRepairsView() {
                 <Clock className="h-5 w-5 text-amber-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-500">Pending</p>
+                <p className="text-sm text-muted-foreground">Pending</p>
                 <p className="text-xl font-bold">{pendingJobs}</p>
               </div>
             </div>
@@ -824,7 +824,7 @@ export function ExternalRepairsView() {
                 <Wrench className="h-5 w-5 text-cyan-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-500">In Progress</p>
+                <p className="text-sm text-muted-foreground">In Progress</p>
                 <p className="text-xl font-bold">{inProgressJobs}</p>
               </div>
             </div>
@@ -837,7 +837,7 @@ export function ExternalRepairsView() {
                 <DollarSign className="h-5 w-5 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-500">Total Value</p>
+                <p className="text-sm text-muted-foreground">Total Value</p>
                 <p className="text-xl font-bold">LKR {totalActual.toFixed(0)}</p>
               </div>
             </div>
@@ -850,7 +850,7 @@ export function ExternalRepairsView() {
                 <Building2 className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-500">Subcontractors</p>
+                <p className="text-sm text-muted-foreground">Subcontractors</p>
                 <p className="text-xl font-bold">{activeSubcontractors}</p>
               </div>
             </div>
@@ -876,7 +876,7 @@ export function ExternalRepairsView() {
             <CardContent className="p-4">
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search jobs..."
                     value={search}
@@ -923,7 +923,7 @@ export function ExternalRepairsView() {
                   <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
                 </div>
               ) : jobs.length === 0 ? (
-                <div className="text-center py-12 text-slate-500">
+                <div className="text-center py-12 text-muted-foreground">
                   <ExternalLink className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>No external jobs found</p>
                 </div>
@@ -953,9 +953,9 @@ export function ExternalRepairsView() {
                             {job.subcontractor ? (
                               <div>
                                 <div className="font-medium">{job.subcontractor.name}</div>
-                                <div className="text-xs text-slate-500">{job.subcontractor.code}</div>
+                                <div className="text-xs text-muted-foreground">{job.subcontractor.code}</div>
                               </div>
-                            ) : <span className="text-slate-400">-</span>}
+                            ) : <span className="text-muted-foreground">-</span>}
                           </TableCell>
                           <TableCell className="max-w-[200px] truncate">{job.description}</TableCell>
                           <TableCell>
@@ -1025,7 +1025,7 @@ export function ExternalRepairsView() {
           <Card>
             <CardContent className="p-0">
               {subcontractors.length === 0 ? (
-                <div className="text-center py-12 text-slate-500">
+                <div className="text-center py-12 text-muted-foreground">
                   <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>No subcontractors found. Add your first subcontractor.</p>
                 </div>
@@ -1060,7 +1060,7 @@ export function ExternalRepairsView() {
                             ) : '-'}
                           </TableCell>
                           <TableCell>
-                            <Badge className={sub.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700'}>
+                            <Badge className={sub.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-foreground'}>
                               {sub.status}
                             </Badge>
                           </TableCell>
@@ -1093,31 +1093,31 @@ export function ExternalRepairsView() {
               {/* Job Info */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                  <p className="text-sm text-slate-500">Type</p>
+                  <p className="text-sm text-muted-foreground">Type</p>
                   <p className="font-medium">{JOB_TYPES[selectedJob.jobType] || selectedJob.jobType}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">Subcontractor</p>
+                  <p className="text-sm text-muted-foreground">Subcontractor</p>
                   <p className="font-medium">{selectedJob.subcontractor?.name || '-'}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">Estimated Cost</p>
+                  <p className="text-sm text-muted-foreground">Estimated Cost</p>
                   <p className="font-medium">LKR {selectedJob.estimatedCost?.toFixed(2) || '-'}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">Actual Cost</p>
+                  <p className="text-sm text-muted-foreground">Actual Cost</p>
                   <p className="font-medium">LKR {selectedJob.actualCost?.toFixed(2) || '-'}</p>
                 </div>
               </div>
               
               <div>
-                <p className="text-sm text-slate-500">Description</p>
+                <p className="text-sm text-muted-foreground">Description</p>
                 <p className="font-medium">{selectedJob.description}</p>
               </div>
 
               {/* Cost Progress */}
               {selectedJob.estimatedCost && selectedJob.actualCost && (
-                <div className="p-3 bg-slate-50 rounded-lg">
+                <div className="p-3 bg-muted/50 rounded-lg">
                   <div className="flex justify-between text-sm mb-2">
                     <span>Cost Progress</span>
                     <span className={selectedJob.actualCost > selectedJob.estimatedCost ? 'text-red-600' : 'text-emerald-600'}>
@@ -1186,7 +1186,7 @@ export function ExternalRepairsView() {
                     </TableBody>
                   </Table>
                 ) : (
-                  <p className="text-sm text-slate-500">No quotations yet</p>
+                  <p className="text-sm text-muted-foreground">No quotations yet</p>
                 )}
               </div>
 
@@ -1222,7 +1222,7 @@ export function ExternalRepairsView() {
                     </TableBody>
                   </Table>
                 ) : (
-                  <p className="text-sm text-slate-500">No costs recorded yet</p>
+                  <p className="text-sm text-muted-foreground">No costs recorded yet</p>
                 )}
               </div>
             </div>
@@ -1251,7 +1251,7 @@ export function ExternalRepairsView() {
                 <Select value={quotationForm.currency} onValueChange={(v) => setQuotationForm({ ...quotationForm, currency: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="USD">USD</SelectItem>
+                    <SelectItem value="LKR">LKR</SelectItem>
                     <SelectItem value="EUR">EUR</SelectItem>
                     <SelectItem value="KES">KES</SelectItem>
                   </SelectContent>

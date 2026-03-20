@@ -89,7 +89,7 @@ const actionColors: Record<string, string> = {
   'UPDATE': 'bg-blue-100 text-blue-700',
   'DELETE': 'bg-red-100 text-red-700',
   'LOGIN': 'bg-purple-100 text-purple-700',
-  'LOGOUT': 'bg-slate-100 text-slate-700',
+  'LOGOUT': 'bg-slate-100 text-foreground',
   'APPROVE': 'bg-amber-100 text-amber-700',
 };
 
@@ -104,7 +104,7 @@ const anomalyStatusColors: Record<string, string> = {
   'OPEN': 'bg-red-100 text-red-700',
   'INVESTIGATING': 'bg-amber-100 text-amber-700',
   'RESOLVED': 'bg-emerald-100 text-emerald-700',
-  'FALSE_POSITIVE': 'bg-slate-100 text-slate-700',
+  'FALSE_POSITIVE': 'bg-slate-100 text-foreground',
 };
 
 export function AuditView() {
@@ -237,8 +237,8 @@ export function AuditView() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Audit Dashboard</h1>
-          <p className="text-slate-500 text-sm">Monitor system activity and detect anomalies</p>
+          <h1 className="text-2xl font-bold text-foreground">Audit Dashboard</h1>
+          <p className="text-muted-foreground text-sm">Monitor system activity and detect anomalies</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={fetchData}>
@@ -262,7 +262,7 @@ export function AuditView() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.totalLogs}</p>
-                <p className="text-xs text-slate-500">Total Logs (24h)</p>
+                <p className="text-xs text-muted-foreground">Total Logs (24h)</p>
               </div>
             </div>
           </CardContent>
@@ -275,7 +275,7 @@ export function AuditView() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.openAnomalies}</p>
-                <p className="text-xs text-slate-500">Open Anomalies</p>
+                <p className="text-xs text-muted-foreground">Open Anomalies</p>
               </div>
             </div>
           </CardContent>
@@ -288,7 +288,7 @@ export function AuditView() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.avgRiskScore}%</p>
-                <p className="text-xs text-slate-500">Avg Risk Score</p>
+                <p className="text-xs text-muted-foreground">Avg Risk Score</p>
               </div>
             </div>
           </CardContent>
@@ -301,7 +301,7 @@ export function AuditView() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.criticalCount}</p>
-                <p className="text-xs text-slate-500">Critical Issues</p>
+                <p className="text-xs text-muted-foreground">Critical Issues</p>
               </div>
             </div>
           </CardContent>
@@ -321,7 +321,7 @@ export function AuditView() {
             <CardContent className="p-4">
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search logs..."
                     value={searchTerm}
@@ -356,7 +356,7 @@ export function AuditView() {
               ) : filteredLogs.length === 0 ? (
                 <div className="text-center py-12">
                   <Shield className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                  <p className="text-slate-500">No audit logs found</p>
+                  <p className="text-muted-foreground">No audit logs found</p>
                 </div>
               ) : (
                 <Table>
@@ -385,7 +385,7 @@ export function AuditView() {
                         <TableCell>
                           <span className="text-sm">{log.entityType}</span>
                         </TableCell>
-                        <TableCell className="text-sm text-slate-500">
+                        <TableCell className="text-sm text-muted-foreground">
                           {log.ipAddress || '-'}
                         </TableCell>
                         <TableCell className="text-right">
@@ -412,7 +412,7 @@ export function AuditView() {
               {anomalies.length === 0 ? (
                 <div className="text-center py-12">
                   <FileWarning className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                  <p className="text-slate-500">No anomalies detected</p>
+                  <p className="text-muted-foreground">No anomalies detected</p>
                 </div>
               ) : (
                 <Table>
@@ -430,7 +430,7 @@ export function AuditView() {
                     {anomalies.map((anomaly) => (
                       <TableRow key={anomaly.id}>
                         <TableCell>
-                          <Badge className={severityColors[anomaly.severity] || 'bg-slate-500'}>
+                          <Badge className={severityColors[anomaly.severity] || 'bg-muted/500'}>
                             {anomaly.severity}
                           </Badge>
                         </TableCell>
@@ -471,7 +471,7 @@ export function AuditView() {
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="text-sm text-slate-500">{indicator.category}</p>
+                      <p className="text-sm text-muted-foreground">{indicator.category}</p>
                       <p className="font-medium">{indicator.indicator}</p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -502,36 +502,36 @@ export function AuditView() {
             <div className="space-y-4 py-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-slate-500">Timestamp</p>
+                  <p className="text-sm text-muted-foreground">Timestamp</p>
                   <p className="font-medium">{new Date(selectedLog.createdAt).toLocaleString()}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">User</p>
+                  <p className="text-sm text-muted-foreground">User</p>
                   <p className="font-medium">{selectedLog.user?.name || 'System'}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">Action</p>
+                  <p className="text-sm text-muted-foreground">Action</p>
                   <Badge className={actionColors[selectedLog.action] || 'bg-slate-100'}>
                     {selectedLog.action}
                   </Badge>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">Entity Type</p>
+                  <p className="text-sm text-muted-foreground">Entity Type</p>
                   <p className="font-medium">{selectedLog.entityType}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">IP Address</p>
+                  <p className="text-sm text-muted-foreground">IP Address</p>
                   <p className="font-medium">{selectedLog.ipAddress || '-'}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">Entity ID</p>
+                  <p className="text-sm text-muted-foreground">Entity ID</p>
                   <p className="font-medium text-sm">{selectedLog.entityId || '-'}</p>
                 </div>
               </div>
 
               {selectedLog.oldValue && (
                 <div>
-                  <p className="text-sm text-slate-500 mb-2">Old Value</p>
+                  <p className="text-sm text-muted-foreground mb-2">Old Value</p>
                   <pre className="text-xs bg-red-50 p-3 rounded-lg overflow-x-auto">
                     {formatValue(selectedLog.oldValue)}
                   </pre>
@@ -540,7 +540,7 @@ export function AuditView() {
 
               {selectedLog.newValue && (
                 <div>
-                  <p className="text-sm text-slate-500 mb-2">New Value</p>
+                  <p className="text-sm text-muted-foreground mb-2">New Value</p>
                   <pre className="text-xs bg-emerald-50 p-3 rounded-lg overflow-x-auto">
                     {formatValue(selectedLog.newValue)}
                   </pre>

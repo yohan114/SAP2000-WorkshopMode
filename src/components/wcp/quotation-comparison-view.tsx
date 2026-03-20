@@ -95,7 +95,7 @@ interface ComparisonResult {
 }
 
 const statusColors: Record<string, string> = {
-  'DRAFT': 'bg-slate-100 text-slate-700',
+  'DRAFT': 'bg-slate-100 text-foreground',
   'SUBMITTED': 'bg-blue-100 text-blue-700',
   'UNDER_REVIEW': 'bg-purple-100 text-purple-700',
   'ACCEPTED': 'bg-emerald-100 text-emerald-700',
@@ -193,7 +193,7 @@ export function QuotationComparisonView() {
     q.supplier?.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
+  const formatCurrency = (amount: number, currency: string = 'LKR') => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency
@@ -204,8 +204,8 @@ export function QuotationComparisonView() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Quotation Comparison</h1>
-          <p className="text-slate-500 text-sm">Compare and select best quotations</p>
+          <h1 className="text-2xl font-bold text-foreground">Quotation Comparison</h1>
+          <p className="text-muted-foreground text-sm">Compare and select best quotations</p>
         </div>
         <div className="flex gap-2">
           {selectedQuotations.length >= 2 && (
@@ -226,7 +226,7 @@ export function QuotationComparisonView() {
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search quotations..."
                 value={searchTerm}
@@ -260,7 +260,7 @@ export function QuotationComparisonView() {
           ) : filteredQuotations.length === 0 ? (
             <div className="text-center py-12">
               <Scale className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-              <p className="text-slate-500">No quotations found</p>
+              <p className="text-muted-foreground">No quotations found</p>
             </div>
           ) : (
             <Table>

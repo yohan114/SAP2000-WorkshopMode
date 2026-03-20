@@ -551,8 +551,8 @@ export function LabourTrainingView() {
                 {['MECHANICAL', 'ELECTRICAL', 'HYDRAULIC', 'WELDING', 'BODY', 'GENERAL'].map(cat => {
                   const count = skills.filter(s => s.category === cat).length;
                   return (
-                    <div key={cat} className="text-center p-4 bg-slate-50 rounded-lg">
-                      <p className="text-2xl font-bold text-slate-700">{count}</p>
+                    <div key={cat} className="text-center p-4 bg-muted/50 rounded-lg">
+                      <p className="text-2xl font-bold text-foreground">{count}</p>
                       <p className="text-xs text-muted-foreground">{cat}</p>
                     </div>
                   );

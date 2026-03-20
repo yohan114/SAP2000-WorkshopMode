@@ -112,7 +112,7 @@ interface MRForMI {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  DRAFT: 'bg-slate-100 text-slate-700',
+  DRAFT: 'bg-slate-100 text-foreground',
   ISSUED: 'bg-blue-100 text-blue-700',
   PARTIALLY_RETURNED: 'bg-amber-100 text-amber-700',
   RETURNED: 'bg-emerald-100 text-emerald-700',
@@ -123,7 +123,7 @@ const PRIORITY_COLORS: Record<string, string> = {
   CRITICAL: 'bg-red-100 text-red-700 border-red-200',
   HIGH: 'bg-amber-100 text-amber-700 border-amber-200',
   NORMAL: 'bg-blue-100 text-blue-700 border-blue-200',
-  LOW: 'bg-slate-100 text-slate-700 border-slate-200',
+  LOW: 'bg-slate-100 text-foreground border-slate-200',
 };
 
 export function MaterialIssuesView() {
@@ -398,8 +398,8 @@ export function MaterialIssuesView() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Material Issues</h2>
-          <p className="text-slate-500">Issue materials from stores to employees</p>
+          <h2 className="text-2xl font-bold text-foreground">Material Issues</h2>
+          <p className="text-muted-foreground">Issue materials from stores to employees</p>
         </div>
         <div className="flex gap-2">
           <Dialog open={isFromMROpen} onOpenChange={setIsFromMROpen}>
@@ -422,7 +422,7 @@ export function MaterialIssuesView() {
                       <Label>Select Material Request</Label>
                       <div className="space-y-2">
                         {availableMRs.length === 0 ? (
-                          <div className="text-center py-8 text-slate-500">
+                          <div className="text-center py-8 text-muted-foreground">
                             <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
                             <p>No approved material requests available</p>
                           </div>
@@ -430,13 +430,13 @@ export function MaterialIssuesView() {
                           availableMRs.map((mr) => (
                             <div
                               key={mr.id}
-                              className="p-3 border rounded-lg hover:bg-slate-50 cursor-pointer"
+                              className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer"
                               onClick={() => fetchMRDetails(mr.id)}
                             >
                               <div className="flex justify-between items-start">
                                 <div>
                                   <div className="font-medium">{mr.mrNumber}</div>
-                                  <div className="text-sm text-slate-500">
+                                  <div className="text-sm text-muted-foreground">
                                     {mr.jobCard?.jobCardNumber || 'No job card'}
                                   </div>
                                 </div>
@@ -447,7 +447,7 @@ export function MaterialIssuesView() {
                                   <Badge>{mr.linesCount} items</Badge>
                                 </div>
                               </div>
-                              <div className="text-xs text-slate-500 mt-1">
+                              <div className="text-xs text-muted-foreground mt-1">
                                 Requested by: {mr.requestor.name}
                               </div>
                             </div>
@@ -487,11 +487,11 @@ export function MaterialIssuesView() {
                         <Label>Items to Issue</Label>
                         <div className="mt-2 space-y-2">
                           {mrLines?.map((line) => (
-                            <div key={line.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                            <div key={line.id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                               <div className="flex-1">
                                 <div className="font-medium">{line.item.name}</div>
-                                <div className="text-xs text-slate-500">{line.item.itemCode}</div>
-                                <div className="text-sm text-slate-600 mt-1">
+                                <div className="text-xs text-muted-foreground">{line.item.itemCode}</div>
+                                <div className="text-sm text-muted-foreground mt-1">
                                   Approved: {line.approvedQty} | Already Issued: {line.issuedQty} | Remaining: {line.remainingToIssue}
                                 </div>
                               </div>
@@ -508,7 +508,7 @@ export function MaterialIssuesView() {
                                   className="text-center"
                                 />
                               </div>
-                              <div className="text-xs text-slate-500 w-12">{line.item.unitOfMeasure}</div>
+                              <div className="text-xs text-muted-foreground w-12">{line.item.unitOfMeasure}</div>
                             </div>
                           ))}
                         </div>
@@ -651,7 +651,7 @@ export function MaterialIssuesView() {
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-emerald-100 rounded-lg"><Package className="h-5 w-5 text-emerald-600" /></div>
-              <div><p className="text-sm text-slate-500">Total Issues</p><p className="text-xl font-bold">{total}</p></div>
+              <div><p className="text-sm text-muted-foreground">Total Issues</p><p className="text-xl font-bold">{total}</p></div>
             </div>
           </CardContent>
         </Card>
@@ -659,7 +659,7 @@ export function MaterialIssuesView() {
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-100 rounded-lg"><Store className="h-5 w-5 text-blue-600" /></div>
-              <div><p className="text-sm text-slate-500">Stores</p><p className="text-xl font-bold">{stores.length}</p></div>
+              <div><p className="text-sm text-muted-foreground">Stores</p><p className="text-xl font-bold">{stores.length}</p></div>
             </div>
           </CardContent>
         </Card>
@@ -667,7 +667,7 @@ export function MaterialIssuesView() {
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-amber-100 rounded-lg"><FileText className="h-5 w-5 text-amber-600" /></div>
-              <div><p className="text-sm text-slate-500">Draft</p><p className="text-xl font-bold">{materialIssues.filter(mi => mi.status === 'DRAFT').length}</p></div>
+              <div><p className="text-sm text-muted-foreground">Draft</p><p className="text-xl font-bold">{materialIssues.filter(mi => mi.status === 'DRAFT').length}</p></div>
             </div>
           </CardContent>
         </Card>
@@ -675,7 +675,7 @@ export function MaterialIssuesView() {
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-purple-100 rounded-lg"><DollarSign className="h-5 w-5 text-purple-600" /></div>
-              <div><p className="text-sm text-slate-500">Total Value</p><p className="text-xl font-bold">LKR {materialIssues.reduce((sum, mi) => sum + (mi.totalValue || 0), 0).toFixed(2)}</p></div>
+              <div><p className="text-sm text-muted-foreground">Total Value</p><p className="text-xl font-bold">LKR {materialIssues.reduce((sum, mi) => sum + (mi.totalValue || 0), 0).toFixed(2)}</p></div>
             </div>
           </CardContent>
         </Card>
@@ -686,7 +686,7 @@ export function MaterialIssuesView() {
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Search by MI number..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -710,7 +710,7 @@ export function MaterialIssuesView() {
           {loading ? (
             <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-emerald-600" /></div>
           ) : materialIssues.length === 0 ? (
-            <div className="text-center py-12 text-slate-500">
+            <div className="text-center py-12 text-muted-foreground">
               <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>No material issues found</p>
             </div>
@@ -731,20 +731,20 @@ export function MaterialIssuesView() {
                 </TableHeader>
                 <TableBody>
                   {materialIssues.map((mi) => (
-                    <TableRow key={mi.id} className="cursor-pointer hover:bg-slate-50" onClick={() => { setSelectedMI(mi); setDetailOpen(true); }}>
+                    <TableRow key={mi.id} className="cursor-pointer hover:bg-muted/50" onClick={() => { setSelectedMI(mi); setDetailOpen(true); }}>
                       <TableCell className="font-medium">{mi.miNumber}</TableCell>
                       <TableCell>
-                        <div><div className="font-medium">{mi.store.code}</div><div className="text-xs text-slate-500">{mi.store.name}</div></div>
+                        <div><div className="font-medium">{mi.store.code}</div><div className="text-xs text-muted-foreground">{mi.store.name}</div></div>
                       </TableCell>
                       <TableCell>
-                        <div><div className="font-medium">{mi.issuedTo.name}</div><div className="text-xs text-slate-500">{mi.issuedTo.email}</div></div>
+                        <div><div className="font-medium">{mi.issuedTo.name}</div><div className="text-xs text-muted-foreground">{mi.issuedTo.email}</div></div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
                         {mi.materialRequest ? (
                           <Badge variant="outline">{mi.materialRequest.mrNumber}</Badge>
                         ) : mi.jobCard ? (
                           <Badge variant="outline">{mi.jobCard.jobCardNumber}</Badge>
-                        ) : <span className="text-slate-400">Direct</span>}
+                        ) : <span className="text-muted-foreground">Direct</span>}
                       </TableCell>
                       <TableCell>{mi.lineCount}</TableCell>
                       <TableCell>LKR {mi.totalValue ? mi.totalValue.toFixed(2) : '0.00'}</TableCell>
@@ -777,7 +777,7 @@ export function MaterialIssuesView() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-slate-500">Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, total)} of {total}</p>
+          <p className="text-sm text-muted-foreground">Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, total)} of {total}</p>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Previous</Button>
             <Button variant="outline" size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>Next</Button>
@@ -797,15 +797,15 @@ export function MaterialIssuesView() {
           {selectedMI && (
             <div className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
-                <div><p className="text-sm text-slate-500">Store</p><p className="font-medium">{selectedMI.store.name}</p></div>
-                <div><p className="text-sm text-slate-500">Issued To</p><p className="font-medium">{selectedMI.issuedTo.name}</p></div>
-                <div><p className="text-sm text-slate-500">Source</p>
+                <div><p className="text-sm text-muted-foreground">Store</p><p className="font-medium">{selectedMI.store.name}</p></div>
+                <div><p className="text-sm text-muted-foreground">Issued To</p><p className="font-medium">{selectedMI.issuedTo.name}</p></div>
+                <div><p className="text-sm text-muted-foreground">Source</p>
                   <p className="font-medium">
                     {selectedMI.materialRequest ? selectedMI.materialRequest.mrNumber : 
                      selectedMI.jobCard ? selectedMI.jobCard.jobCardNumber : 'Direct Issue'}
                   </p>
                 </div>
-                <div><p className="text-sm text-slate-500">Total Value</p><p className="font-medium">LKR {selectedMI.totalValue?.toFixed(2) || '0.00'}</p></div>
+                <div><p className="text-sm text-muted-foreground">Total Value</p><p className="font-medium">LKR {selectedMI.totalValue?.toFixed(2) || '0.00'}</p></div>
               </div>
               
               <div>
@@ -823,7 +823,7 @@ export function MaterialIssuesView() {
                     {selectedMI.lines.map((line) => (
                       <TableRow key={line.id}>
                         <TableCell>
-                          <div><div className="font-medium">{line.item.name}</div><div className="text-xs text-slate-500">{line.item.itemCode}</div></div>
+                          <div><div className="font-medium">{line.item.name}</div><div className="text-xs text-muted-foreground">{line.item.itemCode}</div></div>
                         </TableCell>
                         <TableCell>{line.issuedQty} {line.item.unitOfMeasure}</TableCell>
                         <TableCell>LKR {line.unitCost.toFixed(2)}</TableCell>

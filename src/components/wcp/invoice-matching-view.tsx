@@ -86,7 +86,7 @@ interface Supplier {
 }
 
 const statusColors: Record<string, string> = {
-  'DRAFT': 'bg-slate-100 text-slate-700',
+  'DRAFT': 'bg-slate-100 text-foreground',
   'PENDING': 'bg-blue-100 text-blue-700',
   'MATCHED': 'bg-emerald-100 text-emerald-700',
   'DISCREPANCY': 'bg-amber-100 text-amber-700',
@@ -212,7 +212,7 @@ export function InvoiceMatchingView() {
     inv.supplier?.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
+  const formatCurrency = (amount: number, currency: string = 'LKR') => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency
@@ -229,8 +229,8 @@ export function InvoiceMatchingView() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Invoice Matching</h1>
-          <p className="text-slate-500 text-sm">Match invoices with POs and GRNs</p>
+          <h1 className="text-2xl font-bold text-foreground">Invoice Matching</h1>
+          <p className="text-muted-foreground text-sm">Match invoices with POs and GRNs</p>
         </div>
       </div>
 
@@ -244,7 +244,7 @@ export function InvoiceMatchingView() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{invoices.length}</p>
-                <p className="text-xs text-slate-500">Total Invoices</p>
+                <p className="text-xs text-muted-foreground">Total Invoices</p>
               </div>
             </div>
           </CardContent>
@@ -259,7 +259,7 @@ export function InvoiceMatchingView() {
                 <p className="text-2xl font-bold">
                   {invoices.filter(i => i.status === 'PENDING').length}
                 </p>
-                <p className="text-xs text-slate-500">Pending</p>
+                <p className="text-xs text-muted-foreground">Pending</p>
               </div>
             </div>
           </CardContent>
@@ -274,7 +274,7 @@ export function InvoiceMatchingView() {
                 <p className="text-2xl font-bold">
                   {invoices.filter(i => i.status === 'MATCHED' || i.status === 'APPROVED').length}
                 </p>
-                <p className="text-xs text-slate-500">Matched</p>
+                <p className="text-xs text-muted-foreground">Matched</p>
               </div>
             </div>
           </CardContent>
@@ -292,7 +292,7 @@ export function InvoiceMatchingView() {
                       .reduce((sum, i) => sum + i.totalAmount, 0)
                   )}
                 </p>
-                <p className="text-xs text-slate-500">Unmatched Value</p>
+                <p className="text-xs text-muted-foreground">Unmatched Value</p>
               </div>
             </div>
           </CardContent>
@@ -304,7 +304,7 @@ export function InvoiceMatchingView() {
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search invoices..."
                 value={searchTerm}
@@ -338,7 +338,7 @@ export function InvoiceMatchingView() {
           ) : filteredInvoices.length === 0 ? (
             <div className="text-center py-12">
               <FileCheck className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-              <p className="text-slate-500">No invoices found</p>
+              <p className="text-muted-foreground">No invoices found</p>
             </div>
           ) : (
             <Table>
@@ -412,46 +412,46 @@ export function InvoiceMatchingView() {
               {/* Header Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-slate-500">Invoice Number</p>
+                  <p className="text-sm text-muted-foreground">Invoice Number</p>
                   <p className="font-medium">{selectedInvoice.invoiceNumber}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">Status</p>
+                  <p className="text-sm text-muted-foreground">Status</p>
                   <Badge className={statusColors[selectedInvoice.status]}>
                     {selectedInvoice.status}
                   </Badge>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">Supplier</p>
+                  <p className="text-sm text-muted-foreground">Supplier</p>
                   <p className="font-medium">{selectedInvoice.supplier?.name || '-'}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">Invoice Date</p>
+                  <p className="text-sm text-muted-foreground">Invoice Date</p>
                   <p className="font-medium">{new Date(selectedInvoice.invoiceDate).toLocaleDateString()}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">PO</p>
+                  <p className="text-sm text-muted-foreground">PO</p>
                   <p className="font-medium">{selectedInvoice.po?.poNumber || '-'}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">GRN</p>
+                  <p className="text-sm text-muted-foreground">GRN</p>
                   <p className="font-medium">{selectedInvoice.grn?.grnNumber || '-'}</p>
                 </div>
               </div>
 
               {/* Amounts */}
-              <div className="bg-slate-50 rounded-lg p-4">
+              <div className="bg-muted/50 rounded-lg p-4">
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div>
-                    <p className="text-sm text-slate-500">Subtotal</p>
+                    <p className="text-sm text-muted-foreground">Subtotal</p>
                     <p className="text-lg font-semibold">{formatCurrency(selectedInvoice.subtotal, selectedInvoice.currency)}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-slate-500">Tax</p>
+                    <p className="text-sm text-muted-foreground">Tax</p>
                     <p className="text-lg font-semibold">{formatCurrency(selectedInvoice.taxAmount, selectedInvoice.currency)}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-slate-500">Total</p>
+                    <p className="text-sm text-muted-foreground">Total</p>
                     <p className="text-lg font-bold text-emerald-600">{formatCurrency(selectedInvoice.totalAmount, selectedInvoice.currency)}</p>
                   </div>
                 </div>
@@ -494,7 +494,7 @@ export function InvoiceMatchingView() {
                           <TableCell>
                             <div>
                               <p className="font-medium">{line.item?.itemCode || '-'}</p>
-                              <p className="text-xs text-slate-500">{line.description}</p>
+                              <p className="text-xs text-muted-foreground">{line.description}</p>
                             </div>
                           </TableCell>
                           <TableCell className="text-right">{line.quantity}</TableCell>

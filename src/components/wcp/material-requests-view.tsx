@@ -136,21 +136,21 @@ interface PaginatedResponse {
 }
 
 const statusColors: Record<string, string> = {
-  'DRAFT': 'bg-slate-100 text-slate-700',
+  'DRAFT': 'bg-slate-100 text-foreground',
   'PENDING_APPROVAL': 'bg-amber-100 text-amber-700',
   'APPROVED': 'bg-blue-100 text-blue-700',
   'PARTIALLY_ISSUED': 'bg-purple-100 text-purple-700',
   'FULFILLED': 'bg-emerald-100 text-emerald-700',
   'REJECTED': 'bg-red-100 text-red-700',
-  'CLOSED': 'bg-slate-100 text-slate-500',
-  'CANCELLED': 'bg-slate-100 text-slate-500',
+  'CLOSED': 'bg-slate-100 text-muted-foreground',
+  'CANCELLED': 'bg-slate-100 text-muted-foreground',
 };
 
 const priorityColors: Record<string, string> = {
   'CRITICAL': 'bg-red-100 text-red-700 border-red-200',
   'HIGH': 'bg-amber-100 text-amber-700 border-amber-200',
   'NORMAL': 'bg-blue-100 text-blue-700 border-blue-200',
-  'LOW': 'bg-slate-100 text-slate-700 border-slate-200',
+  'LOW': 'bg-slate-100 text-foreground border-slate-200',
 };
 
 const requestTypeColors: Record<string, string> = {
@@ -506,8 +506,8 @@ export function MaterialRequestsView() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Material Requests</h2>
-          <p className="text-slate-500">Request and approve materials for job cards</p>
+          <h2 className="text-2xl font-bold text-foreground">Material Requests</h2>
+          <p className="text-muted-foreground">Request and approve materials for job cards</p>
         </div>
         <div className="flex items-center gap-2">
           <ExportButton
@@ -590,7 +590,7 @@ export function MaterialRequestsView() {
                   </div>
                   
                   {formData.lines.length === 0 ? (
-                    <div className="text-center py-8 text-slate-500 bg-slate-50 rounded-lg border-2 border-dashed">
+                    <div className="text-center py-8 text-muted-foreground bg-muted/50 rounded-lg border-2 border-dashed">
                       <Package className="h-8 w-8 mx-auto mb-2 opacity-50" />
                       <p>No items added</p>
                       <p className="text-xs">Click "Add Item" to request materials</p>
@@ -598,7 +598,7 @@ export function MaterialRequestsView() {
                   ) : (
                     <div className="space-y-3">
                       {formData.lines.map((line, index) => (
-                        <div key={index} className="flex items-end gap-2 p-3 bg-slate-50 rounded-lg">
+                        <div key={index} className="flex items-end gap-2 p-3 bg-muted/50 rounded-lg">
                           <div className="flex-1 space-y-1">
                             <Label className="text-xs">Item</Label>
                             <Select value={line.itemId} onValueChange={(v) => updateLine(index, 'itemId', v)}>
@@ -618,7 +618,7 @@ export function MaterialRequestsView() {
                           </div>
                           <div className="w-20 space-y-1">
                             <Label className="text-xs">Unit</Label>
-                            <div className="h-10 px-3 flex items-center text-sm text-slate-600 bg-white border rounded-md">
+                            <div className="h-10 px-3 flex items-center text-sm text-muted-foreground bg-card border rounded-md">
                               {line.item?.unitOfMeasure || '-'}
                             </div>
                           </div>
@@ -649,7 +649,7 @@ export function MaterialRequestsView() {
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search by MR number or job card..."
                 value={searchTerm}
@@ -680,7 +680,7 @@ export function MaterialRequestsView() {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50">
+                <TableRow className="bg-muted/50">
                   <TableHead className="font-semibold">MR Number</TableHead>
                   <TableHead className="font-semibold hidden md:table-cell">Type</TableHead>
                   <TableHead className="font-semibold hidden lg:table-cell">Linked To</TableHead>
@@ -701,7 +701,7 @@ export function MaterialRequestsView() {
                   ))
                 ) : materialRequests.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="h-32 text-center text-slate-500">
+                    <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
                       <div className="flex flex-col items-center gap-2">
                         <FileText className="h-8 w-8 text-slate-300" />
                         <p>No material requests found</p>
@@ -713,13 +713,13 @@ export function MaterialRequestsView() {
                   </TableRow>
                 ) : (
                   materialRequests.map((mr) => (
-                    <TableRow key={mr.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => openDetailDialog(mr)}>
+                    <TableRow key={mr.id} className="hover:bg-muted/50 cursor-pointer" onClick={() => openDetailDialog(mr)}>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="p-2 bg-slate-100 rounded"><FileText className="h-4 w-4 text-slate-600" /></div>
+                          <div className="p-2 bg-slate-100 rounded"><FileText className="h-4 w-4 text-muted-foreground" /></div>
                           <div>
                             <div className="font-medium">{mr.mrNumber}</div>
-                            <div className="text-xs text-slate-500 flex items-center gap-1">
+                            <div className="text-xs text-muted-foreground flex items-center gap-1">
                               <User className="h-3 w-3" />{mr.requestor?.name || 'Unknown'}
                             </div>
                           </div>
@@ -734,9 +734,9 @@ export function MaterialRequestsView() {
                         {mr.jobCard ? (
                           <div>
                             <div className="font-medium">{mr.jobCard.jobCardNumber}</div>
-                            <div className="text-xs text-slate-500">{mr.jobCard.asset?.name}</div>
+                            <div className="text-xs text-muted-foreground">{mr.jobCard.asset?.name}</div>
                           </div>
-                        ) : <span className="text-slate-400">-</span>}
+                        ) : <span className="text-muted-foreground">-</span>}
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className={priorityColors[mr.priority] || ''}>{mr.priority}</Badge>
@@ -744,7 +744,7 @@ export function MaterialRequestsView() {
                       <TableCell>
                         <Badge className={statusColors[mr.status] || 'bg-slate-100'}>{mr.status}</Badge>
                       </TableCell>
-                      <TableCell className="hidden sm:table-cell text-slate-600">
+                      <TableCell className="hidden sm:table-cell text-muted-foreground">
                         {mr.requiredBy ? new Date(mr.requiredBy).toLocaleDateString() : '-'}
                       </TableCell>
                       <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
@@ -789,7 +789,7 @@ export function MaterialRequestsView() {
       {/* Pagination */}
       {pagination.totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted-foreground">
             Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} requests
           </p>
           <div className="flex items-center gap-2">
@@ -808,19 +808,19 @@ export function MaterialRequestsView() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card><CardContent className="p-4 text-center">
           <div className="text-2xl font-bold text-amber-600">{materialRequests.filter(mr => mr.status === 'PENDING_APPROVAL').length}</div>
-          <div className="text-sm text-slate-500">Pending Approval</div>
+          <div className="text-sm text-muted-foreground">Pending Approval</div>
         </CardContent></Card>
         <Card><CardContent className="p-4 text-center">
           <div className="text-2xl font-bold text-blue-600">{materialRequests.filter(mr => mr.status === 'APPROVED').length}</div>
-          <div className="text-sm text-slate-500">Approved</div>
+          <div className="text-sm text-muted-foreground">Approved</div>
         </CardContent></Card>
         <Card><CardContent className="p-4 text-center">
           <div className="text-2xl font-bold text-emerald-600">{materialRequests.filter(mr => mr.status === 'FULFILLED').length}</div>
-          <div className="text-sm text-slate-500">Fulfilled</div>
+          <div className="text-sm text-muted-foreground">Fulfilled</div>
         </CardContent></Card>
         <Card><CardContent className="p-4 text-center">
           <div className="text-2xl font-bold text-red-600">{materialRequests.filter(mr => mr.priority === 'CRITICAL' && !['FULFILLED', 'CANCELLED', 'CLOSED'].includes(mr.status)).length}</div>
-          <div className="text-sm text-slate-500">Critical Pending</div>
+          <div className="text-sm text-muted-foreground">Critical Pending</div>
         </CardContent></Card>
       </div>
 
@@ -831,7 +831,7 @@ export function MaterialRequestsView() {
             <>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-3">
-                  <div className="p-2 bg-slate-100 rounded-lg"><FileText className="h-5 w-5 text-slate-600" /></div>
+                  <div className="p-2 bg-slate-100 rounded-lg"><FileText className="h-5 w-5 text-muted-foreground" /></div>
                   {selectedMR.mrNumber}
                   <Badge className={statusColors[selectedMR.status]}>{selectedMR.status}</Badge>
                 </DialogTitle>
@@ -840,7 +840,7 @@ export function MaterialRequestsView() {
                     {selectedMR.requestType === 'JC_LINKED' ? 'Job Card Linked' : selectedMR.requestType}
                   </span>
                   {selectedMR.jobCard && (
-                    <span className="flex items-center gap-1 text-slate-500">
+                    <span className="flex items-center gap-1 text-muted-foreground">
                       <Link className="h-3 w-3" />{selectedMR.jobCard.jobCardNumber}
                     </span>
                   )}
@@ -851,11 +851,11 @@ export function MaterialRequestsView() {
                 <div className="space-y-4 py-4">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-slate-400" />
+                      <User className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm">Requested by: <strong>{selectedMR.requestor?.name}</strong></span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-slate-400" />
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm">Required by: <strong>{selectedMR.requiredBy ? new Date(selectedMR.requiredBy).toLocaleDateString() : 'N/A'}</strong></span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -867,13 +867,13 @@ export function MaterialRequestsView() {
 
                   {/* Request Lines */}
                   <div>
-                    <h4 className="font-semibold text-sm text-slate-500 mb-3 flex items-center gap-2">
+                    <h4 className="font-semibold text-sm text-muted-foreground mb-3 flex items-center gap-2">
                       <List className="h-4 w-4" />Requested Items ({selectedMR.lines?.length || 0})
                     </h4>
                     {selectedMR.lines && selectedMR.lines.length > 0 ? (
                       <div className="rounded-lg border overflow-hidden">
                         <Table>
-                          <TableHeader className="bg-slate-50">
+                          <TableHeader className="bg-muted/50">
                             <TableRow>
                               <TableHead className="font-semibold">Item</TableHead>
                               <TableHead className="font-semibold text-center">Requested</TableHead>
@@ -889,7 +889,7 @@ export function MaterialRequestsView() {
                                 <TableCell>
                                   <div>
                                     <div className="font-medium">{line.item?.name}</div>
-                                    <div className="text-xs text-slate-500">{line.item?.itemCode}</div>
+                                    <div className="text-xs text-muted-foreground">{line.item?.itemCode}</div>
                                   </div>
                                 </TableCell>
                                 <TableCell className="text-center">{line.requestedQty} {line.item?.unitOfMeasure}</TableCell>
@@ -909,7 +909,7 @@ export function MaterialRequestsView() {
                         </Table>
                       </div>
                     ) : (
-                      <div className="text-center text-slate-500 py-8 bg-slate-50 rounded-lg">No items in this request</div>
+                      <div className="text-center text-muted-foreground py-8 bg-muted/50 rounded-lg">No items in this request</div>
                     )}
                   </div>
 
@@ -920,7 +920,7 @@ export function MaterialRequestsView() {
                     </div>
                   )}
 
-                  <div className="text-xs text-slate-400">
+                  <div className="text-xs text-muted-foreground">
                     Created: {new Date(selectedMR.createdAt).toLocaleString()}
                   </div>
                 </div>

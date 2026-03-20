@@ -115,7 +115,7 @@ interface GrnStats {
 }
 
 const statusColors: Record<string, string> = {
-  'DRAFT': 'bg-slate-100 text-slate-700',
+  'DRAFT': 'bg-slate-100 text-foreground',
   'SUBMITTED': 'bg-blue-100 text-blue-700',
   'VERIFIED': 'bg-purple-100 text-purple-700',
   'POSTED': 'bg-emerald-100 text-emerald-700',
@@ -407,27 +407,27 @@ export function GrnView() {
         <div class="info-grid">
           <div class="info-item">
             <label>GRN Number</label>
-            <p>${selectedGrn.grnNumber}</p>
+            <p>LKR {selectedGrn.grnNumber}</p>
           </div>
           <div class="info-item">
             <label>Date</label>
-            <p>${new Date(selectedGrn.grnDate).toLocaleDateString()}</p>
+            <p>LKR {new Date(selectedGrn.grnDate).toLocaleDateString()}</p>
           </div>
           <div class="info-item">
             <label>Supplier</label>
-            <p>${selectedGrn.supplier?.name || '-'}</p>
+            <p>LKR {selectedGrn.supplier?.name || '-'}</p>
           </div>
           <div class="info-item">
             <label>Store</label>
-            <p>${selectedGrn.store?.name || '-'}</p>
+            <p>LKR {selectedGrn.store?.name || '-'}</p>
           </div>
           <div class="info-item">
             <label>Status</label>
-            <p>${selectedGrn.status}</p>
+            <p>LKR {selectedGrn.status}</p>
           </div>
           <div class="info-item">
             <label>Reference</label>
-            <p>${selectedGrn.poId ? 'PO Linked' : 'Direct Receipt'}</p>
+            <p>LKR {selectedGrn.poId ? 'PO Linked' : 'Direct Receipt'}</p>
           </div>
         </div>
 
@@ -446,20 +446,20 @@ export function GrnView() {
           <tbody>
             ${selectedGrn.lines?.map(line => `
               <tr>
-                <td>${line.item?.itemCode || '-'}</td>
-                <td>${line.item?.name || '-'}</td>
-                <td class="text-right">${line.qtyReceived}</td>
-                <td class="text-right">${line.qtyAccepted}</td>
-                <td class="text-right">${line.qtyRejected}</td>
-                <td class="text-right">$${line.unitCost.toFixed(2)}</td>
-                <td class="text-right">$${(line.qtyAccepted * line.unitCost).toFixed(2)}</td>
+                <td>LKR {line.item?.itemCode || '-'}</td>
+                <td>LKR {line.item?.name || '-'}</td>
+                <td class="text-right">LKR {line.qtyReceived}</td>
+                <td class="text-right">LKR {line.qtyAccepted}</td>
+                <td class="text-right">LKR {line.qtyRejected}</td>
+                <td class="text-right">LKR ${line.unitCost.toFixed(2)}</td>
+                <td class="text-right">LKR ${(line.qtyAccepted * line.unitCost).toFixed(2)}</td>
               </tr>
             `).join('') || ''}
           </tbody>
         </table>
 
         <div class="totals">
-          <p><strong>Total Value: $${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong></p>
+          <p><strong>Total Value: LKR ${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong></p>
         </div>
 
         ${selectedGrn.notes ? `<p><strong>Notes:</strong> ${selectedGrn.notes}</p>` : ''}
@@ -558,8 +558,8 @@ export function GrnView() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Goods Received Notes</h1>
-          <p className="text-slate-500 text-sm">Manage goods received from suppliers</p>
+          <h1 className="text-2xl font-bold text-foreground">Goods Received Notes</h1>
+          <p className="text-muted-foreground text-sm">Manage goods received from suppliers</p>
         </div>
         <Button onClick={() => { resetForm(); setShowCreateDialog(true); }} className="bg-emerald-600 hover:bg-emerald-700">
           <Plus className="h-4 w-4 mr-2" />
@@ -577,7 +577,7 @@ export function GrnView() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats?.thisMonth || 0}</p>
-                <p className="text-xs text-slate-500">GRNs This Month</p>
+                <p className="text-xs text-muted-foreground">GRNs This Month</p>
               </div>
             </div>
           </CardContent>
@@ -589,8 +589,8 @@ export function GrnView() {
                 <DollarSign className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">${(stats?.totalValue || 0).toLocaleString()}</p>
-                <p className="text-xs text-slate-500">Total Value Received</p>
+                <p className="text-2xl font-bold">LKR {(stats?.totalValue || 0).toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">Total Value Received</p>
               </div>
             </div>
           </CardContent>
@@ -603,7 +603,7 @@ export function GrnView() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats?.pendingVerification || 0}</p>
-                <p className="text-xs text-slate-500">Pending Verification</p>
+                <p className="text-xs text-muted-foreground">Pending Verification</p>
               </div>
             </div>
           </CardContent>
@@ -616,7 +616,7 @@ export function GrnView() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats?.avgProcessingTime || 0}h</p>
-                <p className="text-xs text-slate-500">Avg Processing Time</p>
+                <p className="text-xs text-muted-foreground">Avg Processing Time</p>
               </div>
             </div>
           </CardContent>
@@ -627,7 +627,7 @@ export function GrnView() {
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search GRNs..."
                 value={searchTerm}
@@ -660,7 +660,7 @@ export function GrnView() {
           ) : filteredGrns.length === 0 ? (
             <div className="text-center py-12">
               <PackageCheck className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-              <p className="text-slate-500">No GRNs found</p>
+              <p className="text-muted-foreground">No GRNs found</p>
             </div>
           ) : (
             <Table>
@@ -735,21 +735,21 @@ export function GrnView() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             {/* PO Linking Section */}
-            <Card className="bg-slate-50">
+            <Card className="bg-muted/50">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <FileText className="h-5 w-5 text-slate-500" />
+                    <FileText className="h-5 w-5 text-muted-foreground" />
                     <div>
                       <p className="font-medium">Purchase Order Link</p>
-                      <p className="text-xs text-slate-500">Link to an approved PO to auto-populate items</p>
+                      <p className="text-xs text-muted-foreground">Link to an approved PO to auto-populate items</p>
                     </div>
                   </div>
                   {linkedPo ? (
                     <div className="flex items-center gap-3">
                       <div className="text-right">
                         <p className="font-medium text-emerald-600">{linkedPo.poNumber}</p>
-                        <p className="text-xs text-slate-500">{linkedPo.supplier?.name}</p>
+                        <p className="text-xs text-muted-foreground">{linkedPo.supplier?.name}</p>
                       </div>
                       <Button variant="outline" size="sm" onClick={handleUnlinkPo}>
                         <Unlink className="h-4 w-4 mr-1" />
@@ -801,7 +801,7 @@ export function GrnView() {
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="font-medium">Line Items</h4>
-                  <p className="text-xs text-slate-500">Total Value: ${calculateTotalValue().toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground">Total Value: ${calculateTotalValue().toLocaleString()}</p>
                 </div>
                 <Button variant="outline" size="sm" onClick={addLineItem} disabled={!!linkedPo}>
                   <Plus className="h-4 w-4 mr-2" /> Add Item
@@ -829,7 +829,7 @@ export function GrnView() {
                             {linkedPo ? (
                               <div>
                                 <p className="font-medium">{line.itemCode}</p>
-                                <p className="text-xs text-slate-500">{line.itemName}</p>
+                                <p className="text-xs text-muted-foreground">{line.itemName}</p>
                               </div>
                             ) : (
                               <SearchableItemSelect value={line.itemId} onChange={(val, item) => {
@@ -890,18 +890,18 @@ export function GrnView() {
           {selectedGrn && (
             <div className="space-y-4 py-4" ref={printRef}>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div><p className="text-sm text-slate-500">GRN Number</p><p className="font-medium">{selectedGrn.grnNumber}</p></div>
-                <div><p className="text-sm text-slate-500">Status</p><Badge className={statusColors[selectedGrn.status]}>{selectedGrn.status}</Badge></div>
-                <div><p className="text-sm text-slate-500">Supplier</p><p className="font-medium">{selectedGrn.supplier?.name || '-'}</p></div>
-                <div><p className="text-sm text-slate-500">Store</p><p className="font-medium">{selectedGrn.store?.name || '-'}</p></div>
-                <div><p className="text-sm text-slate-500">Date</p><p className="font-medium">{new Date(selectedGrn.grnDate).toLocaleDateString()}</p></div>
-                <div><p className="text-sm text-slate-500">Total Value</p><p className="font-medium text-emerald-600">
+                <div><p className="text-sm text-muted-foreground">GRN Number</p><p className="font-medium">{selectedGrn.grnNumber}</p></div>
+                <div><p className="text-sm text-muted-foreground">Status</p><Badge className={statusColors[selectedGrn.status]}>{selectedGrn.status}</Badge></div>
+                <div><p className="text-sm text-muted-foreground">Supplier</p><p className="font-medium">{selectedGrn.supplier?.name || '-'}</p></div>
+                <div><p className="text-sm text-muted-foreground">Store</p><p className="font-medium">{selectedGrn.store?.name || '-'}</p></div>
+                <div><p className="text-sm text-muted-foreground">Date</p><p className="font-medium">{new Date(selectedGrn.grnDate).toLocaleDateString()}</p></div>
+                <div><p className="text-sm text-muted-foreground">Total Value</p><p className="font-medium text-emerald-600">
                   ${selectedGrn.lines?.reduce((sum, l) => sum + (l.qtyAccepted * l.unitCost), 0).toLocaleString() || 0}
                 </p></div>
               </div>
               {selectedGrn.notes && (
-                <div className="bg-slate-50 rounded-lg p-3">
-                  <p className="text-sm text-slate-500">Notes</p>
+                <div className="bg-muted/50 rounded-lg p-3">
+                  <p className="text-sm text-muted-foreground">Notes</p>
                   <p className="text-sm">{selectedGrn.notes}</p>
                 </div>
               )}
@@ -925,15 +925,15 @@ export function GrnView() {
                           <TableCell>
                             <div>
                               <p className="font-medium">{line.item?.itemCode}</p>
-                              <p className="text-xs text-slate-500">{line.item?.name}</p>
-                              {line.batchNumber && <p className="text-xs text-slate-400">Batch: {line.batchNumber}</p>}
+                              <p className="text-xs text-muted-foreground">{line.item?.name}</p>
+                              {line.batchNumber && <p className="text-xs text-muted-foreground">Batch: {line.batchNumber}</p>}
                             </div>
                           </TableCell>
                           <TableCell className="text-right">{line.qtyReceived}</TableCell>
                           <TableCell className="text-right">{line.qtyAccepted}</TableCell>
                           <TableCell className="text-right">{line.qtyRejected}</TableCell>
-                          <TableCell className="text-right">${line.unitCost.toFixed(2)}</TableCell>
-                          <TableCell className="text-right font-medium">${(line.qtyAccepted * line.unitCost).toFixed(2)}</TableCell>
+                          <TableCell className="text-right">LKR {line.unitCost.toFixed(2)}</TableCell>
+                          <TableCell className="text-right font-medium">LKR {(line.qtyAccepted * line.unitCost).toFixed(2)}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -981,7 +981,7 @@ export function GrnView() {
             {purchaseOrders.length === 0 ? (
               <div className="text-center py-8">
                 <AlertCircle className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                <p className="text-slate-500">No approved purchase orders available</p>
+                <p className="text-muted-foreground">No approved purchase orders available</p>
               </div>
             ) : (
               <Table>
@@ -1000,7 +1000,7 @@ export function GrnView() {
                       <TableCell className="font-medium">{po.poNumber}</TableCell>
                       <TableCell>{po.supplier?.name}</TableCell>
                       <TableCell>{new Date(po.orderDate).toLocaleDateString()}</TableCell>
-                      <TableCell className="text-right">${po.totalValue?.toLocaleString() || 0}</TableCell>
+                      <TableCell className="text-right">LKR {po.totalValue?.toLocaleString() || 0}</TableCell>
                       <TableCell>
                         <Button size="sm" onClick={() => handleLinkPo(po)} className="bg-emerald-600 hover:bg-emerald-700">
                           Select

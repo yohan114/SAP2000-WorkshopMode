@@ -175,7 +175,7 @@ const createPurchaseOrderSchema = z.object({
   quotationId: z.string().optional(),
   procurementChannel: z.enum(['LOCAL', 'HEAD_OFFICE', 'DIRECT_IMPORT']).optional(),
   expectedDeliveryDate: z.string().optional(),
-  currency: z.string().default('USD'),
+  currency: z.string().default('LKR'),
   terms: z.string().optional(),
   notes: z.string().optional(),
   lines: z.array(z.object({

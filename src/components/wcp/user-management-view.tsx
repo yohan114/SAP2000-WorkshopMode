@@ -130,7 +130,7 @@ interface PaginatedResponse<T> {
 // Status and level colors
 const statusColors: Record<string, string> = {
   active: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-  inactive: 'bg-slate-100 text-slate-600 border-slate-200',
+  inactive: 'bg-slate-100 text-muted-foreground border-slate-200',
 };
 
 const riskLevelColors: Record<string, string> = {
@@ -140,7 +140,7 @@ const riskLevelColors: Record<string, string> = {
 };
 
 const roleLevelColors: Record<number, string> = {
-  1: 'bg-slate-100 text-slate-600',
+  1: 'bg-slate-100 text-muted-foreground',
   2: 'bg-blue-50 text-blue-700',
   3: 'bg-cyan-50 text-cyan-700',
   4: 'bg-amber-50 text-amber-700',
@@ -155,7 +155,7 @@ const privilegeCategoryColors: Record<string, string> = {
   INVENTORY: 'bg-amber-50 text-amber-700',
   PROCUREMENT: 'bg-purple-50 text-purple-700',
   QUALITY: 'bg-cyan-50 text-cyan-700',
-  REPORTS: 'bg-slate-50 text-slate-700',
+  REPORTS: 'bg-muted/50 text-foreground',
   USERS: 'bg-rose-50 text-rose-700',
   SETTINGS: 'bg-red-50 text-red-700',
 };
@@ -607,8 +607,8 @@ export function UserManagementView() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">User Management</h2>
-          <p className="text-slate-500">Manage system users, roles, and permissions</p>
+          <h2 className="text-2xl font-bold text-foreground">User Management</h2>
+          <p className="text-muted-foreground">Manage system users, roles, and permissions</p>
         </div>
         <Button 
           className="bg-emerald-600 hover:bg-emerald-700"
@@ -624,7 +624,7 @@ export function UserManagementView() {
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search by name, email, or employee ID..."
                 value={searchTerm}
@@ -683,7 +683,7 @@ export function UserManagementView() {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50">
+                <TableRow className="bg-muted/50">
                   <TableHead className="font-semibold">Name</TableHead>
                   <TableHead className="font-semibold">Email</TableHead>
                   <TableHead className="font-semibold hidden md:table-cell">Department</TableHead>
@@ -703,7 +703,7 @@ export function UserManagementView() {
                   ))
                 ) : users.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-32 text-center text-slate-500">
+                    <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
                       <div className="flex flex-col items-center gap-2">
                         <Users className="h-8 w-8 text-slate-300" />
                         <p>No users found</p>
@@ -712,32 +712,32 @@ export function UserManagementView() {
                   </TableRow>
                 ) : (
                   users.map((user) => (
-                    <TableRow key={user.id} className="hover:bg-slate-50">
+                    <TableRow key={user.id} className="hover:bg-muted/50">
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center">
-                            <span className="text-sm font-medium text-slate-600">
+                            <span className="text-sm font-medium text-muted-foreground">
                               {user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                             </span>
                           </div>
                           <div>
                             <div className="font-medium">{user.name}</div>
                             {user.employeeId && (
-                              <div className="text-xs text-slate-500">{user.employeeId}</div>
+                              <div className="text-xs text-muted-foreground">{user.employeeId}</div>
                             )}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4 text-slate-400" />
+                          <Mail className="h-4 w-4 text-muted-foreground" />
                           {user.email}
                         </div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
                         <div className="flex items-center gap-2">
-                          <Building className="h-4 w-4 text-slate-400" />
-                          {user.department || <span className="text-slate-400">N/A</span>}
+                          <Building className="h-4 w-4 text-muted-foreground" />
+                          {user.department || <span className="text-muted-foreground">N/A</span>}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -747,13 +747,13 @@ export function UserManagementView() {
                               <Badge 
                                 key={role.id} 
                                 variant="outline" 
-                                className={roleLevelColors[role.level] || 'bg-slate-50'}
+                                className={roleLevelColors[role.level] || 'bg-muted/50'}
                               >
                                 {role.name}
                               </Badge>
                             ))
                           ) : (
-                            <span className="text-slate-400 text-sm">No roles</span>
+                            <span className="text-muted-foreground text-sm">No roles</span>
                           )}
                           {user.roles.length > 2 && (
                             <Badge variant="outline" className="text-xs">
@@ -833,7 +833,7 @@ export function UserManagementView() {
       {/* Pagination */}
       {pagination.totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted-foreground">
             Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} users
           </p>
           <div className="flex items-center gap-2">
@@ -862,8 +862,8 @@ export function UserManagementView() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-slate-900">{pagination.total}</div>
-            <div className="text-sm text-slate-500">Total Users</div>
+            <div className="text-2xl font-bold text-foreground">{pagination.total}</div>
+            <div className="text-sm text-muted-foreground">Total Users</div>
           </CardContent>
         </Card>
         <Card>
@@ -871,7 +871,7 @@ export function UserManagementView() {
             <div className="text-2xl font-bold text-emerald-600">
               {users.filter(u => u.isActive).length}
             </div>
-            <div className="text-sm text-slate-500">Active Users</div>
+            <div className="text-sm text-muted-foreground">Active Users</div>
           </CardContent>
         </Card>
         <Card>
@@ -879,15 +879,15 @@ export function UserManagementView() {
             <div className="text-2xl font-bold text-amber-600">
               {users.filter(u => u.roles.length > 0).length}
             </div>
-            <div className="text-sm text-slate-500">With Roles</div>
+            <div className="text-sm text-muted-foreground">With Roles</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-slate-600">
+            <div className="text-2xl font-bold text-muted-foreground">
               {availableRoles.length}
             </div>
-            <div className="text-sm text-slate-500">Available Roles</div>
+            <div className="text-sm text-muted-foreground">Available Roles</div>
           </CardContent>
         </Card>
       </div>
@@ -1054,7 +1054,7 @@ export function UserManagementView() {
                   onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
                 />
               </div>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted-foreground">
                 Inactive users cannot log in to the system
               </p>
             </div>
@@ -1079,7 +1079,7 @@ export function UserManagementView() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
-                <Users className="h-5 w-5 text-slate-600" />
+                <Users className="h-5 w-5 text-muted-foreground" />
               </div>
               {selectedUser?.name || selectedUserBasic?.name}
             </DialogTitle>
@@ -1102,28 +1102,28 @@ export function UserManagementView() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-4">
                     <div>
-                      <h4 className="font-semibold text-sm text-slate-500 mb-2">Basic Information</h4>
-                      <div className="bg-slate-50 rounded-lg p-4 space-y-3">
+                      <h4 className="font-semibold text-sm text-muted-foreground mb-2">Basic Information</h4>
+                      <div className="bg-muted/50 rounded-lg p-4 space-y-3">
                         <div className="flex justify-between">
-                          <span className="text-slate-600 flex items-center gap-2">
+                          <span className="text-muted-foreground flex items-center gap-2">
                             <Users className="h-4 w-4" /> Employee ID
                           </span>
                           <span className="font-medium">{selectedUser.employeeId || 'N/A'}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-slate-600 flex items-center gap-2">
+                          <span className="text-muted-foreground flex items-center gap-2">
                             <Mail className="h-4 w-4" /> Email
                           </span>
                           <span className="font-medium">{selectedUser.email}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-slate-600 flex items-center gap-2">
+                          <span className="text-muted-foreground flex items-center gap-2">
                             <Phone className="h-4 w-4" /> Phone
                           </span>
                           <span className="font-medium">{selectedUser.phone || 'N/A'}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-slate-600 flex items-center gap-2">
+                          <span className="text-muted-foreground flex items-center gap-2">
                             <Building className="h-4 w-4" /> Department
                           </span>
                           <span className="font-medium">{selectedUser.department || 'N/A'}</span>
@@ -1132,7 +1132,7 @@ export function UserManagementView() {
                     </div>
                     
                     <div>
-                      <h4 className="font-semibold text-sm text-slate-500 mb-2">Status</h4>
+                      <h4 className="font-semibold text-sm text-muted-foreground mb-2">Status</h4>
                       <div className="flex gap-3">
                         <Badge className={statusColors[selectedUser.isActive ? 'active' : 'inactive']}>
                           {selectedUser.isActive ? 'Active' : 'Inactive'}
@@ -1146,10 +1146,10 @@ export function UserManagementView() {
                   
                   <div className="space-y-4">
                     <div>
-                      <h4 className="font-semibold text-sm text-slate-500 mb-2">Activity</h4>
-                      <div className="bg-slate-50 rounded-lg p-4 space-y-3">
+                      <h4 className="font-semibold text-sm text-muted-foreground mb-2">Activity</h4>
+                      <div className="bg-muted/50 rounded-lg p-4 space-y-3">
                         <div className="flex justify-between">
-                          <span className="text-slate-600 flex items-center gap-2">
+                          <span className="text-muted-foreground flex items-center gap-2">
                             <Clock className="h-4 w-4" /> Last Login
                           </span>
                           <span className="font-medium">
@@ -1159,13 +1159,13 @@ export function UserManagementView() {
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-slate-600">Created</span>
+                          <span className="text-muted-foreground">Created</span>
                           <span className="font-medium">
                             {new Date(selectedUser.createdAt).toLocaleDateString()}
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-slate-600">Last Updated</span>
+                          <span className="text-muted-foreground">Last Updated</span>
                           <span className="font-medium">
                             {new Date(selectedUser.updatedAt).toLocaleDateString()}
                           </span>
@@ -1174,17 +1174,17 @@ export function UserManagementView() {
                     </div>
                     
                     <div>
-                      <h4 className="font-semibold text-sm text-slate-500 mb-2">Summary</h4>
+                      <h4 className="font-semibold text-sm text-muted-foreground mb-2">Summary</h4>
                       <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-slate-50 rounded-lg p-3 text-center">
-                          <Shield className="h-5 w-5 text-slate-400 mx-auto mb-1" />
+                        <div className="bg-muted/50 rounded-lg p-3 text-center">
+                          <Shield className="h-5 w-5 text-muted-foreground mx-auto mb-1" />
                           <div className="font-semibold">{selectedUser.roleCount}</div>
-                          <div className="text-xs text-slate-500">Roles</div>
+                          <div className="text-xs text-muted-foreground">Roles</div>
                         </div>
-                        <div className="bg-slate-50 rounded-lg p-3 text-center">
-                          <Key className="h-5 w-5 text-slate-400 mx-auto mb-1" />
+                        <div className="bg-muted/50 rounded-lg p-3 text-center">
+                          <Key className="h-5 w-5 text-muted-foreground mx-auto mb-1" />
                           <div className="font-semibold">{selectedUser.privilegeCount}</div>
-                          <div className="text-xs text-slate-500">Privileges</div>
+                          <div className="text-xs text-muted-foreground">Privileges</div>
                         </div>
                       </div>
                     </div>
@@ -1195,7 +1195,7 @@ export function UserManagementView() {
               <TabsContent value="roles" className="mt-4">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-semibold text-sm text-slate-500">
+                    <h4 className="font-semibold text-sm text-muted-foreground">
                       Assigned Roles ({selectedUser.roles.length})
                     </h4>
                     <Button 
@@ -1217,16 +1217,16 @@ export function UserManagementView() {
                             <div className="flex items-center justify-between">
                               <div>
                                 <div className="font-medium">{role.name}</div>
-                                <code className="text-xs text-slate-400">{role.code}</code>
+                                <code className="text-xs text-muted-foreground">{role.code}</code>
                               </div>
                               <div className="flex items-center gap-2">
                                 <Badge 
                                   variant="outline" 
-                                  className={roleLevelColors[role.level] || 'bg-slate-50'}
+                                  className={roleLevelColors[role.level] || 'bg-muted/50'}
                                 >
                                   Level {role.level}
                                 </Badge>
-                                <Badge className={role.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}>
+                                <Badge className={role.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-muted-foreground'}>
                                   {role.isActive ? 'Active' : 'Inactive'}
                                 </Badge>
                               </div>
@@ -1235,7 +1235,7 @@ export function UserManagementView() {
                         </Card>
                       ))}
                       {selectedUser.roles.length === 0 && (
-                        <div className="text-center text-slate-500 py-8">
+                        <div className="text-center text-muted-foreground py-8">
                           No roles assigned
                         </div>
                       )}
@@ -1246,7 +1246,7 @@ export function UserManagementView() {
               
               <TabsContent value="privileges" className="mt-4">
                 <div className="space-y-3">
-                  <h4 className="font-semibold text-sm text-slate-500">
+                  <h4 className="font-semibold text-sm text-muted-foreground">
                     Effective Privileges ({selectedUser.effectivePrivileges.length})
                   </h4>
                   <ScrollArea className="h-64">
@@ -1254,10 +1254,10 @@ export function UserManagementView() {
                       {Object.entries(groupPrivilegesByCategory(selectedUser.effectivePrivileges)).map(([category, privs]) => (
                         <div key={category}>
                           <div className="flex items-center gap-2 mb-2">
-                            <Badge className={privilegeCategoryColors[category] || 'bg-slate-50'}>
+                            <Badge className={privilegeCategoryColors[category] || 'bg-muted/50'}>
                               {category}
                             </Badge>
-                            <span className="text-xs text-slate-400">({privs.length})</span>
+                            <span className="text-xs text-muted-foreground">({privs.length})</span>
                           </div>
                           <div className="flex flex-wrap gap-1 ml-2">
                             {privs.map((priv) => (
@@ -1269,7 +1269,7 @@ export function UserManagementView() {
                         </div>
                       ))}
                       {selectedUser.effectivePrivileges.length === 0 && (
-                        <div className="text-center text-slate-500 py-8">
+                        <div className="text-center text-muted-foreground py-8">
                           No privileges assigned
                         </div>
                       )}
@@ -1355,7 +1355,7 @@ export function UserManagementView() {
                     {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
                   </Button>
                 </div>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-muted-foreground">
                   Please provide this temporary password to the user. They will need to change it on their next login.
                 </p>
               </div>
@@ -1393,7 +1393,7 @@ export function UserManagementView() {
                   {availableRoles.map((role) => (
                     <label 
                       key={role.id} 
-                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer"
+                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer"
                     >
                       <Checkbox
                         checked={selectedRoleIds.includes(role.id)}
@@ -1408,12 +1408,12 @@ export function UserManagementView() {
                       <div className="flex-1">
                         <div className="font-medium text-sm">{role.name}</div>
                         {role.description && (
-                          <div className="text-xs text-slate-500">{role.description}</div>
+                          <div className="text-xs text-muted-foreground">{role.description}</div>
                         )}
                       </div>
                       <Badge 
                         variant="outline" 
-                        className={roleLevelColors[role.level] || 'bg-slate-50'}
+                        className={roleLevelColors[role.level] || 'bg-muted/50'}
                       >
                         L{role.level}
                       </Badge>
@@ -1422,7 +1422,7 @@ export function UserManagementView() {
                 </div>
               </ScrollArea>
             </div>
-            <div className="flex items-center justify-between text-sm text-slate-500">
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
               <span>{selectedRoleIds.length} role(s) selected</span>
             </div>
           </div>
