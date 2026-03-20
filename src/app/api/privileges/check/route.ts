@@ -91,8 +91,9 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Failed to get user privileges:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { error: 'Failed to get user privileges' },
+      { error: 'Failed to get user privileges', details: errorMessage },
       { status: 500 }
     );
   }
@@ -192,7 +193,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
+        { error: 'Validation failed', details: (error as z.ZodError<any>).errors },
         { status: 400 }
       );
     }

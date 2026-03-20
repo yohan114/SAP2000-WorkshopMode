@@ -36,6 +36,7 @@ model User {
   deletedAt       DateTime?
 
   roles           UserRole[]
+  privilegeOverrides UserPrivilegeOverride[]
   sessions        UserSession[]
   devices         DeviceRegistry[]
   jobCardsCreated     JobCard[]           @relation("JobCardCreator")
@@ -112,6 +113,7 @@ model PrivilegeDefinition {
   updatedAt   DateTime @updatedAt
 
   rolePrivileges RolePrivilegeSet[]
+  userOverrides  UserPrivilegeOverride[]
 
   @@index([code])
   @@index([category])
@@ -145,6 +147,9 @@ model UserPrivilegeOverride {
   grantedBy       String
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  privilege       PrivilegeDefinition @relation(fields: [privilegeId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }

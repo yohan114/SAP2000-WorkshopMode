@@ -59,8 +59,9 @@ export function useNotifications(): UseNotificationsReturn {
       globalSocket.emit('notifications:get')
     } else {
       // Create new socket connection
-      // Use XTransformPort to route through Caddy gateway
-      const socket = io('/?XTransformPort=3003', {
+      // For local development without Caddy, connect directly to port 3003
+      const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3003';
+      const socket = io(socketUrl, {
         transports: ['websocket', 'polling'],
         forceNew: false,
         reconnection: true,

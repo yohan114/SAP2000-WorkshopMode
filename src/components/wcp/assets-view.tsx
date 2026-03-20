@@ -177,7 +177,7 @@ export function AssetsView() {
       if (response.ok) {
         const data: PaginatedResponse = await response.json();
         setAssets(data.data || []);
-        setPagination(prev => ({ ...prev, ...data.pagination }));
+        setPagination(prev => ({ ...prev, ...data.meta }));
       }
     } catch (error) {
       console.error('Failed to fetch assets:', error);

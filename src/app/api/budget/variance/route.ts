@@ -34,76 +34,108 @@ export async function GET(request: NextRequest) {
       const actualAmount = Number(line.actualAmount);
       
       // Variance = Budget - Actual
-      const budgetVariance = revisedAmount - actualAmount;
+      const variance = revisedAmount - actualAmount;
       const variancePercent = revisedAmount > 0 
-        ? (budgetVariance / revisedAmount) * 100 
+        ? (variance / revisedAmount) * 100 
         : 0;
       
-      // Status based on variance
-      let status: 'OVER_BUDGET' | 'ON_TRACK' | 'UNDER_BUDGET' = 'ON_TRACK';
-      if (variancePercent < -10) {
-        status = 'OVER_BUDGET';
-      } else if (variancePercent > 10) {
-        status = 'UNDER_BUDGET';
-      }
-
-      // Calculate commitment rate (committed / revised)
-      const commitmentRate = revisedAmount > 0 
-        ? (committedAmount / revisedAmount) * 100 
+      const utilizationPercent = revisedAmount > 0 
+        ? ((committedAmount + actualAmount) / revisedAmount) * 100 
         : 0;
+
+      // Status based on utilization
+      let status: 'NORMAL' | 'WARNING' | 'CRITICAL' | 'EXCEEDED' = 'NORMAL';
+      if (utilizationPercent > 100) {
+        status = 'EXCEEDED';
+      } else if (utilizationPercent >= 90) {
+        status = 'CRITICAL';
+      } else if (utilizationPercent >= 80) {
+        status = 'WARNING';
+      }
 
       return {
         id: line.id,
         code: line.code,
         name: line.name,
-        department: line.department,
+        department: line.department || 'Unassigned',
+        financialYear: line.financialYear,
         originalAmount,
         revisedAmount,
         committedAmount,
         actualAmount,
-        budgetVariance,
+        variance,
         variancePercent: Math.round(variancePercent * 100) / 100,
-        commitmentRate: Math.round(commitmentRate * 100) / 100,
         status,
-        transactionCount: line.transactions.length,
       };
     });
 
     // Summary statistics
     const summary = {
-      totalBudget: varianceReport.reduce((sum, b) => sum + b.revisedAmount, 0),
+      totalBudgetLines: varianceReport.length,
+      totalOriginal: varianceReport.reduce((sum, b) => sum + b.originalAmount, 0),
+      totalRevised: varianceReport.reduce((sum, b) => sum + b.revisedAmount, 0),
       totalCommitted: varianceReport.reduce((sum, b) => sum + b.committedAmount, 0),
       totalActual: varianceReport.reduce((sum, b) => sum + b.actualAmount, 0),
-      totalVariance: varianceReport.reduce((sum, b) => sum + b.budgetVariance, 0),
-      overBudgetCount: varianceReport.filter(b => b.status === 'OVER_BUDGET').length,
-      onTrackCount: varianceReport.filter(b => b.status === 'ON_TRACK').length,
-      underBudgetCount: varianceReport.filter(b => b.status === 'UNDER_BUDGET').length,
+      totalVariance: varianceReport.reduce((sum, b) => sum + b.variance, 0),
+      totalAvailable: varianceReport.reduce((sum, b) => sum + (b.revisedAmount - b.committedAmount - b.actualAmount), 0),
+      statusBreakdown: {
+        normal: varianceReport.filter(b => b.status === 'NORMAL').length,
+        warning: varianceReport.filter(b => b.status === 'WARNING').length,
+        critical: varianceReport.filter(b => b.status === 'CRITICAL').length,
+        exceeded: varianceReport.filter(b => b.status === 'EXCEEDED').length,
+      }
     };
 
     // Group by department
-    const byDepartment = varianceReport.reduce((acc, line) => {
-      const dept = line.department || 'Unassigned';
+    const byDepartmentMap = varianceReport.reduce((acc, line) => {
+      const dept = line.department;
       if (!acc[dept]) {
         acc[dept] = {
-          count: 0,
-          totalBudget: 0,
-          totalActual: 0,
-          totalVariance: 0,
+          department: dept,
+          budgetLines: [],
+          totals: {
+            originalAmount: 0,
+            revisedAmount: 0,
+            committedAmount: 0,
+            actualAmount: 0,
+            variance: 0,
+            variancePercent: 0,
+          }
         };
       }
-      acc[dept].count++;
-      acc[dept].totalBudget += line.revisedAmount;
-      acc[dept].totalActual += line.actualAmount;
-      acc[dept].totalVariance += line.budgetVariance;
+      acc[dept].budgetLines.push(line);
+      acc[dept].totals.originalAmount += line.originalAmount;
+      acc[dept].totals.revisedAmount += line.revisedAmount;
+      acc[dept].totals.committedAmount += line.committedAmount;
+      acc[dept].totals.actualAmount += line.actualAmount;
+      acc[dept].totals.variance += line.variance;
       return acc;
-    }, {} as Record<string, { count: number; totalBudget: number; totalActual: number; totalVariance: number }>);
+    }, {} as Record<string, any>);
+    
+    // Calculate final variance percent for each dept
+    Object.values(byDepartmentMap).forEach((dept: any) => {
+      if (dept.totals.revisedAmount > 0) {
+         dept.totals.variancePercent = Math.round((dept.totals.variance / dept.totals.revisedAmount) * 10000) / 100;
+      }
+    });
+
+    const byDepartment = Object.values(byDepartmentMap);
+
+    // Chart data
+    const chartData = byDepartment.map((dept: any) => ({
+      department: dept.department,
+      original: dept.totals.originalAmount,
+      revised: dept.totals.revisedAmount,
+      actual: dept.totals.actualAmount,
+      variance: dept.totals.variance,
+      count: dept.budgetLines.length,
+    }));
 
     return NextResponse.json({
-      success: true,
-      data: varianceReport,
+      varianceData: varianceReport,
       summary,
       byDepartment,
-      financialYear,
+      chartData,
     });
   } catch (error) {
     console.error('Failed to generate variance report:', error);

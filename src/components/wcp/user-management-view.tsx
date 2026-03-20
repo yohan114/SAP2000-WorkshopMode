@@ -229,7 +229,7 @@ export function UserManagementView() {
       if (response.ok) {
         const data: PaginatedResponse<User> = await response.json();
         setUsers(data.data || []);
-        setPagination(prev => ({ ...prev, ...data.pagination }));
+        setPagination(prev => ({ ...prev, ...data.meta }));
         
         // Extract unique departments if not already loaded
         if (departments.length === 0) {

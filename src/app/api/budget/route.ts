@@ -70,9 +70,25 @@ export async function GET(request: NextRequest) {
       availableAmount: budgetWithCalculated.reduce((sum, b) => sum + b.availableAmount, 0),
     };
 
+    // Get filter options natively across all records
+    const [deptRows, yearRows] = await Promise.all([
+      db.budgetLine.findMany({ select: { department: true }, distinct: ['department'] }),
+      db.budgetLine.findMany({ select: { financialYear: true }, distinct: ['financialYear'] })
+    ]);
+
     return NextResponse.json({
       success: true,
-      data: budgetWithCalculated,
+      budgetLines: budgetWithCalculated,
+      filters: {
+        departments: deptRows.map(d => d.department).filter(Boolean) as string[],
+        financialYears: yearRows.map(y => y.financialYear).filter(Boolean) as string[],
+      },
+      pagination: {
+        total: budgetWithCalculated.length,
+        page: 1,
+        limit: budgetWithCalculated.length,
+        totalPages: 1
+      },
       totals,
       financialYear,
     });

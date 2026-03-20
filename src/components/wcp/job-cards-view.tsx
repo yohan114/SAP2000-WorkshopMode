@@ -523,7 +523,7 @@ export function JobCardsView() {
           })
         );
         setJobCards(jobCardsWithSla);
-        setPagination(prev => ({ ...prev, ...data.pagination }));
+        setPagination(prev => ({ ...prev, ...data.meta }));
       }
     } catch (error) {
       console.error('Failed to fetch job cards:', error);

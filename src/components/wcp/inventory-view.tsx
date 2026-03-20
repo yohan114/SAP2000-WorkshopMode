@@ -258,7 +258,7 @@ export function InventoryView() {
         }
         
         setStockItems(items);
-        setPagination(prev => ({ ...prev, total: data.pagination?.total || items.length }));
+        setPagination(prev => ({ ...prev, total: data.meta?.total || items.length }));
       }
     } catch (error) {
       console.error('Failed to fetch stock:', error);

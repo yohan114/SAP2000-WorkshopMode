@@ -211,7 +211,10 @@ export function usePrivileges(options: UsePrivilegesOptions = {}): UsePrivileges
       const response = await fetch(`/api/privileges/check?${params.toString()}`);
       
       if (!response.ok) {
-        throw new Error('Failed to fetch privileges');
+        let errorDetails = '';
+        try { errorDetails = await response.text(); } catch (e) {}
+        console.error('Privilege fetch API failed:', response.status, errorDetails);
+        throw new Error(`Failed to fetch privileges: ${response.status} ${errorDetails}`);
       }
 
       const result = await response.json();

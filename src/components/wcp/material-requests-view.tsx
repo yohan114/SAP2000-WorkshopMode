@@ -233,7 +233,7 @@ export function MaterialRequestsView() {
       if (response.ok) {
         const data: PaginatedResponse = await response.json();
         setMaterialRequests(data.data || []);
-        setPagination(prev => ({ ...prev, ...data.pagination }));
+        setPagination(prev => ({ ...prev, ...data.meta }));
       }
     } catch (error) {
       console.error('Failed to fetch material requests:', error);

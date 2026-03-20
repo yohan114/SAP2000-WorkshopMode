@@ -139,7 +139,7 @@ export function TimeLogsView() {
       
       if (data.success) {
         setTimeLogs(data.data);
-        setTotal(data.pagination.total);
+        setTotal(data.meta.total);
       }
     } catch (error) {
       console.error('Failed to fetch time logs:', error);

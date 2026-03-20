@@ -476,7 +476,7 @@ export function PurchaseOrdersView() {
       
       if (data.success) {
         setPurchaseOrders(data.data);
-        setTotal(data.pagination.total);
+        setTotal(data.meta.total);
       }
     } catch (error) {
       console.error('Failed to fetch purchase orders:', error);
@@ -493,7 +493,7 @@ export function PurchaseOrdersView() {
       const data = await res.json();
       if (data.success) {
         setGRNs(data.data);
-        setGRNTotal(data.pagination.total);
+        setGRNTotal(data.meta.total);
       }
     } catch (error) {
       console.error('Failed to fetch GRNs:', error);
@@ -510,7 +510,7 @@ export function PurchaseOrdersView() {
       const data = await res.json();
       if (data.success) {
         setInvoices(data.data);
-        setInvoiceTotal(data.pagination.total);
+        setInvoiceTotal(data.meta.total);
       }
     } catch (error) {
       console.error('Failed to fetch invoices:', error);
@@ -537,7 +537,7 @@ export function PurchaseOrdersView() {
       const data = await res.json();
       if (data.success) {
         setAllSuppliers(data.data);
-        setSupplierTotal(data.pagination.total);
+        setSupplierTotal(data.meta.total);
       }
     } catch (error) {
       console.error('Failed to fetch suppliers:', error);
@@ -594,7 +594,7 @@ export function PurchaseOrdersView() {
       const data = await res.json();
       if (data.success) {
         setRFQs(data.data);
-        setRFQTotal(data.pagination.total);
+        setRFQTotal(data.meta.total);
       }
     } catch (error) {
       console.error('Failed to fetch RFQs:', error);
@@ -758,7 +758,7 @@ export function PurchaseOrdersView() {
       const data = await res.json();
       if (data.success) {
         setPRs(data.data);
-        setPRTotal(data.pagination.total);
+        setPRTotal(data.meta.total);
       }
     } catch (error) {
       console.error('Failed to fetch PRs:', error);

@@ -193,7 +193,7 @@ export function MaterialIssuesView() {
       
       if (data.success) {
         setMaterialIssues(data.data);
-        setTotal(data.pagination.total);
+        setTotal(data.meta.total);
       }
     } catch (error) {
       console.error('Failed to fetch material issues:', error);

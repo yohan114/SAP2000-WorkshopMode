@@ -852,8 +852,8 @@ async function seedDemoProcurementFlow() {
           issuedAt: new Date(now - 5 * dayMs),
           lines: {
             create: [
-              { lineNumber: 1, itemId: items.find(i => i.itemCode === 'FLT-001')?.id, description: 'Oil Filter - Toyota Hilux', orderedQty: 10, quantity: 10, unitPrice: 24, totalPrice: 240, status: 'PENDING' },
-              { lineNumber: 2, itemId: items.find(i => i.itemCode === 'OIL-001')?.id, description: 'Engine Oil 15W-40 (20L)', orderedQty: 25, quantity: 25, unitPrice: 7.2, totalPrice: 180, status: 'PENDING' },
+              { lineNumber: 1, itemId: items.find(i => i.itemCode === 'FLT-001')?.id, description: 'Oil Filter - Toyota Hilux', orderedQty: 10, unitPrice: 24, totalPrice: 240, status: 'PENDING' },
+              { lineNumber: 2, itemId: items.find(i => i.itemCode === 'OIL-001')?.id, description: 'Engine Oil 15W-40 (20L)', orderedQty: 25, unitPrice: 7.2, totalPrice: 180, status: 'PENDING' },
             ].filter(l => l.itemId)
           }
         }
