@@ -83,10 +83,20 @@ import {
   Minus,
   BarChart3,
   PieChart as PieChartIcon,
-  Activity
+  Activity,
+  Bookmark,
+  BookmarkCheck,
+  Trash2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { exportReportToExcel, exportReportToCSV } from '@/lib/export-utils';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 // Report categories
 const REPORT_CATEGORIES = {
@@ -307,6 +317,22 @@ function ColorIndicator({ value, thresholds }: { value: number; thresholds: { gr
   );
 }
 
+interface SavedReport {
+  id: string;
+  name: string;
+  reportType: string;
+  filters: Record<string, any>;
+  schedule: string | null;
+  nextRunAt: string | null;
+  lastRunAt: string | null;
+  recipients: string[] | null;
+  format: string;
+  createdBy: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export function ReportsView() {
   const [selectedReport, setSelectedReport] = useState<string | null>(null);
   const [dateFrom, setDateFrom] = useState(() => {
@@ -323,6 +349,106 @@ export function ReportsView() {
   const [exporting, setExporting] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [reportTrends, setReportTrends] = useState<Record<string, number[]>>({});
+  
+  // Saved reports state
+  const [savedReports, setSavedReports] = useState<SavedReport[]>([]);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [showLoadDialog, setShowLoadDialog] = useState(false);
+  const [saveName, setSaveName] = useState('');
+  const [saveSchedule, setSaveSchedule] = useState<string>('');
+  const [saving, setSaving] = useState(false);
+  const [loadingSaved, setLoadingSaved] = useState(false);
+
+  // Fetch saved reports
+  const fetchSavedReports = async () => {
+    try {
+      const response = await fetch('/api/reports/saved');
+      if (response.ok) {
+        const data = await response.json();
+        setSavedReports(data.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch saved reports:', error);
+    }
+  };
+
+  // Load saved reports on mount
+  useEffect(() => {
+    fetchSavedReports();
+  }, []);
+
+  // Save current report configuration
+  const handleSaveReport = async () => {
+    if (!selectedReport || !saveName.trim()) {
+      toast.error('Please enter a name for the saved report');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const response = await fetch('/api/reports/saved', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: saveName,
+          reportType: selectedReport,
+          filters: {
+            dateFrom,
+            dateTo,
+            category: activeCategory,
+          },
+          schedule: saveSchedule || null,
+          format: 'PDF',
+          createdBy: 'demo-user', // In real app, get from auth
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Report saved successfully');
+        setShowSaveDialog(false);
+        setSaveName('');
+        setSaveSchedule('');
+        fetchSavedReports();
+      } else {
+        toast.error('Failed to save report');
+      }
+    } catch (error) {
+      console.error('Failed to save report:', error);
+      toast.error('Failed to save report');
+    }
+    setSaving(false);
+  };
+
+  // Load a saved report configuration
+  const handleLoadReport = (saved: SavedReport) => {
+    if (saved.filters) {
+      if (saved.filters.dateFrom) setDateFrom(saved.filters.dateFrom);
+      if (saved.filters.dateTo) setDateTo(saved.filters.dateTo);
+      if (saved.filters.category) setActiveCategory(saved.filters.category);
+    }
+    setSelectedReport(saved.reportType);
+    setShowLoadDialog(false);
+    toast.success(`Loaded: ${saved.name}`);
+  };
+
+  // Delete a saved report
+  const handleDeleteSavedReport = async (id: string) => {
+    try {
+      const response = await fetch(`/api/reports/saved/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        toast.success('Report deleted');
+        fetchSavedReports();
+      } else {
+        toast.error('Failed to delete report');
+      }
+    } catch (error) {
+      console.error('Failed to delete report:', error);
+      toast.error('Failed to delete report');
+    }
+  };
 
   // Quick date range handlers
   const setThisMonth = () => {
@@ -559,6 +685,19 @@ export function ReportsView() {
           <h1 className="text-2xl font-bold text-slate-900">Reports</h1>
           <p className="text-slate-500 text-sm">Generate and export workshop reports</p>
         </div>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => setShowLoadDialog(true)}
+            className="flex items-center gap-2"
+          >
+            <BookmarkCheck className="h-4 w-4" />
+            Load Saved
+            {savedReports.length > 0 && (
+              <Badge variant="secondary" className="ml-1">{savedReports.length}</Badge>
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Date Range Selector */}
@@ -596,6 +735,17 @@ export function ReportsView() {
               <Button variant="outline" size="sm" onClick={setThisYear}>
                 This Year
               </Button>
+              {selectedReport && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setShowSaveDialog(true)}
+                  className="text-emerald-600 border-emerald-600"
+                >
+                  <Bookmark className="h-4 w-4 mr-1" />
+                  Save
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>
@@ -818,6 +968,123 @@ export function ReportsView() {
           })}
         </div>
       </div>
+
+      {/* Save Report Dialog */}
+      <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Save Report Configuration</DialogTitle>
+            <DialogDescription>
+              Save this report configuration for quick access later
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-600">Report Name</label>
+              <Input
+                placeholder="e.g., Monthly Maintenance Report"
+                value={saveName}
+                onChange={(e) => setSaveName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-600">Schedule (Optional)</label>
+              <Select value={saveSchedule} onValueChange={setSaveSchedule}>
+                <SelectTrigger>
+                  <SelectValue placeholder="No schedule" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">No schedule</SelectItem>
+                  <SelectItem value="DAILY">Daily</SelectItem>
+                  <SelectItem value="WEEKLY">Weekly</SelectItem>
+                  <SelectItem value="MONTHLY">Monthly</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="bg-slate-50 rounded-lg p-3 text-sm text-slate-600">
+              <p><strong>Report Type:</strong> {REPORT_TYPES.find(r => r.id === selectedReport)?.name}</p>
+              <p><strong>Date Range:</strong> {dateFrom} to {dateTo}</p>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowSaveDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveReport} disabled={saving}>
+              {saving ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Bookmark className="h-4 w-4 mr-2" />
+              )}
+              Save Report
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Load Saved Reports Dialog */}
+      <Dialog open={showLoadDialog} onOpenChange={setShowLoadDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Load Saved Report</DialogTitle>
+            <DialogDescription>
+              Select a previously saved report configuration
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {savedReports.length > 0 ? (
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {savedReports.map((saved) => (
+                  <div
+                    key={saved.id}
+                    className="flex items-center justify-between p-3 rounded-lg border hover:bg-slate-50 cursor-pointer"
+                  >
+                    <div className="flex-1" onClick={() => handleLoadReport(saved)}>
+                      <div className="flex items-center gap-2">
+                        <Bookmark className="h-4 w-4 text-emerald-500" />
+                        <span className="font-medium">{saved.name}</span>
+                        {saved.schedule && (
+                          <Badge variant="outline" className="text-xs">
+                            <Clock className="h-3 w-3 mr-1" />
+                            {saved.schedule}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-slate-500 mt-1">
+                        {REPORT_TYPES.find(r => r.id === saved.reportType)?.name || saved.reportType}
+                        {' • '}
+                        {saved.filters?.dateFrom} to {saved.filters?.dateTo}
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteSavedReport(saved.id);
+                      }}
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-slate-500">
+                <Bookmark className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+                <p>No saved reports yet</p>
+                <p className="text-sm mt-1">Generate a report and click "Save" to add it here</p>
+              </div>
+            )}
+          </div>
+          <div className="flex justify-end">
+            <Button variant="outline" onClick={() => setShowLoadDialog(false)}>
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Preview Dialog */}
       <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>

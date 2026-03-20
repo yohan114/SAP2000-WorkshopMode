@@ -1,5 +1,6 @@
 import { db } from '@/lib/db';
 import { hash } from 'bcryptjs';
+import { seedDemoData } from './seed-demo';
 
 async function main() {
   console.log('🌱 Starting seed process...\n');
@@ -27,6 +28,9 @@ async function main() {
   await seedMaterialRequests();
   await seedMaterialIssues();
   await seedTimeLogs();
+
+  // Seed demo data for testing reports
+  await seedDemoData();
 
   console.log('\n✨ Seed completed successfully!');
 }
@@ -697,20 +701,20 @@ async function seedEmployees() {
 async function seedBudgetLines() {
   console.log('💵 Seeding budget lines...');
   
-  const fiscalYear = new Date().getFullYear();
+  const financialYear = String(new Date().getFullYear());
   
   const budgets = [
-    { code: 'BUD-MAINT', name: 'Maintenance Budget', department: 'Workshop', fiscalYear, allocatedAmount: 500000, availableAmount: 500000 },
-    { code: 'BUD-PARTS', name: 'Spare Parts Budget', department: 'Workshop', fiscalYear, allocatedAmount: 300000, availableAmount: 300000 },
-    { code: 'BUD-PROC', name: 'Procurement Budget', department: 'Procurement', fiscalYear, allocatedAmount: 1000000, availableAmount: 1000000 },
-    { code: 'BUD-FUEL', name: 'Fuel Budget', department: 'Workshop', fiscalYear, allocatedAmount: 200000, availableAmount: 200000 },
-    { code: 'BUD-TRAIN', name: 'Training Budget', department: 'HR', fiscalYear, allocatedAmount: 50000, availableAmount: 50000 },
+    { code: 'BUD-MAINT', name: 'Maintenance Budget', department: 'Workshop', financialYear, originalAmount: 500000, availableAmount: 500000 },
+    { code: 'BUD-PARTS', name: 'Spare Parts Budget', department: 'Workshop', financialYear, originalAmount: 300000, availableAmount: 300000 },
+    { code: 'BUD-PROC', name: 'Procurement Budget', department: 'Procurement', financialYear, originalAmount: 1000000, availableAmount: 1000000 },
+    { code: 'BUD-FUEL', name: 'Fuel Budget', department: 'Workshop', financialYear, originalAmount: 200000, availableAmount: 200000 },
+    { code: 'BUD-TRAIN', name: 'Training Budget', department: 'HR', financialYear, originalAmount: 50000, availableAmount: 50000 },
   ];
 
   let count = 0;
   for (const budget of budgets) {
     const existing = await db.budgetLine.findFirst({
-      where: { code: budget.code, fiscalYear }
+      where: { code: budget.code, financialYear }
     });
     if (!existing) {
       await db.budgetLine.create({ data: budget });

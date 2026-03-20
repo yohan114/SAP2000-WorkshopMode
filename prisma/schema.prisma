@@ -58,6 +58,8 @@ model User {
   correctiveVerifiers CorrectiveAction[]  @relation("CorrectiveActionVerifier")
   documents           Document[]
   uploadedJcPhotos    JcPhoto[]           @relation("JcPhotoUploader")
+  notificationPreferences NotificationPreferences?
+  emailDigests        EmailDigestQueue[]
 
   @@index([email])
   @@index([employeeId])
@@ -463,6 +465,17 @@ model JcPhoto {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  // EXIF validation fields
+  exifCapturedAt    DateTime?  // Capture date from EXIF
+  exifDeviceMake    String?    // Camera/device manufacturer
+  exifDeviceModel   String?    // Camera/device model
+  exifLatitude      Decimal?   // GPS latitude from EXIF
+  exifLongitude     Decimal?   // GPS longitude from EXIF
+  exifTrustScore    Int?       // Trust score (0-100)
+  exifWarnings      String?    // JSON array of validation warnings
+  exifValidatedAt   DateTime?  // When EXIF was validated
+  exifIsValid       Boolean?   // Overall validation result
+
   jobCard       JobCard            @relation(fields: [jobCardId], references: [id], onDelete: Cascade)
   category      JcPhotoCategory?  @relation(fields: [categoryId], references: [id])
   uploader      User?              @relation("JcPhotoUploader", fields: [uploadedBy], references: [id])
@@ -472,6 +485,8 @@ model JcPhoto {
   @@index([uploadedBy])
   @@index([uploadedAt])
   @@index([isActive])
+  @@index([exifTrustScore])
+  @@index([exifIsValid])
 }
 
 model JcStateTransition {
@@ -1230,6 +1245,7 @@ model PurchaseOrder {
   quotationId     String?
   supplierId      String
   procurementChannel String?
+  budgetLineId    String?  // Budget line for commitment tracking
   status          String   @default("DRAFT")
   orderDate       DateTime?
   expectedDeliveryDate DateTime?
@@ -1241,6 +1257,7 @@ model PurchaseOrder {
   approvedAt      DateTime?
   issuedAt        DateTime?
   acknowledgedAt  DateTime?
+  commitmentCreated Boolean @default(false)  // Flag for budget commitment
   isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -1248,6 +1265,7 @@ model PurchaseOrder {
   updatedBy       String?
 
   supplier        Supplier       @relation(fields: [supplierId], references: [id])
+  budgetLine      BudgetLine?   @relation(fields: [budgetLineId], references: [id])
   lines           PoLine[]
   amendments      PoAmendment[]
   grnHeaders      GrnHeader[]
@@ -1256,6 +1274,7 @@ model PurchaseOrder {
   @@index([poNumber])
   @@index([supplierId])
   @@index([status])
+  @@index([budgetLineId])
 }
 
 model PoLine {
@@ -2104,6 +2123,11 @@ model AuditLog {
   userAgent       String?
   hash            String?
   previousHash    String?
+  // Hash chain fields for tamper detection
+  currentHash         String?
+  blockNumber         Int?
+  verifiedAt          DateTime?
+  verificationStatus  String?  @default("UNVERIFIED") // UNVERIFIED, VERIFIED, TAMPERED
   createdAt       DateTime @default(now())
 
   actor           User?    @relation(fields: [actorId], references: [id])
@@ -2111,6 +2135,8 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([actorId])
   @@index([createdAt])
+  @@index([blockNumber])
+  @@index([verificationStatus])
 }
 
 model IntegrityCheck {
@@ -2318,27 +2344,51 @@ model StockAdjustmentLine {
   @@index([itemId])
 }
 
+// ============================================
+// 20. BUDGET CONTROL DOMAIN
+// ============================================
+
 model BudgetLine {
   id              String   @id @default(cuid())
   code            String   @unique
   name            String
   department      String?
-  fiscalYear      Int
-  allocatedAmount Decimal
+  financialYear   String
+  originalAmount  Decimal
+  revisedAmount   Decimal?
   committedAmount Decimal  @default(0)
-  spentAmount     Decimal  @default(0)
-  availableAmount Decimal
+  actualAmount    Decimal  @default(0)
+  availableAmount Decimal  @default(0)
   isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  @@unique([code, fiscalYear])
+  transactions    BudgetTransaction[]
+  purchaseOrders  PurchaseOrder[]
+
+  @@index([code])
   @@index([department])
-  @@index([fiscalYear])
+  @@index([financialYear])
+}
+
+model BudgetTransaction {
+  id              String   @id @default(cuid())
+  budgetLineId    String
+  transactionType String   // COMMITMENT, OBLIGATION, ACTUAL, RELEASE
+  amount          Decimal
+  referenceType   String?  // PO, GRN, INVOICE
+  referenceId     String?
+  description     String?
+  createdAt       DateTime @default(now())
+
+  budgetLine      BudgetLine @relation(fields: [budgetLineId], references: [id], onDelete: Cascade)
+
+  @@index([budgetLineId])
+  @@index([transactionType])
 }
 
 // ============================================
-// 20. QUALITY MANAGEMENT DOMAIN
+// 21. QUALITY MANAGEMENT DOMAIN
 // ============================================
 
 model QualityInspection {
@@ -2572,4 +2622,134 @@ model Document {
   @@index([entityType])
   @@index([entityId])
   @@index([createdAt])
+}
+
+// ============================================
+// 23. SAVED REPORTS DOMAIN
+// ============================================
+
+model SavedReport {
+  id              String    @id @default(cuid())
+  name            String
+  reportType      String    // job-card-cost, monthly-closed-jobs, etc.
+  filters         String    // JSON string with date range, filters, etc.
+  schedule        String?   // DAILY, WEEKLY, MONTHLY
+  nextRunAt       DateTime?
+  lastRunAt       DateTime?
+  recipients      String?   // JSON array of email addresses
+  format          String    @default("PDF") // PDF, EXCEL, CSV
+  createdBy       String
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([reportType])
+  @@index([createdBy])
+  @@index([nextRunAt])
+  @@index([isActive])
+}
+
+// ============================================
+// 24. EMAIL NOTIFICATIONS DOMAIN
+// ============================================
+
+model EmailLog {
+  id              String    @id @default(cuid())
+  messageId       String    @unique
+  recipients      String    // JSON array of email addresses
+  subject         String
+  bodyHtml        String?
+  bodyText        String?
+  status          String    @default("PENDING") // PENDING, SENT, FAILED, BOUNCED
+  sentAt          DateTime?
+  deliveredAt     DateTime?
+  openedAt        DateTime?
+  clickedAt       DateTime?
+  bouncedAt       DateTime?
+  bounceReason    String?
+  errorMessage    String?
+  retryCount      Int       @default(0)
+  entityType      String?   // JOB_CARD, MATERIAL_REQUEST, etc.
+  entityId        String?   // ID of related entity
+  eventType       String?   // JC_SLA_BREACH, LOW_STOCK_ALERT, etc.
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([messageId])
+  @@index([status])
+  @@index([entityType, entityId])
+  @@index([eventType])
+  @@index([createdAt])
+}
+
+model NotificationPreferences {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Email notification settings
+  emailEnabled    Boolean   @default(true)
+  emailSlaWarning Boolean   @default(true)
+  emailSlaBreach  Boolean   @default(true)
+  emailApprovalPending Boolean @default(true)
+  emailApprovalReminder Boolean @default(true)
+  emailApprovalEscalation Boolean @default(true)
+  emailLowStock   Boolean   @default(true)
+  emailPmDue      Boolean   @default(true)
+  emailBudgetThreshold Boolean @default(true)
+  emailScheduledReport Boolean @default(true)
+  emailEmergencyJob Boolean  @default(true)
+  emailJobCardCreated Boolean @default(true)
+  emailJobCardCompleted Boolean @default(false)
+  
+  // In-app notification settings
+  inAppEnabled    Boolean   @default(true)
+  inAppSlaWarning Boolean   @default(true)
+  inAppSlaBreach  Boolean   @default(true)
+  inAppApprovalPending Boolean @default(true)
+  inAppApprovalReminder Boolean @default(true)
+  inAppApprovalEscalation Boolean @default(true)
+  inAppLowStock   Boolean   @default(true)
+  inAppPmDue      Boolean   @default(true)
+  inAppBudgetThreshold Boolean @default(true)
+  inAppScheduledReport Boolean @default(true)
+  inAppEmergencyJob Boolean  @default(true)
+  inAppJobCardCreated Boolean @default(true)
+  inAppJobCardCompleted Boolean @default(true)
+  
+  // Quiet hours settings
+  quietHoursEnabled Boolean  @default(false)
+  quietHoursStart String?   // "22:00"
+  quietHoursEnd   String?   // "07:00"
+  quietHoursTimezone String? @default("UTC")
+  
+  // Digest settings
+  digestEnabled   Boolean   @default(true)
+  digestFrequency String?   @default("DAILY") // DAILY, WEEKLY
+  digestTime      String?   @default("09:00")
+  digestDay       String?   // For weekly: MONDAY, TUESDAY, etc.
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model EmailDigestQueue {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  digestType      String    // DAILY_APPROVAL, WEEKLY_SUMMARY
+  scheduledAt     DateTime
+  status          String    @default("PENDING") // PENDING, PROCESSING, SENT, FAILED
+  itemsCount      Int       @default(0)
+  itemsData       String?   // JSON array of digest items
+  sentAt          DateTime?
+  error           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([scheduledAt])
 }

@@ -64,6 +64,8 @@ import { TimeLogsView } from '@/components/wcp/time-logs-view';
 import { MaterialIssuesView } from '@/components/wcp/material-issues-view';
 import { PurchaseOrdersView } from '@/components/wcp/purchase-orders-view';
 import { ReportsView } from '@/components/wcp/reports-view';
+import { BudgetView } from '@/components/wcp/budget-view';
+import { SavedReportsView } from '@/components/wcp/saved-reports-view';
 import { FuelControlView } from '@/components/wcp/fuel-control-view';
 import { ExternalRepairsView } from '@/components/wcp/external-repairs-view';
 import { LabourTrainingView } from '@/components/wcp/labour-training-view';
@@ -112,6 +114,8 @@ const navigationItems = [
   { id: 'audit', label: 'Audit', icon: Shield },
   { id: 'webhooks', label: 'Webhooks', icon: Webhook },
   { id: 'reports', label: 'Reports', icon: BarChart3 },
+  { id: 'saved-reports', label: 'Saved Reports', icon: FileText },
+  { id: 'budget', label: 'Budget', icon: DollarSign },
   { id: 'users', label: 'Users', icon: UserCog, adminOnly: true },
   { id: 'roles', label: 'Roles', icon: KeyRound, adminOnly: true },
   { id: 'privileges', label: 'Privileges', icon: Lock, adminOnly: true },
@@ -283,6 +287,8 @@ export default function Home() {
       case 'audit': return <AuditView />;
       case 'webhooks': return <WebhooksView />;
       case 'reports': return <ReportsView />;
+      case 'saved-reports': return <SavedReportsView />;
+      case 'budget': return <BudgetView />;
       case 'users': return <UserManagementView />;
       case 'roles': return <RoleManagementView />;
       case 'privileges': return <PrivilegeManagementView />;

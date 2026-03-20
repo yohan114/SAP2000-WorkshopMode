@@ -1993,3 +1993,1003 @@ Completely rewrote `/src/components/wcp/job-cards-view.tsx` with comprehensive a
 - Real-time polling every 60 seconds for SLA updates
 - All code passes ESLint validation
 - Dev server running successfully
+
+---
+Task ID: phase-1-foundation
+Agent: full-stack-developer
+Task: Implement Section 1.1-1.3 Foundation
+
+Work Log:
+- Verified Job Card Cost Report API - confirmed correct cost calculation formula:
+  - Material Cost = materialIssues.lines (issuedQty × unitCost)
+  - Labour Cost = timeLogs (totalCost or totalMinutes/60 × hourlyRate)
+  - External Cost = externalJobs (actualCost or estimatedCost)
+  - Subtotal = Material + Labour + External
+  - Sundry = Subtotal × 10%
+  - Total Bill = Subtotal + Sundry
+- Created Finished Job Card PDF endpoint: `/api/reports/job-card/[jobCardId]/pdf/route.ts`
+  - Generates comprehensive PDF with job card details, costs, material/labour/external lines
+  - Includes cost summary box with all calculations
+  - Uses jsPDF with autoTable for professional formatting
+- Added SavedReport model to prisma/schema.prisma with:
+  - Fields: name, reportType, filters (JSON), schedule, nextRunAt, lastRunAt, recipients, format, createdBy
+  - Indexes on reportType, createdBy, nextRunAt, isActive
+- Created Saved Reports API endpoints:
+  - `/api/reports/saved/route.ts`: GET (list) and POST (create)
+  - `/api/reports/saved/[id]/route.ts`: GET, PUT, DELETE operations
+- Updated reports-view.tsx with Save/Load functionality:
+  - Added "Load Saved" button with badge count
+  - Added "Save" button (visible when report selected)
+  - Created Save Report Dialog with name input and schedule selector
+  - Created Load Saved Reports Dialog with delete capability
+  - Integrated with saved reports API endpoints
+- Created seed-demo.ts with comprehensive demo data:
+  - 5 demo users (admin, manager, supervisor, technician, storekeeper)
+  - 13 demo assets across categories (vehicles, generators, plant, compressors)
+  - 12 demo job cards in various states (8 closed for cost report testing)
+  - Demo material requests and issues with line items
+  - Demo time logs with labour costs
+  - Demo external jobs with subcontractor costs
+  - Demo PM schedules (active and overdue)
+- Updated seed.ts to integrate demo data seed
+
+Stage Summary:
+- Complete Job Card Cost Report API verification (formula correct)
+- New individual Job Card PDF endpoint for finished job cards
+- SavedReport model and full CRUD API
+- Save/Load report configuration UI in Reports module
+- Comprehensive demo data seeding for testing
+- All code passes ESLint validation (0 errors, 3 warnings)
+- Dev server running successfully
+
+---
+## Task ID: section-2.3-pdf - Server-side PDF Generation
+### Work Task
+Implement robust server-side PDF generation with proper formatting for scheduled report delivery using jsPDF with jspdf-autotable v5.x API.
+
+### Work Summary
+Created 2 new files and updated 1 API endpoint:
+
+1. **`/src/lib/pdf-service.ts`** - Core PDF Generation Service
+   - **Type Definitions**:
+     - `ReportTemplate` interface for customizable report templates
+     - `ReportSection` interface for report section structure (summary, table, text, chart, spacer)
+     - `CostReportData` interface for cost report data structure
+     - `JobCardPDFData` interface for individual job card PDF data
+   
+   - **Core PDF Generation Functions**:
+     - `generateReportPDF(reportType, data)` - Generic PDF generation for any report type
+     - `generateJobCardPDF(data)` - Individual job card with cost breakdown
+     - `generateCostReportPDF(data)` - Monthly/period cost summary
+     - `generateMaterialUsagePDF(data)` - Material usage report
+     - `generatePMCompliancePDF(data)` - PM compliance report with status highlighting
+     - `generateCustomReportPDF(template, sections)` - Multi-page custom reports
+   
+   - **Helper Functions**:
+     - `formatCurrency(value, currency)` - Currency formatting with LKR symbol
+     - `formatDate(date)` - Date formatting for display
+     - `addHeader(doc, title, period)` - Company header with branding
+     - `addFooter(doc, generatedAt)` - Page numbers and timestamp
+     - `addSummarySection(doc, startY, data, title)` - Summary boxes with grid layout
+     - `addDataTable(doc, startY, columns, data, options)` - Tables with alternating row colors
+
+   - **PDF Features**:
+     - A4 page format (210mm × 297mm)
+     - Professional company header with logo placeholder
+     - Proper table formatting with autoTable v5.x API
+     - Alternating row colors for readability
+     - Summary sections with grid layout
+     - Cost breakdown tables (Material/Labour/External)
+     - Automatic sundry (10%) calculation
+     - Page numbers in footer
+     - Generated timestamp
+     - Multi-page support with proper Y-position tracking
+
+2. **`/src/lib/report-templates/index.ts`** - Report Templates Registry
+   - **Templates Defined**:
+     - `jobCardTemplate` - Job Card Report template
+     - `costReportTemplate` - Job Card Cost Report template
+     - `materialUsageTemplate` - Material Usage Report template
+     - `pmComplianceTemplate` - PM Compliance Report template
+     - `externalCostsTemplate` - External Costs Report template
+     - `fleetAvailabilityTemplate` - Fleet Availability Report template
+     - `technicianUtilisationTemplate` - Technician Utilisation Report template
+     - `fuelConsumptionTemplate` - Fuel Consumption Report template
+     - `stockValuationTemplate` - Stock Valuation Report template
+     - `procurementSpendTemplate` - Procurement Spend Analysis template
+     - `monthlyClosedJobsTemplate` - Monthly Closed Job Cards template
+   
+   - **Template Functions**:
+     - `getTemplate(reportType)` - Get template by report type
+     - `getAllTemplates()` - Get all available templates
+     - `getTemplateNames()` - Get template names for dropdowns
+
+3. **`/src/app/api/reports/generate-pdf/route.ts`** - Server-side PDF Generation Endpoint
+   - **POST endpoint** - Generate PDF with request body data:
+     - Accepts `reportType`, `reportData`, `from`, `to` parameters
+     - Routes to appropriate PDF generation function
+   
+   - **GET endpoint** - Generate PDF with query parameters:
+     - Accepts `reportType`, `from`, `to` query parameters
+     - Fetches data from database and generates PDF
+   
+   - **Data Fetching Functions**:
+     - `fetchCostReportData()` - Job card costs with Material/Labour/External breakdown
+     - `fetchMaterialUsageData()` - Material issues with item details
+     - `fetchPMComplianceData()` - PM schedules with compliance rate
+     - `fetchMonthlyClosedJobsData()` - Closed job cards summary
+     - `fetchExternalCostsData()` - External repair costs
+     - `fetchFleetAvailabilityData()` - Asset status overview
+     - `fetchTechnicianUtilisationData()` - Time logs per technician
+     - `fetchFuelConsumptionData()` - Fuel issues by asset
+     - `fetchStockValuationData()` - Stock items with WAC
+     - `fetchProcurementSpendData()` - PO values by supplier
+
+### PDF Report Structure
+```
+┌─────────────────────────────────────────┐
+│ Company Header (WCP)                     │
+│ Report Title                             │
+│ Period: [start] to [end]                 │
+├─────────────────────────────────────────┤
+│ Summary Section (grid layout)            │
+│ - Total Job Cards: XX                    │
+│ - Total Material Cost: LKR XXX           │
+│ - Total Labour Cost: LKR XXX             │
+│ - Total External Cost: LKR XXX           │
+│ - Total Sundry (10%): LKR XXX            │
+│ - Grand Total: LKR XXX                   │
+├─────────────────────────────────────────┤
+│ Data Table                               │
+│ JC# | Asset | Material | Labour | Ext | Total │
+│ ...  (alternating row colors)             │
+├─────────────────────────────────────────┤
+│ Footer: Page X of Y | Generated: [date] │
+└─────────────────────────────────────────┘
+```
+
+### Cost Report PDF Features
+- Company header with emerald accent color
+- Period information display
+- Summary section with 6-column grid
+- Job card breakdown table with:
+  - Material cost column (green header)
+  - Labour cost column (blue header)
+  - External cost column (amber header)
+  - Total bill column
+- Automatic totals row calculation
+- Page numbers and generated timestamp
+
+### Technical Details
+- Uses `jspdf` and `jspdf-autotable` v5.x API
+- Proper TypeScript types with strict typing
+- All currency values in LKR format
+- Date formatting with locale support
+- Multi-page handling with Y-position tracking
+- Response headers for PDF download:
+  - `Content-Type: application/pdf`
+  - `Content-Disposition: attachment; filename="..."`
+- All code passes ESLint validation (0 errors, 3 warnings from existing code)
+- Dev server running successfully
+
+---
+## Task ID: section-2.1-budget - Budget Control System
+### Work Task
+Implement comprehensive budget control with commitment accounting, variance tracking, and alerts for the Workshop Control Platform (WCP).
+
+### Work Summary
+Created 4 new API route files, 1 UI component, and updated Prisma schema:
+
+1. **Updated `/prisma/schema.prisma`** - Budget Control Domain
+   - Updated `BudgetLine` model with:
+     - `code`: Unique budget line code
+     - `name`: Budget line name
+     - `department`: Optional department
+     - `financialYear`: Financial year (String)
+     - `originalAmount`: Original allocated budget
+     - `revisedAmount`: Optional revised budget
+     - `committedAmount`: Committed funds (default: 0)
+     - `actualAmount`: Actually spent amount (default: 0)
+     - `availableAmount`: Remaining available (default: 0)
+     - Indexes on code, department, financialYear
+   - Added `BudgetTransaction` model with:
+     - `transactionType`: COMMITMENT, OBLIGATION, ACTUAL, RELEASE
+     - `amount`: Transaction amount
+     - `referenceType`: PO, GRN, INVOICE
+     - `referenceId`: Reference to source document
+     - Cascade delete relation to BudgetLine
+
+2. **`/src/app/api/budget/route.ts`** - Budget Lines CRUD
+   - GET: List budget lines with filters (department, financialYear, search, isActive)
+     - Includes recent transactions and transaction count
+     - Calculates utilization rate and status for each line
+     - Returns unique departments and financial years for filter dropdowns
+   - POST: Create new budget line
+     - Validates unique code
+     - Auto-calculates available amount
+     - Returns created budget line with transactions
+
+3. **`/src/app/api/budget/[id]/route.ts`** - Single Budget Line Operations
+   - GET: Get budget line details with all transactions
+     - Groups transactions by type (COMMITMENT, OBLIGATION, ACTUAL, RELEASE)
+     - Calculates totals by type
+     - Returns utilization rate and status
+   - PUT: Update budget line
+     - Validates budget line exists
+     - Recalculates available amount on amount changes
+   - DELETE: Soft delete budget line
+     - Deactivates if transactions exist
+     - Hard delete if no transactions
+
+4. **`/src/app/api/budget/variance/route.ts`** - Variance Analysis
+   - GET: Variance analysis with filters
+     - Calculates variance per budget line (Revised - Actual)
+     - Groups by department with totals
+     - Returns chart data for visualization
+     - Summary statistics:
+       - Total budget lines, original, revised, committed, actual
+       - Total variance and available
+       - Status breakdown (normal, warning, critical, exceeded)
+
+5. **`/src/app/api/budget/alerts/route.ts`** - Budget Threshold Alerts
+   - Alert Thresholds:
+     - WARNING: 80% utilization
+     - CRITICAL: 90% utilization
+     - EXCEEDED: 100% utilization
+   - GET: Returns budget lines exceeding thresholds
+     - Sorted by severity (EXCEEDED first)
+     - Includes recent transactions for context
+     - Summary by department
+
+6. **`/src/components/wcp/budget-view.tsx`** - Budget Management UI
+   - **Three Tabs**:
+     - Overview: Budget lines table with summary cards
+     - Variance Analysis: Charts and detailed variance table
+     - Alerts: Alert cards grouped by severity
+   - **Budget Lines Table**:
+     - Columns: Code, Name, Department, Original, Committed, Actual, Available, Status
+     - Color-coded rows by status (red for exceeded, orange for critical, amber for warning)
+     - Edit/Delete actions via dropdown menu
+   - **Summary Cards**:
+     - Total Budget, Committed, Actual Spent, Variance
+     - Progress bars showing utilization
+   - **Filters**:
+     - Department dropdown
+     - Financial Year dropdown
+     - Search by code/name
+   - **Add/Edit Dialog**:
+     - Code, Name, Department, Financial Year
+     - Original Amount, Revised Amount (optional)
+   - **Variance Chart**:
+     - Composed chart (bar + line)
+     - Original, Revised, Actual bars by department
+     - Variance line overlay
+   - **Alert Summary Cards**:
+     - Exceeded (red), Critical (orange), Warning (amber) counts
+
+### Commitment Logic Implementation
+```
+Available Amount = Revised Amount - Committed Amount - Actual Amount
+
+Status Determination:
+- NORMAL: utilization < 80%
+- WARNING: utilization >= 80% and < 90%
+- CRITICAL: utilization >= 90% and < 100%
+- EXCEEDED: utilization >= 100%
+```
+
+### Technical Details
+- Prisma Decimal for monetary calculations
+- TypeScript interfaces for type safety
+- Recharts for visualizations (ComposedChart, BarChart)
+- shadcn/ui components (Card, Table, Dialog, Tabs, Badge, Progress, Select)
+- Toast notifications for user feedback
+- Responsive design with Tailwind CSS grid
+- All code passes ESLint validation (0 errors, 3 warnings from existing code)
+- Database reset and sync successful
+- Dev server running successfully
+
+---
+## Task ID: section-2.2-email - Email Notifications System
+### Work Task
+Implement email notification system using mock sender (console logging) since we don't have email provider credentials. Create email service, templates, preferences API, and UI components.
+
+### Work Summary
+**VERIFICATION RESULT:** The email notifications system was already fully implemented by a previous agent. All required components exist and are functional:
+
+#### Files Verified (Already Exist):
+
+1. **`/src/lib/email-service.ts`** - Core Email Service
+   - `sendEmail(options)` - Mock implementation that logs to console with detailed formatting
+   - `queueEmail(options, scheduledAt)` - Queue emails for delayed delivery with retry logic
+   - `renderTemplate(templateId, variables)` - Template rendering with variable substitution
+   - `getEmailTemplates()` - Returns all available templates
+   - `triggerNotification(context)` - Triggers emails based on notification events
+   - `getQueueStatus()` - Returns queue statistics (pending, sent, failed)
+   - `getUsersToNotify(event, options)` - Helper to get notification recipients
+   - Supports: SLA events, Approval events, Operational events, Job Card events
+   - Logs emails to database via `EmailLog` model
+
+2. **`/src/lib/email-templates/index.ts`** - Email Templates Index
+   - Template categories: SLA, Approval, Operational, Job Card, System
+   - `getTemplateGroups()` - Returns templates grouped by category
+   - `getTemplateForEvent(event)` - Returns template for a specific event
+   - `getAllNotificationEvents()` - Returns all events with labels and descriptions
+   - Event definitions with labels and descriptions for UI display
+
+3. **Email Templates Included (in email-service.ts)**:
+   - `sla-breach` - SLA breach notification (red header #dc2626)
+   - `sla-warning` - SLA warning at 80% (amber header #f59e0b)
+   - `approval-pending` - Approval required (blue header #3b82f6)
+   - `approval-reminder` - Daily digest (neutral header #6366f1)
+   - `approval-escalation` - Escalation alert (red header #dc2626)
+   - `low-stock` - Low stock alert (amber header #f59e0b)
+   - `pm-due` - PM due reminder (green header #10b981)
+   - `budget-threshold` - Budget threshold alert (dynamic colors based on level)
+   - `scheduled-report` - Report delivery (indigo header #6366f1)
+   - `emergency-job` - Emergency job card (red header #dc2626)
+
+4. **`/src/app/api/notifications/preferences/route.ts`** - Preferences API
+   - GET: Fetch user notification preferences (returns defaults if not set)
+   - POST/PUT: Update user preferences with validation
+   - Upserts preferences to create or update
+   - Returns user-friendly error messages
+
+5. **`/src/components/wcp/notification-preferences.tsx`** - Preferences UI
+   - Tabbed interface: Email, In-App, Quiet Hours, Digest
+   - Toggle switches for each notification type
+   - Grouped by event category (SLA, Approval, Operational, Job Card)
+   - Quiet hours configuration with timezone support
+   - Digest settings (daily/weekly frequency)
+   - Save/Reset/Cancel buttons with change detection
+   - Toast notifications for feedback
+
+#### Database Schema (Already Exists):
+
+**`NotificationPreferences` Model:**
+- userId (unique)
+- Email toggles: emailEnabled, emailSlaWarning, emailSlaBreach, emailApprovalPending, emailApprovalReminder, emailApprovalEscalation, emailLowStock, emailPmDue, emailBudgetThreshold, emailScheduledReport, emailEmergencyJob, emailJobCardCreated, emailJobCardCompleted
+- In-app toggles: Same as email with inApp prefix
+- Quiet hours: quietHoursEnabled, quietHoursStart, quietHoursEnd, quietHoursTimezone
+- Digest: digestEnabled, digestFrequency, digestTime, digestDay
+
+**`EmailLog` Model:**
+- messageId, recipients, subject, bodyHtml, bodyText
+- status (PENDING, SENT, FAILED, BOUNCED)
+- Tracking: sentAt, deliveredAt, openedAt, clickedAt, bouncedAt
+- Error handling: bounceReason, errorMessage, retryCount
+- Entity linking: entityType, entityId, eventType
+
+**`EmailDigestQueue` Model:**
+- userId, digestType, scheduledAt, status
+- itemsCount, itemsData (JSON), sentAt, error
+
+#### Notification Events Supported:
+- SLA: JC_SLA_WARNING, JC_SLA_BREACH, MR_SLA_WARNING, MR_SLA_BREACH
+- Approval: JC_PENDING_APPROVAL, MR_PENDING_APPROVAL, PR_PENDING_APPROVAL, APPROVAL_REMINDER, APPROVAL_ESCALATION
+- Operational: LOW_STOCK_ALERT, PM_DUE_REMINDER, BUDGET_THRESHOLD_80/90/100, SCHEDULED_REPORT
+- Job Card: JOB_CARD_CREATED, JOB_CARD_COMPLETED, EMERGENCY_JOB
+
+#### Technical Implementation Details:
+- Mock email sending via console.log with formatted output
+- In-memory email queue with automatic processing
+- Retry logic with exponential backoff (2, 4, 8 minutes)
+- Max 3 retry attempts before marking as failed
+- Database logging for audit trail
+- Template variable substitution using {{variableName}} syntax
+- Responsive UI with shadcn/ui components
+- All code passes ESLint validation (0 errors, 3 warnings)
+
+#### Verification Commands Run:
+- `npm run lint` - Passed with 0 errors, 3 warnings (unrelated to email)
+- Dev server running successfully on port 3000
+
+### Conclusion
+The Email Notifications System (Section 2.2) is already fully implemented and functional. The implementation exceeds the specification requirements with:
+- More granular notification preferences (email + in-app separation)
+- Quiet hours feature
+- Digest scheduling
+- Comprehensive template library
+- Database-backed logging and queue management
+
+---
+## Task ID: section-3.1-mtbf-mttr - MTBF/MTTR Dashboards and Analytics
+### Work Task
+Implement comprehensive reliability metrics with Mean Time Between Failures and Mean Time To Repair analytics.
+
+### Work Summary
+Created 3 new files for the MTBF/MTTR Dashboard:
+
+1. **`/src/lib/reliability-metrics.ts`** - Core Reliability Calculation Library
+   - **Interfaces**:
+     - `ReliabilityMetrics`: Core metrics (mtbf, mttr, availability, reliabilityRate, etc.)
+     - `AssetReliability`: Per-asset reliability with asset details
+     - `CategoryReliability`: Per-category metrics with asset count
+     - `FleetReliability`: Fleet-wide metrics with operational counts
+     - `MtbfTrend`: Monthly MTBF trend data
+     - `RepairTimeDistribution`: MTTR statistics by category
+     - `FailureCause`: Pareto analysis data
+
+   - **Core Calculation Functions**:
+     - `calculateMTBF(downtimeHours, failureCount, operatingHours)`: Operating Time / Number of Failures
+     - `calculateMTTR(totalRepairHours, repairCount)`: Total Repair Duration / Number of Repairs
+     - `calculateAvailability(operatingTime, downtime)`: Operating Time / (Operating Time + Downtime) × 100
+     - `calculateReliabilityRate(mtbf, mttr)`: MTBF / (MTBF + MTTR) × 100
+
+   - **Data Retrieval Functions**:
+     - `getAssetReliability(assetId, periodStart, periodEnd)`: Single asset metrics
+     - `getCategoryReliability(categoryId, periodStart, periodEnd)`: Category aggregation
+     - `getFleetReliability(periodStart, periodEnd)`: Fleet-wide metrics
+     - `getMtbfTrend(months, assetId?, categoryId?)`: Monthly MTBF trends
+     - `getMttrByCategory(periodStart, periodEnd)`: Repair time by category
+     - `getAssetReliabilityRanking(periodStart, periodEnd, limit, sortBy)`: Asset ranking
+     - `getFailureFrequencyByCause(periodStart, periodEnd)`: Pareto analysis
+     - `getAllCategoryReliability(periodStart, periodEnd)`: All categories
+
+   - **Data Sources Used**:
+     - `DowntimeLog` model: BREAKDOWN type events for failure tracking
+     - `JobCard` model: actualStart/actualEnd for repair duration
+     - `Asset` model: Category grouping
+
+2. **`/src/app/api/analytics/mtbf-mttr/route.ts`** - API Endpoint
+   - **GET endpoint** with comprehensive filtering:
+     - `periodStart`, `periodEnd`: Date range filter
+     - `assetId`: Single asset analysis (groupBy=asset)
+     - `categoryId`: Category aggregation (groupBy=category)
+     - `groupBy`: 'asset' | 'category' | 'fleet' (default)
+     - `months`: Trend period (default: 6)
+     - `limit`: Asset ranking limit (default: 10)
+     - `sortBy`: 'reliability' | 'failures' | 'downtime'
+
+   - **Response Structure**:
+     - Fleet mode: fleet metrics, categories, MTBF trend, MTTR by category, top problematic assets, failure causes
+     - Category mode: category metrics, assets in category, MTBF trend
+     - Asset mode: asset metrics, MTBF trend
+
+3. **`/src/components/wcp/reliability-dashboard.tsx`** - Dashboard UI Component
+   - **KPI Cards** (4 cards):
+     - MTBF (hours) with trend indicator
+     - MTTR (hours) with efficiency badge
+     - Availability (%) with operational counts
+     - Reliability Rate (%) with failure/downtime details
+
+   - **Overview Tab**:
+     - MTBF Trend Line Chart (6 months by default)
+     - MTTR by Category Horizontal Bar Chart
+     - Category Reliability Summary Table with badges
+
+   - **Trends Tab**:
+     - MTBF vs MTTR Composed Chart (bar + line)
+     - Failure Frequency Area Chart
+
+   - **Asset Ranking Tab**:
+     - Top 10 Problematic Assets Bar Chart (color-coded by reliability)
+     - Detailed Asset Metrics Table (sortable)
+     - Sort options: reliability, failures, downtime
+
+   - **Failure Analysis Tab**:
+     - Failure Causes Pareto Chart (horizontal bar)
+     - Failure Distribution Pie Chart (donut style)
+     - Detailed Failure Analysis Table
+
+   - **UI Features**:
+     - Period selector (3, 6, 12 months)
+     - Sort dropdown for asset ranking
+     - Refresh button
+     - Color-coded reliability badges (Excellent/Good/Fair/Poor)
+     - Responsive design with tabs
+     - Loading skeletons
+     - Error handling with retry
+
+### MTBF/MTTR Formulas Implemented
+```
+MTBF = (Operating Hours - Downtime Hours) / Number of Failures
+     = Operating Time / Failure Count
+
+MTTR = Total Repair Duration / Number of Completed Repairs
+
+Reliability Rate = (MTBF / (MTBF + MTTR)) × 100
+
+Availability = Operating Time / (Operating Time + Downtime) × 100
+```
+
+### Reliability Color Coding
+| Rate | Status | Color |
+|------|--------|-------|
+| ≥90% | Excellent | Emerald (#10b981) |
+| 80-89% | Good | Blue (#3b82f6) |
+| 60-79% | Fair | Amber (#f59e0b) |
+| <60% | Poor | Red (#ef4444) |
+
+### Technical Details
+- Uses existing DowntimeLog model for failure tracking
+- Uses JobCard actualStart/actualEnd for repair duration calculation
+- Parallel query execution with Promise.all for performance
+- Comprehensive TypeScript interfaces
+- Recharts for all visualizations
+- shadcn/ui components (Card, Tabs, Table, Badge, Select)
+- All code passes ESLint validation (0 errors)
+
+### Files Created
+1. `/src/lib/reliability-metrics.ts` - 610 lines
+2. `/src/app/api/analytics/mtbf-mttr/route.ts` - 145 lines
+3. `/src/components/wcp/reliability-dashboard.tsx` - 730 lines
+
+---
+## Task ID: section-3.4-kpis - Advanced KPIs with Predictive Analytics
+### Work Task
+Implement advanced KPIs with trend analysis and predictive indicators for the Workshop Control Platform (WCP).
+
+### Work Summary
+Created 3 new files implementing comprehensive KPI calculations, predictions, and visualization:
+
+1. **`/src/lib/kpi-engine.ts`** - KPI Calculation Engine (770+ lines)
+   - **Interfaces Defined**:
+     - `KPIResult`: Current value, previous value, trend, target, status, unit, description
+     - `KPIPrediction`: Predicted value, confidence, method (LINEAR, MOVING_AVERAGE, EXPONENTIAL_SMOOTHING)
+     - `KPIThreshold`: Warning/critical thresholds with comparison type
+     - `HistoricalValue`: Date-value pairs for trend analysis
+
+   - **Operational KPIs**:
+     - Job Card Completion Rate: (Completed / Total) × 100
+     - Average Repair Time (MTTR): Hours per job
+     - First-Time Fix Rate: (No Reopen / Total Completed) × 100
+     - SLA Compliance Rate: (On Time / Total) × 100
+     - Work Order Backlog: Open job cards count
+
+   - **Reliability KPIs**:
+     - MTBF by Asset Category: Hours between failures
+     - Asset Availability Rate: (Available / Total) × 100
+     - Planned vs Unplanned Ratio: PM / Emergency jobs
+     - Failure Frequency: Failures per 1000 operating hours
+
+   - **Cost KPIs**:
+     - Cost per Repair: Average cost per job card
+     - Material Cost Variance: (Actual - Estimated) / Estimated × 100
+     - Labour Utilization Rate: (Productive Hours / Available Hours) × 100
+     - Budget Compliance: (Spent / Budget) × 100
+
+   - **Inventory KPIs**:
+     - Stock Turnover Rate: Issues / Average Stock
+     - Stockout Rate: (Stockout Events / Total Requests) × 100
+     - Inventory Accuracy: (Correct Counts / Total Counts) × 100
+     - Obsolescence Rate: (Obsolete Value / Total Value) × 100
+
+   - **Trend Analysis Functions**:
+     - `calculateMovingAverage()`: Simple moving average for smoothing
+     - `calculateTrend()`: Direction (UP/DOWN/STABLE) and percentage
+
+   - **Prediction Functions**:
+     - `predictLinear()`: Linear regression with R-squared confidence
+     - `predictExponentialSmoothing()`: Exponential smoothing forecast
+
+2. **`/src/app/api/kpi/advanced/route.ts`** - Advanced KPI API (200+ lines)
+   - **GET Endpoint**: Get all KPIs with predictions and trends
+   - **Query Parameters**:
+     - `periodStart`, `periodEnd`: Date range for calculations
+     - `includePredictions`: Enable/disable predictive analytics
+     - `months`: Historical data range (3, 6, or 12 months)
+     - `category`: Filter by OPERATIONAL, RELIABILITY, COST, or INVENTORY
+
+   - **Response Structure**:
+     - `kpis`: Array of KPI results with predictions and sparkline data
+     - `summary`: Total KPIs, on-track/at-risk/off-track counts, by-category averages
+     - `healthScore`: Overall system health (0-100)
+     - `period`: Date range for calculations
+
+   - **POST Endpoint**: Save KPI thresholds configuration
+
+3. **`/src/components/wcp/advanced-kpi-view.tsx`** - Advanced KPI Dashboard (680+ lines)
+   - **Summary Cards**:
+     - Health Score Gauge (SVG circular gauge, color-coded)
+     - Total KPIs count
+     - On Track count with progress bar
+     - Needs Attention count (at-risk + off-track)
+
+   - **Tab Structure**:
+     - **Overview Tab**: 
+       - Status Distribution Pie Chart (donut style)
+       - Category Performance Bar Chart
+       - Filterable KPI Cards Grid with sparklines
+
+     - **Operational Tab**:
+       - Operational KPI cards with area charts
+       - Progress indicators against targets
+
+     - **Reliability Tab**:
+       - Reliability KPI cards with trend visualizations
+       - Historical value area charts
+
+     - **Predictions Tab**:
+       - Predictive Analytics Panel with confidence scores
+       - Linear regression predictions with R-squared
+       - Threshold Configuration section
+
+   - **KPI Card Features**:
+     - Status badge (ON_TRACK/AT_RISK/OFF_TRACK)
+     - Trend indicator (UP/DOWN/STABLE with percentage)
+     - Sparkline mini-chart
+     - Category badge
+     - Prediction panel (if available)
+
+   - **Interactive Dialog**:
+     - Detailed KPI information
+     - Historical trend line chart
+     - Prediction details with confidence
+
+### KPI Status Determination
+| Condition | Status |
+|-----------|--------|
+| Within target variance | ON_TRACK |
+| Within 20% of target | AT_RISK |
+| Beyond 20% of target | OFF_TRACK |
+
+### Prediction Methods
+1. **Linear Regression**: 
+   - Calculates slope and intercept from historical data
+   - Confidence based on R-squared value
+   - Best for consistent trends
+
+2. **Moving Average**: 
+   - Simple smoothing technique
+   - Reduces noise in volatile data
+
+3. **Exponential Smoothing**: 
+   - Weighted average with alpha parameter
+   - More weight to recent observations
+
+### Technical Details
+- Uses Prisma for database queries
+- Parallel query execution with Promise.all
+- Recharts for all visualizations
+- shadcn/ui components (Card, Tabs, Table, Badge, Select, Dialog, Progress)
+- Responsive design with Tailwind CSS grid
+- Color-coded status indicators
+- All code passes ESLint validation (0 errors)
+- Dev server running successfully
+
+### Files Created
+1. `/src/lib/kpi-engine.ts` - 770+ lines
+2. `/src/app/api/kpi/advanced/route.ts` - 200+ lines
+3. `/src/components/wcp/advanced-kpi-view.tsx` - 680+ lines
+
+---
+## Task ID: section-3.2-hash-chain - Hash Chain Audit Implementation
+### Work Task
+Implement cryptographic hash chain for audit log tamper detection as part of Section 3.2 of the WCP Implementation Plan.
+
+### Work Summary
+Created 3 new files and modified 2 existing files:
+
+1. **Updated `/prisma/schema.prisma`** - AuditLog Model Hash Chain Fields
+   - Added `currentHash` field for storing the calculated hash of each block
+   - Added `blockNumber` field for sequential block identification
+   - Added `verifiedAt` field for timestamp of last verification
+   - Added `verificationStatus` field with values: UNVERIFIED, VERIFIED, TAMPERED
+   - Added indexes on `blockNumber` and `verificationStatus` for efficient queries
+
+2. **Created `/src/lib/audit-hash-chain.ts`** - Hash Chain Library
+   - **Core Hash Functions**:
+     - `calculateHash(record, previousHash)` - SHA-256 hash calculation including all record data
+     - `getLastBlock()` - Get the last block in the chain
+     - `initializeHashChain(record)` - Initialize hash for new audit record
+     - `updateAuditLogWithHash(auditLogId, hashChainResult)` - Update record with hash chain data
+   
+   - **Verification Functions**:
+     - `verifyHashChain(startBlock?, endBlock?)` - Verify entire chain or range
+       - Recalculates hashes using stored previousHash
+       - Compares with stored currentHash
+       - Flags mismatches as TAMPERED
+       - Updates verification status for each block
+     - `verifySingleRecord(auditLogId)` - Verify a single audit log record
+     - `getHashChainStats()` - Get chain statistics
+     - `getTamperedRecords(limit)` - Get records flagged as tampered
+     - `getBlocksInRange(start, end)` - Block explorer support
+     - `getBlockByNumber(blockNumber)` - Get specific block
+   
+   - **Recovery Functions**:
+     - `rebuildHashChainFromBlock(startBlockNumber)` - Rebuild chain from a specific block
+     - `exportVerificationReport()` - Export verification report
+
+   - **Hash Chain Logic**:
+     ```
+     Genesis Block: previousHash = null
+     Block N: previousHash = Block (N-1).currentHash
+     currentHash = SHA256(id + action + entityType + entityId + actorId + timestamp + oldValue + newValue + previousHash)
+     ```
+
+3. **Created `/src/app/api/audit/verify/route.ts`** - Verification API
+   - **GET Endpoints**:
+     - Default: Get hash chain statistics
+     - `?action=tampered`: Get tampered records list
+     - `?action=blocks&start=N&end=M`: Get blocks for explorer
+     - `?action=export`: Export verification report
+   
+   - **POST Endpoints**:
+     - `{}`: Verify entire chain
+     - `{ startBlock, endBlock }`: Verify specific range
+     - `{ action: 'verify_single', auditLogId }`: Verify single record
+     - `{ action: 'rebuild', rebuildFromBlock }`: Rebuild chain from block
+
+4. **Updated `/src/lib/audit.ts`** - Hash Chain Integration
+   - Modified `auditLog()` function to:
+     - Create audit log record first
+     - Calculate hash chain values using `initializeHashChain()`
+     - Update record with hash chain data using `updateAuditLogWithHash()`
+   - Returns audit log ID instead of void
+   - Fixed relation name from `user` to `actor` for Prisma queries
+
+5. **Created `/src/components/wcp/audit-integrity-view.tsx`** - Integrity Dashboard UI
+   - **Summary Cards**:
+     - Total Blocks in chain
+     - Verified Blocks count
+     - Unverified Blocks count
+     - Tampered Blocks count with alert
+   
+   - **Verification Progress Bar**:
+     - Shows percentage of verified blocks
+     - Last verification timestamp
+   
+   - **Block Explorer Tab**:
+     - Navigate blocks with pagination (20 per page)
+     - Jump to specific block number
+     - View block details in dialog
+     - Copy hash to clipboard
+     - Status badges (UNVERIFIED, VERIFIED, TAMPERED)
+   
+   - **Tampered Records Tab**:
+     - List of all tampered blocks with details
+     - Expected vs actual hash comparison
+     - Detection timestamp
+   
+   - **Actions**:
+     - "Verify Chain" button with loading state
+     - "Export Report" button for JSON download
+     - "Refresh" button for data update
+   
+   - **Verification Result Dialog**:
+     - Success/failure indicator
+     - Total blocks, verified blocks counts
+     - List of tampered block numbers
+
+### Technical Implementation
+- Uses Node.js `crypto` module for SHA-256 hashing
+- All hash chain operations wrapped in Prisma transactions
+- Proper TypeScript interfaces for all data types
+- Responsive design with shadcn/ui components
+- Toast notifications for user feedback
+- All code passes ESLint validation
+- Database schema changes applied with `npm run db:push`
+
+### Files Modified
+- `prisma/schema.prisma`: Added hash chain fields to AuditLog model
+- `src/lib/audit.ts`: Integrated hash chain calculation
+
+### Files Created
+- `src/lib/audit-hash-chain.ts`: Hash chain library
+- `src/app/api/audit/verify/route.ts`: Verification API
+- `src/components/wcp/audit-integrity-view.tsx`: Integrity dashboard UI
+
+---
+## Task ID: section-3.3-exif - Photo EXIF Validation Server-side
+### Work Task
+Implement server-side EXIF validation for photo evidence to detect manipulation and ensure authenticity.
+
+### Work Summary
+Created 3 new files and updated 1 existing file:
+
+1. **`/src/lib/exif-validator.ts`** - EXIF Extraction and Validation Library
+   - **ExifData Interface**: Comprehensive EXIF data structure including:
+     - capturedAt, deviceMake, deviceModel, software
+     - gpsLatitude, gpsLongitude, altitude
+     - orientation, exposureTime, fNumber, iso, focalLength
+     - imageWidth, imageHeight, modifiedAt
+   
+   - **ExifWarning Types**:
+     - MISSING_CAPTURE_DATE (HIGH) - No DateTimeOriginal in EXIF
+     - DATE_MISMATCH (HIGH) - Capture date outside expected range
+     - SOFTWARE_MODIFIED (MEDIUM) - Photo editing software detected
+     - METADATA_STRIPPED (HIGH) - Critical EXIF fields missing
+     - FUTURE_DATE (HIGH) - Capture date in the future
+     - DEVICE_MISMATCH (LOW) - Device not in allowed list
+     - LOCATION_MISMATCH (HIGH) - GPS coordinates outside expected area
+     - SUSPICIOUS_EDIT (MEDIUM) - Modified long after capture
+   
+   - **Core Functions**:
+     - `extractExif(buffer)` - Parse EXIF from JPEG buffer (supports JPEG, PNG)
+     - `validateExif(exifData, context)` - Validate with constraints
+     - `calculateTrustScore(exifData, warnings)` - Calculate 0-100 trust score
+     - `formatExifData(exifData)` - Format for display
+   
+   - **Trust Score Calculation**:
+     - Base Score: 100
+     - MISSING_CAPTURE_DATE: -30
+     - DATE_MISMATCH: -40
+     - SOFTWARE_MODIFIED: -20
+     - METADATA_STRIPPED: -50
+     - FUTURE_DATE: -50
+     - DEVICE_MISMATCH: -10
+     - No GPS data: -5
+     - Rich metadata bonus: +5 (8+ fields present)
+   
+   - **EXIF Parsing Implementation**:
+     - Custom TIFF/EXIF parser (no external dependencies)
+     - Supports both big-endian (MM) and little-endian (II) byte orders
+     - Parses IFD0, ExifIFD, and GPS IFD structures
+     - Extracts standard EXIF tags (Make, Model, DateTime, GPS, etc.)
+     - Handles rational numbers for exposure/aperture values
+     - Converts GPS coordinates to decimal degrees
+
+2. **`/src/app/api/photos/validate/route.ts`** - Photo Validation API
+   - **GET /api/photos/validate**:
+     - Single photo lookup with `photoId` parameter
+     - List photos with `jobCardId` filter
+     - Filter by `minTrustScore` and `hasWarnings`
+     - Returns validation status, EXIF data, warnings
+     - Includes summary statistics (total, validated, valid/invalid, avg trust score)
+   
+   - **POST /api/photos/validate**:
+     - Upload and validate new photo
+     - Revalidate existing photo with `photoId` and `revalidate=true`
+     - Accepts validation context parameters:
+       - `expectedDateStart`, `expectedDateEnd` - Date range constraint
+       - `expectedLat`, `expectedLng`, `expectedRadius` - Location constraint
+       - `allowedDevices` - Device whitelist
+     - Reads file from disk for existing photos
+     - Updates JcPhoto record with validation results
+   
+   - **PATCH /api/photos/validate**:
+     - Bulk validation of up to 50 photos
+     - Parallel processing with error collection
+     - Returns per-photo results and errors
+
+3. **`/src/components/wcp/photo-validation-view.tsx`** - Photo Validation UI
+   - **Statistics Dashboard**:
+     - Total photos, validated count, valid/invalid counts
+     - Average trust score, trust distribution (high/medium/low/untrusted)
+   
+   - **Filter Options**:
+     - All, Validated, Not Validated
+     - High Trust (80%+), Medium Trust (60-79%), Low Trust (40-59%), Untrusted (<40%)
+     - Search by filename, job card, device
+   
+   - **Photo Grid**:
+     - Thumbnail gallery with trust score badges
+     - Color-coded badges (emerald/amber/orange/red)
+     - Valid/Invalid indicator icons
+     - Selection checkboxes for bulk operations
+     - Warning count indicator
+   
+   - **Photo Detail Dialog**:
+     - Full image preview
+     - File information (name, size, type, dates)
+     - Trust score with progress bar
+     - EXIF metadata viewer (scrollable)
+     - Validation warnings with severity colors
+     - GPS location with "View on Map" link
+     - Validate/Revalidate buttons
+   
+   - **Bulk Operations**:
+     - Multi-select with "Select All" option
+     - Bulk validation action bar
+     - Toast notifications for results
+
+4. **Updated `prisma/schema.prisma`** - JcPhoto Model Extensions
+   - Added EXIF validation fields:
+     - `exifCapturedAt DateTime?` - Capture date from EXIF
+     - `exifDeviceMake String?` - Camera manufacturer
+     - `exifDeviceModel String?` - Camera model
+     - `exifLatitude Decimal?` - GPS latitude
+     - `exifLongitude Decimal?` - GPS longitude
+     - `exifTrustScore Int?` - Trust score (0-100)
+     - `exifWarnings String?` - JSON array of warnings
+     - `exifValidatedAt DateTime?` - Validation timestamp
+     - `exifIsValid Boolean?` - Overall validation result
+   - Added indexes on `exifTrustScore` and `exifIsValid`
+
+### Validation Rules Implemented
+| Warning Type | Severity | Message Template |
+|-------------|----------|------------------|
+| MISSING_CAPTURE_DATE | HIGH | No capture date found in EXIF data |
+| DATE_MISMATCH | HIGH | Capture date outside expected range |
+| SOFTWARE_MODIFIED | MEDIUM | Photo processed with editing software |
+| METADATA_STRIPPED | HIGH | Most EXIF metadata is missing |
+| FUTURE_DATE | HIGH | Capture date is in the future |
+| DEVICE_MISMATCH | LOW | Device not in allowed list |
+| LOCATION_MISMATCH | HIGH | Photo taken far from expected location |
+| SUSPICIOUS_EDIT | MEDIUM | Photo modified long after capture |
+
+### Technical Implementation
+- Custom EXIF parser (no external dependencies like exif-js)
+- Server-side only (z-ai-web-dev-sdk not used in client)
+- Proper Buffer handling for binary data
+- Haversine formula for GPS distance calculation
+- Prisma Decimal type for GPS coordinates
+- JSON serialization for warnings array
+- All code passes ESLint validation
+- Database schema changes applied with `npm run db:push`
+
+### Files Created
+- `src/lib/exif-validator.ts` - EXIF extraction and validation library
+- `src/app/api/photos/validate/route.ts` - Photo validation API endpoint
+- `src/components/wcp/photo-validation-view.tsx` - Photo validation UI component
+
+### Files Modified
+- `prisma/schema.prisma` - Added EXIF validation fields to JcPhoto model
+
+---
+## Task ID: 4 - Frontend UI Enhancement & Integration
+### Work Task
+Create Saved Reports Management Page, enhance Budget Dashboard with alerts, and integrate PO approval with budget commitments.
+
+### Work Summary
+Created 4 new files and enhanced 3 existing files:
+
+1. **`/src/components/wcp/saved-reports-view.tsx`** - Saved Reports Management Page
+   - **All Reports Tab**: List all saved reports with search and filters
+   - **Scheduled Tab**: View scheduled reports with next run times
+   - **Recent Tab**: Recently executed reports
+   - **Create/Edit Dialog**: Configure report name, type, filters, schedule, and recipients
+   - **Execute Report**: Run reports on demand with preview
+   - **Toggle Active/Inactive**: Enable or disable scheduled reports
+   - **Export Options**: Support for PDF, Excel, CSV formats
+
+2. **`/src/lib/email-service.ts`** - Email Service for Scheduled Reports
+   - `sendEmail()`: Send emails (dev mode logs, production ready for SendGrid/AWS SES)
+   - `generateReportEmailHTML()`: Generate HTML email templates for reports
+   - `generateReportEmailText()`: Generate plain text email
+   - `sendScheduledReportEmail()`: Send scheduled report to recipients
+   - `processScheduledReports()`: Process all due scheduled reports
+
+3. **`/src/app/api/reports/scheduled/process/route.ts`** - Scheduled Reports Processing API
+   - POST: Process all scheduled reports that are due
+   - GET: Get status of scheduled reports (overdue, upcoming)
+
+4. **`/src/app/api/reports/scheduled/[id]/send-test/route.ts`** - Send Test Email API
+   - POST: Send test email for a saved report configuration
+
+### Schema Changes
+Updated `/prisma/schema.prisma`:
+- Added `budgetLineId` field to PurchaseOrder model
+- Added `commitmentCreated` boolean flag to PurchaseOrder model
+- Added `purchaseOrders` relation to BudgetLine model
+
+### Enhanced Files
+
+1. **`/src/app/api/purchase-orders/[id]/transition/route.ts`** - PO Approval Budget Integration
+   - On APPROVED status: Creates budget commitment from PO total value
+   - Checks budget availability before approval
+   - On CANCELLED status: Releases budget commitment
+   - Includes budget transaction history in GET response
+
+2. **`/src/app/api/grn/[id]/process/route.ts`** - GRN Posting Budget Conversion
+   - On GRN posting: Converts commitment to actual expense
+   - Calculates variance between committed and actual amounts
+   - Creates adjustment transactions for variances
+   - Updates budget line committed/actual/available amounts
+
+3. **`/src/app/page.tsx`** - Added Navigation Items
+   - Added 'Saved Reports' menu item
+   - Added 'Budget' menu item
+   - Imported BudgetView and SavedReportsView components
+
+### Budget Integration Flow
+```
+PO Approval → Budget Commitment (encumbrance)
+     ↓
+GRN Posting → Convert to Actual
+     ↓
+Variance Handling → Adjustment transactions
+     ↓
+Budget Line Updated → Committed/Actual/Available
+```
+
+### Technical Details
+- All routes use Zod for request validation
+- Transaction support for atomic budget operations
+- Proper error handling with budget availability checks
+- Toast notifications for user feedback
+- ESLint passes with 0 errors (3 warnings in unrelated files)
+- Dev server running successfully
+
+---

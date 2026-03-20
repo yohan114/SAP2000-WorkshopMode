@@ -178,7 +178,7 @@ async function getMonthlyClosedJobs(startDate: Date, endDate: Date) {
 async function getMaterialUsage(startDate: Date, endDate: Date) {
   const issues = await db.materialIssue.findMany({
     where: {
-      issueDate: { gte: startDate, lte: endDate },
+      issuedAt: { gte: startDate, lte: endDate },
     },
     include: {
       store: { select: { name: true } },
@@ -188,20 +188,20 @@ async function getMaterialUsage(startDate: Date, endDate: Date) {
         },
       },
     },
-    orderBy: { issueDate: 'desc' },
+    orderBy: { issuedAt: 'desc' },
     take: 50,
   });
 
   const lines = issues.flatMap(issue => 
     issue.lines.map(line => ({
-      issueNumber: issue.issueNumber,
+      issueNumber: issue.miNumber,
       store: issue.store?.name || '-',
-      date: new Date(issue.issueDate).toLocaleDateString(),
+      date: issue.issuedAt ? new Date(issue.issuedAt).toLocaleDateString() : '-',
       itemCode: line.item?.itemCode || '-',
       itemName: line.item?.name || '-',
-      quantity: line.quantityIssued,
+      quantity: Number(line.issuedQty),
       unit: line.item?.unitOfMeasure || '-',
-      value: `$${((line.quantityIssued * (line.unitCost || 0))).toLocaleString()}`,
+      value: `$${((Number(line.issuedQty) * Number(line.unitCost || 0))).toLocaleString()}`,
     }))
   );
 
@@ -324,19 +324,19 @@ async function getFleetAvailability() {
 
 // PM Compliance Report
 async function getPMCompliance(startDate: Date, endDate: Date) {
-  const pmSchedules = await db.preventiveMaintenance.findMany({
+  const pmSchedules = await db.pmSchedule.findMany({
     where: {
-      scheduledDate: { gte: startDate, lte: endDate },
+      nextExecutionAt: { gte: startDate, lte: endDate },
     },
     include: {
       asset: { select: { assetNumber: true, name: true } },
     },
-    orderBy: { scheduledDate: 'asc' },
+    orderBy: { nextExecutionAt: 'asc' },
   });
 
   const total = pmSchedules.length;
   const completed = pmSchedules.filter(pm => pm.status === 'COMPLETED').length;
-  const overdue = pmSchedules.filter(pm => pm.status === 'OVERDUE').length;
+  const overdue = pmSchedules.filter(pm => pm.status === 'OVERDUE' || (pm.nextExecutionAt && pm.nextExecutionAt < new Date() && pm.status !== 'COMPLETED')).length;
 
   return {
     title: 'PM Compliance Report',
@@ -352,7 +352,7 @@ async function getPMCompliance(startDate: Date, endDate: Date) {
       no: idx + 1,
       asset: pm.asset ? `${pm.asset.assetNumber}` : '-',
       pmType: pm.pmType,
-      scheduledDate: new Date(pm.scheduledDate).toLocaleDateString(),
+      scheduledDate: pm.nextExecutionAt ? new Date(pm.nextExecutionAt).toLocaleDateString() : '-',
       status: pm.status,
     })),
     columns: [
@@ -414,15 +414,14 @@ async function getTechnicianUtilisation(startDate: Date, endDate: Date) {
     include: {
       timeLogs: {
         where: {
-          startTime: { gte: startDate, lte: endDate },
+          logDate: { gte: startDate, lte: endDate },
         },
       },
-      _count: { select: { jobCards: true } },
     },
   });
 
   const totalHours = employees.reduce((sum, emp) => {
-    return sum + emp.timeLogs.reduce((s, tl) => s + (tl.hoursWorked || 0), 0);
+    return sum + emp.timeLogs.reduce((s, tl) => s + ((tl.totalMinutes || 0) / 60), 0);
   }, 0);
 
   return {
@@ -435,14 +434,14 @@ async function getTechnicianUtilisation(startDate: Date, endDate: Date) {
       'Avg Hours/Technician': `${employees.length > 0 ? (totalHours / employees.length).toFixed(1) : 0}h`,
     },
     data: employees.map((emp, idx) => {
-      const hours = emp.timeLogs.reduce((s, tl) => s + (tl.hoursWorked || 0), 0);
+      const hours = emp.timeLogs.reduce((s, tl) => s + ((tl.totalMinutes || 0) / 60), 0);
       return {
         no: idx + 1,
         employeeNumber: emp.employeeNumber,
         name: emp.name,
         designation: emp.designation || '-',
         hoursLogged: `${hours.toFixed(1)}h`,
-        jobCards: emp._count.jobCards,
+        totalCost: emp.timeLogs.reduce((s, tl) => s + Number(tl.totalCost || 0), 0),
       };
     }),
     columns: [
@@ -451,7 +450,7 @@ async function getTechnicianUtilisation(startDate: Date, endDate: Date) {
       { key: 'name', label: 'Name' },
       { key: 'designation', label: 'Designation' },
       { key: 'hoursLogged', label: 'Hours', align: 'right' },
-      { key: 'jobCards', label: 'Jobs', align: 'right' },
+      { key: 'totalCost', label: 'Cost', align: 'right' },
     ],
   };
 }
@@ -460,16 +459,16 @@ async function getTechnicianUtilisation(startDate: Date, endDate: Date) {
 async function getFuelConsumption(startDate: Date, endDate: Date) {
   const fuelIssues = await db.fuelIssue.findMany({
     where: {
-      issueDate: { gte: startDate, lte: endDate },
+      issuedAt: { gte: startDate, lte: endDate },
     },
     include: {
       asset: { select: { assetNumber: true, name: true } },
+      tank: { select: { name: true, fuelType: true } },
     },
-    orderBy: { issueDate: 'desc' },
+    orderBy: { issuedAt: 'desc' },
   });
 
-  const totalLitres = fuelIssues.reduce((sum, fi) => sum + (fi.quantity || 0), 0);
-  const totalCost = fuelIssues.reduce((sum, fi) => sum + (fi.totalCost || 0), 0);
+  const totalLitres = fuelIssues.reduce((sum, fi) => sum + Number(fi.quantity || 0), 0);
 
   return {
     title: 'Fuel Consumption Report',
@@ -478,23 +477,22 @@ async function getFuelConsumption(startDate: Date, endDate: Date) {
     summary: {
       'Total Issues': fuelIssues.length,
       'Total Litres': `${totalLitres.toLocaleString()}L`,
-      'Total Cost': `$${totalCost.toLocaleString()}`,
     },
     data: fuelIssues.slice(0, 100).map((fi, idx) => ({
       no: idx + 1,
-      date: new Date(fi.issueDate).toLocaleDateString(),
+      date: new Date(fi.issuedAt).toLocaleDateString(),
       asset: fi.asset ? `${fi.asset.assetNumber}` : '-',
-      fuelType: fi.fuelType,
-      quantity: `${fi.quantity}L`,
-      totalCost: `$${(fi.totalCost || 0).toLocaleString()}`,
+      tank: fi.tank?.name || '-',
+      fuelType: fi.tank?.fuelType || '-',
+      quantity: `${Number(fi.quantity).toLocaleString()}L`,
     })),
     columns: [
       { key: 'no', label: '#' },
       { key: 'date', label: 'Date' },
       { key: 'asset', label: 'Asset' },
+      { key: 'tank', label: 'Tank' },
       { key: 'fuelType', label: 'Fuel Type' },
       { key: 'quantity', label: 'Qty', align: 'right' },
-      { key: 'totalCost', label: 'Total $', align: 'right' },
     ],
   };
 }
@@ -510,18 +508,26 @@ async function getJobCardCostReport(startDate: Date, endDate: Date) {
     },
     include: {
       asset: { select: { assetNumber: true, name: true, category: true } },
-      assignedTo: { select: { name: true, hourlyRate: true } },
-      timeLogs: true,
+      technicianAssignments: {
+        include: {
+          technician: { select: { name: true } },
+        },
+      },
+      timeLogs: {
+        include: {
+          employee: { select: { hourlyRate: true } },
+        },
+      },
       materialIssues: {
         include: {
-          lines: true,
+          lines: {
+            include: {
+              item: { select: { itemCode: true, name: true } },
+            },
+          },
         },
       },
-      externalRepairs: {
-        include: {
-          supplier: { select: { name: true } },
-        },
-      },
+      externalJobs: true,
     },
     orderBy: { closedAt: 'desc' },
     take: 100,
@@ -532,17 +538,16 @@ async function getJobCardCostReport(startDate: Date, endDate: Date) {
     // Material Cost - from material issues linked to this job card
     const materialCost = jc.materialIssues?.reduce((sum, mi) => {
       return sum + (mi.lines?.reduce((lSum, line) => 
-        lSum + (line.quantityIssued * (line.unitCost || 0)), 0) || 0);
+        lSum + (Number(line.issuedQty) * Number(line.unitCost || 0)), 0) || 0);
     }, 0) || 0;
 
-    // Labour Cost - from time logs
-    const labourHours = jc.timeLogs?.reduce((sum, tl) => sum + (tl.hoursWorked || 0), 0) || 0;
-    const labourRate = jc.assignedTo?.hourlyRate || 50; // Default rate
-    const labourCost = labourHours * labourRate;
+    // Labour Cost - from time logs (totalMinutes / 60)
+    const labourHours = jc.timeLogs?.reduce((sum, tl) => sum + ((tl.totalMinutes || 0) / 60), 0) || 0;
+    const labourCost = jc.timeLogs?.reduce((sum, tl) => sum + Number(tl.totalCost || 0), 0) || 0;
 
-    // External Cost - from external repairs
-    const externalCost = jc.externalRepairs?.reduce((sum, er) => 
-      sum + (er.actualCost || er.estimatedCost || 0), 0) || 0;
+    // External Cost - from external jobs
+    const externalCost = jc.externalJobs?.reduce((sum, ej) => 
+      sum + Number(ej.actualCost || ej.estimatedCost || 0), 0) || 0;
 
     // Subtotal
     const subtotal = materialCost + labourCost + externalCost;

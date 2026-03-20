@@ -140,8 +140,21 @@ export async function POST(
     const formData = await request.formData();
     const files = formData.getAll('files') as File[];
     const categoryCode = formData.get('categoryCode') as string || 'OTHER';
-    const uploadedBy = formData.get('uploadedBy') as string;
+    const uploadedByRaw = formData.get('uploadedBy') as string;
     const description = formData.get('description') as string;
+
+    // Validate uploadedBy - must be a valid user ID or null
+    let uploadedBy: string | null = null;
+    if (uploadedByRaw && uploadedByRaw.trim() !== '') {
+      // Verify the user exists before using the ID
+      const userExists = await db.user.findUnique({
+        where: { id: uploadedByRaw.trim() },
+        select: { id: true }
+      });
+      if (userExists) {
+        uploadedBy = uploadedByRaw.trim();
+      }
+    }
 
     if (!files || files.length === 0) {
       return apiError('No files provided', 400);
@@ -206,7 +219,7 @@ export async function POST(
           originalName: file.name,
           fileSize: file.size,
           mimeType: file.type,
-          uploadedBy: uploadedBy || null,
+          uploadedBy: uploadedBy,
           description: description || null,
         },
         include: {

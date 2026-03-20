@@ -1,4 +1,5 @@
 import { db } from '@/lib/db';
+import { initializeHashChain, updateAuditLogWithHash, AuditRecordForHash } from './audit-hash-chain';
 
 export type AuditAction =
   | 'CREATE'
@@ -43,27 +44,49 @@ interface AuditLogInput {
 }
 
 /**
- * Log an audit event
+ * Log an audit event with hash chain integration
  */
-export async function auditLog(input: AuditLogInput): Promise<void> {
+export async function auditLog(input: AuditLogInput): Promise<string | null> {
   try {
-    await db.auditLog.create({
+    const oldValueStr = input.oldValue ? JSON.stringify(input.oldValue) : null;
+    const newValueStr = input.newValue ? JSON.stringify(input.newValue) : null;
+
+    // Create the audit log first
+    const log = await db.auditLog.create({
       data: {
         action: input.action,
         entityType: input.entityType,
         entityId: input.entityId,
         actorId: input.actorId || 'system',
-        oldValue: input.oldValue ? JSON.stringify(input.oldValue) : null,
-        newValue: input.newValue ? JSON.stringify(input.newValue) : null,
+        oldValue: oldValueStr,
+        newValue: newValueStr,
         ipAddress: input.request?.headers.get('x-forwarded-for') ||
                    input.request?.headers.get('x-real-ip') ||
                    'unknown',
         userAgent: input.request?.headers.get('user-agent') || 'unknown',
       },
     });
+
+    // Initialize hash chain for this record
+    const recordForHash: AuditRecordForHash = {
+      id: log.id,
+      action: log.action,
+      entityType: log.entityType,
+      entityId: log.entityId,
+      actorId: log.actorId,
+      createdAt: log.createdAt,
+      oldValue: oldValueStr,
+      newValue: newValueStr,
+    };
+
+    const hashChainResult = await initializeHashChain(recordForHash);
+    await updateAuditLogWithHash(log.id, hashChainResult);
+
+    return log.id;
   } catch (error) {
     console.error('Failed to create audit log:', error);
     // Don't throw - audit logging should not break the main operation
+    return null;
   }
 }
 
@@ -83,7 +106,7 @@ export async function getEntityHistory(
     orderBy: { createdAt: 'desc' },
     take: limit,
     include: {
-      user: {
+      actor: {
         select: {
           id: true,
           name: true,
@@ -105,7 +128,7 @@ export async function getUserActivity(
     limit?: number;
   }
 ) {
-  const where: Record<string, unknown> = { userId };
+  const where: Record<string, unknown> = { actorId: userId };
   
   if (options?.fromDate || options?.toDate) {
     where.createdAt = {};

@@ -1,13 +1,14 @@
 import { db } from '@/lib/db';
 import { apiSuccess, apiError } from '@/lib/api-utils';
 import { z } from 'zod';
+import { Decimal } from '@prisma/client/runtime/library';
 
 const processGRNSchema = z.object({
   postedBy: z.string().min(1),
   notes: z.string().optional(),
 });
 
-// POST - Process/Post GRN (update stock, create transactions)
+// POST - Process/Post GRN (update stock, create transactions, convert budget commitments)
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -15,7 +16,7 @@ export async function POST(
   try {
     const { id } = await params;
     const body = await request.json();
-    
+
     const result = processGRNSchema.safeParse(body);
     if (!result.success) {
       return apiError('Validation failed', 400, result.error.issues[0]?.message);
@@ -35,7 +36,10 @@ export async function POST(
         store: { select: { id: true, code: true, name: true } },
         supplier: { select: { id: true, supplierCode: true, name: true } },
         purchaseOrder: {
-          include: { lines: true },
+          include: {
+            lines: true,
+            budgetLine: true,
+          },
         },
       },
     });
@@ -51,7 +55,8 @@ export async function POST(
     // Process in transaction
     const result_data = await db.$transaction(async (tx) => {
       const transactions = [];
-      
+      let totalGRNValue = 0;
+
       // Process each line
       for (const line of grn.lines) {
         const acceptedQty = line.acceptedQty.toNumber();
@@ -59,6 +64,7 @@ export async function POST(
 
         const unitCost = line.unitCost.toNumber();
         const totalValue = unitCost * acceptedQty;
+        totalGRNValue += totalValue;
 
         // Check if stock record exists
         let stock = await tx.storeStock.findFirst({
@@ -125,7 +131,7 @@ export async function POST(
           if (poLine) {
             const currentReceived = poLine.receivedQty?.toNumber() || 0;
             const newReceived = currentReceived + acceptedQty;
-            
+
             await tx.poLine.update({
               where: { id: poLine.id },
               data: {
@@ -148,6 +154,7 @@ export async function POST(
       });
 
       // Update PO status
+      let poStatusChanged = false;
       if (grn.purchaseOrder) {
         const allLines = await tx.poLine.findMany({
           where: { poId: grn.poId! },
@@ -172,18 +179,102 @@ export async function POST(
             where: { id: grn.poId! },
             data: { status: newPOStatus },
           });
+          poStatusChanged = true;
+        }
+
+        // Convert budget commitment to actual if PO has budget line
+        if (grn.purchaseOrder.budgetLineId && grn.purchaseOrder.commitmentCreated) {
+          const budgetLineId = grn.purchaseOrder.budgetLineId;
+
+          // Find the original commitment
+          const commitment = await tx.budgetTransaction.findFirst({
+            where: {
+              budgetLineId,
+              referenceType: 'PO',
+              referenceId: grn.poId!,
+              transactionType: 'COMMITMENT',
+            },
+          });
+
+          if (commitment) {
+            const committedAmount = Number(commitment.amount);
+            const actualAmount = totalGRNValue;
+            const variance = committedAmount - actualAmount;
+
+            // Get current budget line state
+            const budgetLine = await tx.budgetLine.findUnique({
+              where: { id: budgetLineId },
+            });
+
+            if (budgetLine) {
+              const currentCommitted = Number(budgetLine.committedAmount);
+              const currentActual = Number(budgetLine.actualAmount);
+              const revisedAmount = budgetLine.revisedAmount
+                ? Number(budgetLine.revisedAmount)
+                : Number(budgetLine.originalAmount);
+
+              // Create actual transaction
+              await tx.budgetTransaction.create({
+                data: {
+                  budgetLineId,
+                  transactionType: 'ACTUAL',
+                  amount: new Decimal(actualAmount),
+                  referenceType: 'GRN',
+                  referenceId: id,
+                  description: `GRN ${grn.grnNumber} - Actual expense${variance !== 0 ? ` (Variance: ${variance >= 0 ? '+' : ''}${variance.toLocaleString()})` : ''}`,
+                },
+              });
+
+              // If there's variance, create adjustment transaction
+              if (Math.abs(variance) > 0.01) {
+                await tx.budgetTransaction.create({
+                  data: {
+                    budgetLineId,
+                    transactionType: variance > 0 ? 'RELEASE' : 'ADJUSTMENT',
+                    amount: new Decimal(Math.abs(variance)),
+                    referenceType: 'GRN',
+                    referenceId: id,
+                    description: `Variance adjustment for GRN ${grn.grnNumber} - ${variance > 0 ? 'Under budget' : 'Over budget'}`,
+                  },
+                });
+              }
+
+              // Update budget line - reduce commitment, increase actual
+              const newCommitted = currentCommitted - committedAmount;
+              const newActual = currentActual + actualAmount;
+              const newAvailable = revisedAmount - newCommitted - newActual;
+
+              await tx.budgetLine.update({
+                where: { id: budgetLineId },
+                data: {
+                  committedAmount: new Decimal(Math.max(0, newCommitted)),
+                  actualAmount: new Decimal(newActual),
+                  availableAmount: new Decimal(newAvailable),
+                },
+              });
+            }
+          }
         }
       }
 
-      return { grn: updatedGRN, transactions };
+      return { grn: updatedGRN, transactions, totalGRNValue, poStatusChanged };
     });
+
+    // Build response message
+    let message = 'GRN processed successfully';
+    if (grn.purchaseOrder?.budgetLine) {
+      message = `GRN processed successfully. Budget commitment converted to actual expense of ${result_data.totalGRNValue.toLocaleString()} for ${grn.purchaseOrder.budgetLine.code}`;
+    }
 
     return apiSuccess({
       id: result_data.grn.id,
       grnNumber: grn.grnNumber,
       status: result_data.grn.status,
       transactionsProcessed: result_data.transactions.length,
-    }, 'GRN processed successfully');
+      totalValue: result_data.totalGRNValue,
+      budgetConverted: !!grn.purchaseOrder?.budgetLineId,
+      budgetLine: grn.purchaseOrder?.budgetLine,
+    }, message);
   } catch (error) {
     console.error('Process GRN error:', error);
     return apiError('Failed to process GRN', 500);
@@ -203,7 +294,16 @@ export async function GET(
       include: {
         supplier: { select: { id: true, supplierCode: true, name: true } },
         store: { select: { id: true, code: true, name: true } },
-        purchaseOrder: { select: { id: true, poNumber: true, status: true } },
+        purchaseOrder: {
+          select: {
+            id: true,
+            poNumber: true,
+            status: true,
+            budgetLineId: true,
+            commitmentCreated: true,
+            budgetLine: { select: { id: true, code: true, name: true } },
+          },
+        },
         creator: { select: { id: true, name: true } },
         verifier: { select: { id: true, name: true } },
         lines: {
@@ -217,6 +317,17 @@ export async function GET(
     if (!grn) {
       return apiError('GRN not found', 404);
     }
+
+    // Get budget transactions for this GRN
+    const budgetTransactions = grn.purchaseOrder?.budgetLineId
+      ? await db.budgetTransaction.findMany({
+          where: {
+            budgetLineId: grn.purchaseOrder.budgetLineId,
+            referenceId: id,
+          },
+          orderBy: { createdAt: 'desc' },
+        })
+      : [];
 
     return apiSuccess({
       id: grn.id,
@@ -244,6 +355,13 @@ export async function GET(
         totalCost: l.totalCost.toNumber(),
         batchNumber: l.batchNumber,
         expiryDate: l.expiryDate,
+      })),
+      budgetTransactions: budgetTransactions.map(t => ({
+        id: t.id,
+        type: t.transactionType,
+        amount: Number(t.amount),
+        description: t.description,
+        createdAt: t.createdAt,
       })),
       createdAt: grn.createdAt,
     });
