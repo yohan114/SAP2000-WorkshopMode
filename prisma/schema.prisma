@@ -17,23 +17,29 @@ datasource db {
 // ============================================
 
 model User {
-  id              String    @id @default(cuid())
-  employeeId      String?   @unique
-  email           String    @unique
-  passwordHash    String
-  name            String
-  phone           String?
-  department      String?
-  costCentre      String?
-  contractType    String?
-  riskLevel       String    @default("LOW")
-  isActive        Boolean   @default(true)
-  lastLoginAt     DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  createdBy       String?
-  updatedBy       String?
-  deletedAt       DateTime?
+  id                    String    @id @default(cuid())
+  employeeId            String?   @unique
+  email                 String    @unique
+  passwordHash          String
+  name                  String
+  phone                 String?
+  department            String?
+  costCentre            String?
+  contractType          String?
+  riskLevel             String    @default("LOW")
+  isActive              Boolean   @default(true)
+  // Security fields (hardening)
+  mustChangePassword    Boolean   @default(false)
+  failedLoginAttempts   Int       @default(0)
+  lockedUntil           DateTime?
+  lastLoginAt            DateTime?
+  lastLoginIp            String?
+  passwordChangedAt     DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  createdBy             String?
+  updatedBy             String?
+  deletedAt              DateTime?
 
   roles           UserRole[]
   privilegeOverrides UserPrivilegeOverride[]
@@ -65,6 +71,7 @@ model User {
   @@index([email])
   @@index([employeeId])
   @@index([isActive])
+  @@index([lockedUntil])
 }
 
 model Role {

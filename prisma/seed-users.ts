@@ -3,6 +3,23 @@ import { hash } from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
+/**
+ * Generate a secure random temporary password
+ */
+function generateTemporaryPassword(): string {
+  const length = 16;
+  const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let password = "";
+
+  for (let i = 0; i < length; i++) {
+    const randomBuffer = new Uint8Array(1);
+    crypto.getRandomValues(randomBuffer);
+    password += charset[randomBuffer[0] % charset.length];
+  }
+
+  return password;
+}
+
 async function main() {
   console.log('Seeding users...');
 
@@ -19,6 +36,12 @@ async function main() {
     { code: 'INV_VIEW', name: 'View Inventory', category: 'INVENTORY', description: 'View inventory' },
     { code: 'INV_MANAGE', name: 'Manage Inventory', category: 'INVENTORY', description: 'Manage inventory' },
     { code: 'ADMIN', name: 'Full Admin Access', category: 'SYSTEM', description: 'Full admin access' },
+    { code: 'ASSET_VIEW', name: 'View Assets', category: 'ASSET', description: 'View assets' },
+    { code: 'ASSET_CREATE', name: 'Create Assets', category: 'ASSET', description: 'Create new assets' },
+    { code: 'ASSET_EDIT', name: 'Edit Assets', category: 'ASSET', description: 'Edit asset details' },
+    { code: 'PR_CREATE', name: 'Create Purchase Requisitions', category: 'PROCUREMENT', description: 'Create PRs' },
+    { code: 'PO_APPROVE', name: 'Approve Purchase Orders', category: 'PROCUREMENT', description: 'Approve POs' },
+    { code: 'INVOICE_APPROVE', name: 'Approve Invoices', category: 'PROCUREMENT', description: 'Approve invoices' },
   ];
 
   for (const priv of privileges) {
@@ -60,8 +83,9 @@ async function main() {
     }
   }
 
-  // Create users with passwordHash field
-  const passwordHash = await hash('password123', 10);
+  // Generate a secure temporary password for seeding
+  const tempPassword = generateTemporaryPassword();
+  const passwordHash = await hash(tempPassword, 12); // 12 rounds for better security
 
   const users = [
     {
@@ -69,6 +93,7 @@ async function main() {
       name: 'System Administrator',
       department: 'IT',
       passwordHash,
+      mustChangePassword: true, // Force password change on first login
       roles: ['ADMIN'],
     },
     {
@@ -76,6 +101,7 @@ async function main() {
       name: 'David Wilson',
       department: 'Workshop',
       passwordHash,
+      mustChangePassword: true,
       roles: ['SUPERVISOR'],
     },
     {
@@ -83,6 +109,7 @@ async function main() {
       name: 'John Smith',
       department: 'Workshop',
       passwordHash,
+      mustChangePassword: true,
       roles: ['TECHNICIAN'],
     },
     {
@@ -90,6 +117,7 @@ async function main() {
       name: 'Mike Johnson',
       department: 'Stores',
       passwordHash,
+      mustChangePassword: true,
       roles: ['STOREMAN'],
     },
   ];
@@ -102,12 +130,16 @@ async function main() {
         name: userData.name,
         department: userData.department,
         passwordHash: userData.passwordHash,
+        mustChangePassword: userData.mustChangePassword,
+        passwordChangedAt: new Date(), // Set so we know when the temp password was set
         isActive: true,
       },
       update: {
         name: userData.name,
         department: userData.department,
         passwordHash: userData.passwordHash,
+        mustChangePassword: userData.mustChangePassword,
+        passwordChangedAt: new Date(),
         isActive: true,
       },
     });
@@ -125,9 +157,16 @@ async function main() {
     }
   }
 
-  console.log('Users seeded successfully!');
-  console.log('\nDemo accounts (password: password123):');
-  users.forEach(u => console.log(`  - ${u.email} (${u.roles.join(', ')})`));
+  console.log('\n========================================');
+  console.log('        USERS SEEDED SUCCESSFULLY!');
+  console.log('========================================');
+  console.log('\n⚠️  IMPORTANT: Save these credentials!');
+  console.log('   They will NOT be shown again.\n');
+  console.log(`   Temporary Password: ${tempPassword}\n`);
+  console.log('   Login credentials:');
+  users.forEach(u => console.log(`   - ${u.email} (${u.roles.join(', ')})`));
+  console.log('\n   ℹ️  Users will be required to change their password on first login.');
+  console.log('========================================\n');
 }
 
 main()

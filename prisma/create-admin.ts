@@ -3,12 +3,30 @@ import { hash } from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
+/**
+ * Generate a secure random temporary password
+ */
+function generateTemporaryPassword(): string {
+  const length = 16;
+  const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let password = "";
+
+  for (let i = 0; i < length; i++) {
+    const randomBuffer = new Uint8Array(1);
+    crypto.getRandomValues(randomBuffer);
+    password += charset[randomBuffer[0] % charset.length];
+  }
+
+  return password;
+}
+
 async function main() {
   console.log('Creating production admin account...');
 
+  // Generate secure temporary password
   const adminEmail = 'christiegroup@gmail.com';
-  const adminPassword = 'Christie@852123';
-  const passwordHash = await hash(adminPassword, 10);
+  const adminPassword = generateTemporaryPassword();
+  const passwordHash = await hash(adminPassword, 12); // 12 rounds for security
 
   // Create privileges
   const privileges = [
@@ -57,39 +75,65 @@ async function main() {
     });
   }
 
-  // Create admin user
-  const adminUser = await prisma.user.create({
-    data: {
-      email: adminEmail,
-      name: 'System Administrator',
-      department: 'IT',
-      passwordHash,
-      isActive: true,
-      employeeId: 'ADMIN-001',
-    }
+  // Check if admin user already exists
+  const existingUser = await prisma.user.findUnique({
+    where: { email: adminEmail }
   });
 
-  // Assign ADMIN role
-  await prisma.userRole.create({
-    data: {
-      userId: adminUser.id,
-      roleId: adminRole.id,
-      isActive: true
-    }
-  });
+  if (existingUser) {
+    console.log('⚠️  Admin user already exists. Updating password...');
+    await prisma.user.update({
+      where: { email: adminEmail },
+      data: {
+        passwordHash,
+        mustChangePassword: true,
+        passwordChangedAt: new Date(),
+      }
+    });
+  } else {
+    // Create admin user
+    const adminUser = await prisma.user.create({
+      data: {
+        email: adminEmail,
+        name: 'System Administrator',
+        department: 'IT',
+        passwordHash,
+        mustChangePassword: true,
+        passwordChangedAt: new Date(),
+        isActive: true,
+        employeeId: 'ADMIN-001',
+      }
+    });
 
-  // Create notification preferences
-  await prisma.notificationPreferences.create({
-    data: {
-      userId: adminUser.id,
-      emailEnabled: true,
-      inAppEnabled: true
-    }
-  });
+    // Assign ADMIN role
+    await prisma.userRole.create({
+      data: {
+        userId: adminUser.id,
+        roleId: adminRole.id,
+        isActive: true
+      }
+    });
 
-  console.log('✅ Admin account created!');
-  console.log(`   Email: ${adminEmail}`);
+    // Create notification preferences
+    await prisma.notificationPreferences.create({
+      data: {
+        userId: adminUser.id,
+        emailEnabled: true,
+        inAppEnabled: true
+      }
+    });
+  }
+
+  console.log('\n========================================');
+  console.log('      ✅ ADMIN ACCOUNT CREATED/UPDATED!');
+  console.log('========================================');
+  console.log('\n⚠️  IMPORTANT: Save these credentials!');
+  console.log('   They will NOT be shown again.\n');
+  console.log(`   Email:    ${adminEmail}`);
   console.log(`   Password: ${adminPassword}`);
+  console.log('\n   ℹ️  You will be required to change your');
+  console.log('      password on first login.');
+  console.log('========================================\n');
 
   await prisma.$disconnect();
 }

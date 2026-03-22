@@ -8,6 +8,14 @@ const publicPaths = [
   '/api/auth',
 ];
 
+// Paths that should be excluded from auth checks
+const excludedPaths = [
+  '/_next',
+  '/static',
+  '/favicon',
+  '/public',
+];
+
 // Static file extensions to always allow
 const staticExtensions = [
   '.svg',
@@ -22,6 +30,7 @@ const staticExtensions = [
   '.woff2',
   '.ttf',
   '.eot',
+  '.webp',
 ];
 
 export async function middleware(request: NextRequest) {
@@ -32,28 +41,28 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Allow _next paths
-  if (pathname.startsWith('/_next')) {
+  // Allow excluded paths
+  if (excludedPaths.some(path => pathname.startsWith(path))) {
     return NextResponse.next();
   }
 
-  // Get the token
+  // Get the token with enhanced secret fallback
+  const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
   const token = await getToken({
     req: request,
-    secret: process.env.NEXTAUTH_SECRET || 'wcp-secret-key-change-in-production',
+    secret,
   });
 
-  // Allow public paths (but if logged in and going to login, redirect to home)
+  // Allow public paths (but if logged in and going to login, redirect to dashboard)
   if (publicPaths.some(path => pathname.startsWith(path))) {
     if (token && pathname === '/login') {
-      return NextResponse.redirect(new URL('/', request.url));
+      return NextResponse.redirect(new URL('/dashboard', request.url));
     }
     return NextResponse.next();
   }
 
   // For root path, check if user is authenticated
   if (pathname === '/') {
-    // Allow access to root - the page itself will handle auth state
     return NextResponse.next();
   }
 
@@ -72,7 +81,24 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  return NextResponse.next();
+  // Force password change if required
+  const mustChangePassword = token.mustChangePassword === true;
+  const changePasswordPaths = ['/dashboard/change-password', '/account/change-password'];
+
+  if (mustChangePassword && !changePasswordPaths.some(path => pathname.startsWith(path))) {
+    // Allow API routes that might need to check user status
+    if (!pathname.startsWith('/api/')) {
+      return NextResponse.redirect(new URL('/dashboard/change-password', request.url));
+    }
+  }
+
+  // Add security headers to all responses
+  const response = NextResponse.next();
+  response.headers.set('X-Frame-Options', 'SAMEORIGIN');
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+  return response;
 }
 
 export const config = {

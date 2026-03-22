@@ -1,7 +1,8 @@
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { compare } from 'bcryptjs';
+import { verifyPassword } from './password';
 import { db } from '@/lib/db';
+import { AuditHelpers } from '@/lib/audit';
 
 // Note: Type declarations are in src/lib/auth/index.ts
 
@@ -46,21 +47,61 @@ export const authOptions: NextAuthOptions = {
             },
           });
 
+          // Check if user exists and is active
           if (!user || !user.isActive || !user.passwordHash) {
             return null;
           }
 
-          const isValid = await compare(credentials.password, user.passwordHash);
+          // Check account lockout
+          if (user.lockedUntil && user.lockedUntil > new Date()) {
+            const lockMinutes = Math.ceil(
+              (user.lockedUntil.getTime() - Date.now()) / 60000
+            );
+            throw new Error(
+              `Account temporarily locked. Try again in ${lockMinutes} minute${lockMinutes > 1 ? 's' : ''}.`
+            );
+          }
+
+          const isValid = await verifyPassword(credentials.password, user.passwordHash);
 
           if (!isValid) {
+            // Increment failed login attempts
+            const attempts = (user.failedLoginAttempts || 0) + 1;
+            const lockoutDuration = Math.min(15, Math.pow(2, attempts - 3)); // 15 min max, starts at 5 attempts
+
+            const updateData: any = {
+              failedLoginAttempts: attempts,
+            };
+
+            if (attempts >= 5) {
+              // Lock the account
+              updateData.lockedUntil = new Date(Date.now() + lockoutDuration * 60 * 1000);
+
+              // Audit log the lockout
+              await AuditHelpers.logLoginFailed(
+                user.email,
+                'unknown',
+                `${attempts} failed attempts`
+              );
+            }
+
+            await db.user.update({
+              where: { id: user.id },
+              data: updateData,
+            }).catch(() => {});
+
             return null;
           }
 
-          // Update last login
+          // Successful login - reset lockout counters
           await db.user.update({
             where: { id: user.id },
-            data: { lastLoginAt: new Date() },
-          }).catch(() => {}); // Ignore update errors
+            data: {
+              failedLoginAttempts: 0,
+              lockedUntil: null,
+              lastLoginAt: new Date(),
+            },
+          }).catch(() => {});
 
           // Transform roles and privileges
           const roles = user.roles
@@ -85,8 +126,13 @@ export const authOptions: NextAuthOptions = {
             department: user.department,
             roles,
             privileges,
+            mustChangePassword: user.mustChangePassword || false,
           };
         } catch (error) {
+          // Rethrow lockout error to show to user
+          if (error instanceof Error && error.message.includes('locked')) {
+            throw error;
+          }
           console.error('[Auth] Authorization error:', error);
           return null;
         }
@@ -95,7 +141,7 @@ export const authOptions: NextAuthOptions = {
   ],
   session: {
     strategy: 'jwt',
-    maxAge: 24 * 60 * 60, // 24 hours
+    maxAge: 8 * 60 * 60, // 8 hours (reduced from 24 for security)
   },
   pages: {
     signIn: '/login',
@@ -108,7 +154,7 @@ export const authOptions: NextAuthOptions = {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: false, // Set to true in production with HTTPS
+        secure: process.env.NODE_ENV === 'production', // HTTPS in production
       },
     },
   },
@@ -123,6 +169,7 @@ export const authOptions: NextAuthOptions = {
         token.department = user.department;
         token.roles = user.roles;
         token.privileges = user.privileges;
+        token.mustChangePassword = user.mustChangePassword;
       }
 
       // Handle session update
@@ -142,6 +189,7 @@ export const authOptions: NextAuthOptions = {
           department: token.department as string | null | undefined,
           roles: token.roles as Array<{ code: string; name: string; level: number }>,
           privileges: token.privileges as string[],
+          mustChangePassword: token.mustChangePassword as boolean,
         };
       }
       return session;
@@ -155,6 +203,6 @@ export const authOptions: NextAuthOptions = {
       console.log(`[Auth] User signed out: ${token?.email}`);
     },
   },
-  debug: false, // Disable debug to reduce noise
-  secret: process.env.NEXTAUTH_SECRET || 'wcp-secret-key-change-in-production',
+  debug: process.env.NODE_ENV === 'development',
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
 };

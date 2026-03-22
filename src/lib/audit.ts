@@ -14,6 +14,12 @@ export type AuditAction =
   | 'POST'
   | 'LOGIN'
   | 'LOGOUT'
+  | 'LOGIN_FAILED'
+  | 'PRIVILEGE_DENIED'
+  | 'PASSWORD_CHANGE'
+  | 'PASSWORD_RESET'
+  | 'ACCOUNT_LOCKED'
+  | 'ACCOUNT_UNLOCKED'
   | 'EXPORT'
   | 'IMPORT';
 
@@ -281,6 +287,56 @@ export const AuditHelpers = {
     entityId: 'batch',
     metadata: { filename, count },
     actorId,
+    request,
+  }),
+
+  // Security-related helpers
+  logLoginFailed: (email: string, ipAddress: string, reason?: string) => auditLog({
+    action: 'LOGIN_FAILED',
+    entityType: 'USER',
+    entityId: email,
+    metadata: { ipAddress, reason },
+    actorId: 'system',
+  }),
+
+  logPrivilegeDenied: (userId: string, privilege: string, entityType: string, request?: Request) => auditLog({
+    action: 'PRIVILEGE_DENIED',
+    entityType: entityType as EntityType,
+    entityId: userId,
+    metadata: { privilege },
+    actorId: userId,
+    request,
+  }),
+
+  logPasswordChange: (userId: string, request?: Request) => auditLog({
+    action: 'PASSWORD_CHANGE',
+    entityType: 'USER',
+    entityId: userId,
+    actorId: userId,
+    request,
+  }),
+
+  logPasswordReset: (userId: string, resetBy: string, request?: Request) => auditLog({
+    action: 'PASSWORD_RESET',
+    entityType: 'USER',
+    entityId: userId,
+    actorId: resetBy,
+    request,
+  }),
+
+  logAccountLocked: (userId: string, ipAddress: string) => auditLog({
+    action: 'ACCOUNT_LOCKED',
+    entityType: 'USER',
+    entityId: userId,
+    metadata: { ipAddress },
+    actorId: 'system',
+  }),
+
+  logAccountUnlocked: (userId: string, unlockedBy: string, request?: Request) => auditLog({
+    action: 'ACCOUNT_UNLOCKED',
+    entityType: 'USER',
+    entityId: userId,
+    actorId: unlockedBy,
     request,
   }),
 };
