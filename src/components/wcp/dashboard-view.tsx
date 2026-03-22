@@ -1363,7 +1363,7 @@ export function DashboardView({ onNavigate }: DashboardViewProps) {
                 <Clock className="h-5 w-5 text-emerald-600" />
                 Recent Job Cards
               </CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => onNavigate?.('jobcards')}>
+              <Button variant="ghost" size="sm" onClick={() => onNavigate?.('job-cards')}>
                 View All
                 <ArrowUpRight className="h-4 w-4 ml-1" />
               </Button>
@@ -1457,7 +1457,7 @@ export function DashboardView({ onNavigate }: DashboardViewProps) {
           <div className="flex flex-wrap gap-3">
             <Button
               className="bg-emerald-600 hover:bg-emerald-700"
-              onClick={() => onNavigate?.('jobcards')}
+              onClick={() => onNavigate?.('job-cards')}
             >
               <Wrench className="h-4 w-4 mr-2" />
               New Job Card

@@ -58,34 +58,34 @@ import { NotificationBell } from '@/components/wcp/notification-bell';
 
 const navigationItems = [
   { id: 'dashboard', label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { id: 'assets', label: 'Assets', href: '/dashboard/assets', icon: Truck },
-  { id: 'job-cards', label: 'Job Cards', href: '/dashboard/job-cards', icon: Wrench },
-  { id: 'time-logs', label: 'Time Logs', href: '/dashboard/time-logs', icon: Clock },
-  { id: 'employees', label: 'Employees', href: '/dashboard/employees', icon: Users },
-  { id: 'inventory', label: 'Inventory', href: '/dashboard/inventory', icon: Package },
-  { id: 'requests', label: 'Requests', href: '/dashboard/requests', icon: FileText },
-  { id: 'issues', label: 'Issues', href: '/dashboard/issues', icon: ClipboardList },
-  { id: 'purchase', label: 'Purchase', href: '/dashboard/purchase', icon: ShoppingCart },
-  { id: 'quotations', label: 'Quotations', href: '/dashboard/quotations', icon: Scale },
-  { id: 'invoices', label: 'Invoices', href: '/dashboard/invoices', icon: FileCheck },
-  { id: 'stock-take', label: 'Stock Take', href: '/dashboard/stock-take', icon: ClipboardCheck },
-  { id: 'documents', label: 'Documents', href: '/dashboard/documents', icon: FolderOpen },
-  { id: 'fuel', label: 'Fuel', href: '/dashboard/fuel', icon: Fuel },
-  { id: 'external', label: 'External', href: '/dashboard/external', icon: ExternalLink },
-  { id: 'labour', label: 'Training', href: '/dashboard/labour', icon: GraduationCap },
-  { id: 'pm', label: 'PM', href: '/dashboard/pm', icon: CalendarCheck },
-  { id: 'quality', label: 'Quality', href: '/dashboard/quality', icon: ShieldCheck },
-  { id: 'notifications', label: 'Notifications', href: '/dashboard/notifications', icon: BellRing },
-  { id: 'kpi', label: 'KPIs', href: '/dashboard/kpi', icon: Gauge },
-  { id: 'audit', label: 'Audit', href: '/dashboard/audit', icon: Shield },
-  { id: 'webhooks', label: 'Webhooks', href: '/dashboard/webhooks', icon: Webhook },
-  { id: 'reports', label: 'Reports', href: '/dashboard/reports', icon: BarChart3 },
-  { id: 'saved-reports', label: 'Saved Reports', href: '/dashboard/saved-reports', icon: FileText },
-  { id: 'budget', label: 'Budget', href: '/dashboard/budget', icon: DollarSign },
-  { id: 'users', label: 'Users', href: '/dashboard/users', icon: UserCog, adminOnly: true },
-  { id: 'roles', label: 'Roles', href: '/dashboard/roles', icon: KeyRound, adminOnly: true },
-  { id: 'privileges', label: 'Privileges', href: '/dashboard/privileges', icon: Lock, adminOnly: true },
-  { id: 'lpa', label: 'LPA', href: '/dashboard/lpa', icon: DollarSign, adminOnly: true },
+  { id: 'assets', label: 'Assets', href: '/assets', icon: Truck },
+  { id: 'job-cards', label: 'Job Cards', href: '/job-cards', icon: Wrench },
+  { id: 'time-logs', label: 'Time Logs', href: '/time-logs', icon: Clock },
+  { id: 'employees', label: 'Employees', href: '/employees', icon: Users },
+  { id: 'inventory', label: 'Inventory', href: '/inventory', icon: Package },
+  { id: 'requests', label: 'Requests', href: '/requests', icon: FileText },
+  { id: 'issues', label: 'Issues', href: '/issues', icon: ClipboardList },
+  { id: 'purchase', label: 'Purchase', href: '/purchase', icon: ShoppingCart },
+  { id: 'quotations', label: 'Quotations', href: '/quotations', icon: Scale },
+  { id: 'invoices', label: 'Invoices', href: '/invoices', icon: FileCheck },
+  { id: 'stock-take', label: 'Stock Take', href: '/stock-take', icon: ClipboardCheck },
+  { id: 'documents', label: 'Documents', href: '/documents', icon: FolderOpen },
+  { id: 'fuel', label: 'Fuel', href: '/fuel', icon: Fuel },
+  { id: 'external', label: 'External', href: '/external', icon: ExternalLink },
+  { id: 'labour', label: 'Training', href: '/labour', icon: GraduationCap },
+  { id: 'pm', label: 'PM', href: '/pm', icon: CalendarCheck },
+  { id: 'quality', label: 'Quality', href: '/quality', icon: ShieldCheck },
+  { id: 'notifications', label: 'Notifications', href: '/notifications', icon: BellRing },
+  { id: 'kpi', label: 'KPIs', href: '/kpi', icon: Gauge },
+  { id: 'audit', label: 'Audit', href: '/audit', icon: Shield },
+  { id: 'webhooks', label: 'Webhooks', href: '/webhooks', icon: Webhook },
+  { id: 'reports', label: 'Reports', href: '/reports', icon: BarChart3 },
+  { id: 'saved-reports', label: 'Saved Reports', href: '/saved-reports', icon: FileText },
+  { id: 'budget', label: 'Budget', href: '/budget', icon: DollarSign },
+  { id: 'users', label: 'Users', href: '/users', icon: UserCog, adminOnly: true },
+  { id: 'roles', label: 'Roles', href: '/roles', icon: KeyRound, adminOnly: true },
+  { id: 'privileges', label: 'Privileges', href: '/privileges', icon: Lock, adminOnly: true },
+  { id: 'lpa', label: 'LPA', href: '/lpa', icon: DollarSign, adminOnly: true },
 ];
 
 interface SidebarContentProps {
@@ -198,6 +198,7 @@ export default function DashboardLayout({
   const { user, isLoading, isAuthenticated, logout, isAdmin } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const pathname = usePathname();
 
   if (isLoading) {
     return (
@@ -224,6 +225,10 @@ export default function DashboardLayout({
   const handleLogout = async () => {
     await logout();
   };
+
+  // Get current page title
+  const currentPage = navigationItems.find(item => item.href === pathname || pathname?.startsWith(item.href + '/'));
+  const pageTitle = currentPage?.label || 'Dashboard';
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -298,9 +303,7 @@ export default function DashboardLayout({
 
                 {/* Page Title */}
                 <div>
-                  <h2 className="text-lg font-semibold text-foreground">
-                    {navigationItems.find(item => item.href === typeof window !== 'undefined' ? window.location.pathname : '/')?.label || 'Dashboard'}
-                  </h2>
+                  <h2 className="text-lg font-semibold text-foreground">{pageTitle}</h2>
                 </div>
               </div>
 
@@ -338,13 +341,13 @@ export default function DashboardLayout({
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
-                        <Link href="/dashboard/profile">
+                        <Link href="/profile">
                           <User className="h-4 w-4 mr-2" />
                           Profile
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link href="/dashboard/settings">
+                        <Link href="/settings">
                           <Settings className="h-4 w-4 mr-2" />
                           Settings
                         </Link>
@@ -428,15 +431,24 @@ export default function DashboardLayout({
           </div>
         </footer>
 
-        {/* 2026 Mobile Bottom Navigation */}
+        {/* Mobile Bottom Navigation */}
         <div className="md:hidden fixed bottom-4 left-4 right-4 h-16 bg-card/90 backdrop-blur-2xl border border-black/5 dark:border-white/10 rounded-[1.5rem] z-50 flex items-center justify-between px-2 shadow-[0_8px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.2)]">
-          <Link href="/dashboard" className="p-3 rounded-[1rem] transition-all duration-300 active:scale-95 bg-primary/20 text-primary shadow-inner">
+          <Link href="/dashboard" className={cn(
+            "p-3 rounded-[1rem] transition-all duration-300 active:scale-95",
+            pathname === '/dashboard' ? "bg-primary/20 text-primary shadow-inner" : "text-muted-foreground hover:text-foreground"
+          )}>
             <LayoutDashboard className="w-6 h-6" />
           </Link>
-          <Link href="/dashboard/job-cards" className="p-3 rounded-[1rem] transition-all duration-300 active:scale-95 text-muted-foreground hover:text-foreground">
+          <Link href="/job-cards" className={cn(
+            "p-3 rounded-[1rem] transition-all duration-300 active:scale-95",
+            pathname === '/job-cards' ? "bg-primary/20 text-primary shadow-inner" : "text-muted-foreground hover:text-foreground"
+          )}>
             <Wrench className="w-6 h-6" />
           </Link>
-          <Link href="/dashboard/inventory" className="p-3 rounded-[1rem] transition-all duration-300 active:scale-95 text-muted-foreground hover:text-foreground">
+          <Link href="/inventory" className={cn(
+            "p-3 rounded-[1rem] transition-all duration-300 active:scale-95",
+            pathname === '/inventory' ? "bg-primary/20 text-primary shadow-inner" : "text-muted-foreground hover:text-foreground"
+          )}>
             <Package className="w-6 h-6" />
           </Link>
           <button onClick={() => setMobileSidebarOpen(true)} className="p-3 rounded-[1rem] transition-all duration-300 active:scale-95 text-muted-foreground hover:text-foreground">

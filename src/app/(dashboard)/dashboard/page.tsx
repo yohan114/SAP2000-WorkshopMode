@@ -6,5 +6,5 @@ import { useRouter } from 'next/navigation';
 export default function DashboardPage() {
   const router = useRouter();
 
-  return <DashboardView onNavigate={(path) => router.push(`/dashboard/${path}`)} />;
+  return <DashboardView onNavigate={(path) => router.push(`/${path}`)} />;
 }
