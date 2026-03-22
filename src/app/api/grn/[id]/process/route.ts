@@ -52,6 +52,32 @@ export async function POST(
       return apiError('Only draft GRNs can be processed', 400);
     }
 
+    // BUG FIX #31: Validate GRN quantities don't exceed PO quantities
+    if (grn.purchaseOrder) {
+      for (const line of grn.lines) {
+        if (!line.poLineId) continue;
+
+        const poLine = grn.purchaseOrder.lines.find(
+          (l: { id: string }) => l.id === line.poLineId
+        );
+
+        if (poLine) {
+          const orderedQty = poLine.orderedQty.toNumber();
+          const currentReceived = poLine.receivedQty?.toNumber() || 0;
+          const newReceivedQty = currentReceived + line.acceptedQty.toNumber();
+
+          if (newReceivedQty > orderedQty) {
+            return apiError(
+              `Cannot process GRN: Over-receipt for item ${line.item.itemCode} - ${line.item.name}. ` +
+              `Ordered: ${orderedQty}, Already Received: ${currentReceived}, This GRN: ${line.acceptedQty.toNumber()}, ` +
+              `Total Would Be: ${newReceivedQty}`,
+              400
+            );
+          }
+        }
+      }
+    }
+
     // Process in transaction
     const result_data = await db.$transaction(async (tx) => {
       const transactions = [];

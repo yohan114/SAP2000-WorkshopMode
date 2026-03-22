@@ -24,6 +24,25 @@ const DocumentCategory = z.enum([
   'OTHER',
 ]);
 
+// BUG FIX #48: Allowed file types for security
+const ALLOWED_FILE_TYPES = [
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'text/plain',
+  'text/csv',
+];
+
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+
 // Schema for creating a document (metadata only, file handled separately)
 const createDocumentSchema = z.object({
   name: z.string().min(1, 'Document name is required'),
@@ -153,8 +172,16 @@ export async function POST(request: Request) {
         return apiError('Document name is required', 400);
       }
 
+      // BUG FIX #48: Validate file type for security
+      if (file.type && !ALLOWED_FILE_TYPES.includes(file.type)) {
+        return apiError(
+          `Invalid file type: ${file.type}. Allowed types: PDF, Images (JPEG, PNG, GIF, WebP), Word, Excel, PowerPoint, Text, CSV`,
+          400
+        );
+      }
+
       // Validate file size (max 50MB)
-      if (file.size > 50 * 1024 * 1024) {
+      if (file.size > MAX_FILE_SIZE) {
         return apiError('File size exceeds 50MB limit', 400);
       }
 

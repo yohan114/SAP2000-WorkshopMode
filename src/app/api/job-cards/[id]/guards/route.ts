@@ -57,13 +57,15 @@ const transitionsRequiringReason: Set<TransitionType> = new Set([
   'CANCEL',
 ]);
 
+import { getCurrentUser } from '@/lib/auth/session';
+
 /**
  * GET /api/job-cards/[id]/guards
  * 
  * Check what transitions are available for the current job card.
  * 
  * Query parameters:
- * - userId: The user ID to check privileges for (required)
+ * - userId: The user ID to check privileges for (required, can be 'current')
  * - reason: The reason to validate for reason-requiring transitions (optional)
  * 
  * Returns:
@@ -77,8 +79,16 @@ export async function GET(
   try {
     const { id } = await params;
     const url = new URL(request.url);
-    const userId = url.searchParams.get('userId');
+    let userId = url.searchParams.get('userId');
     const reason = url.searchParams.get('reason') || undefined;
+
+    if (userId === 'current') {
+      const currentUser = await getCurrentUser();
+      if (!currentUser) {
+        return apiError('Authentication required', 401);
+      }
+      userId = currentUser.id;
+    }
 
     if (!userId) {
       return apiError('userId query parameter is required', 400);

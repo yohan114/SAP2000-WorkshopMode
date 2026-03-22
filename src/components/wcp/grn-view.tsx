@@ -5,13 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
 } from '@/components/ui/dialog';
 import {
   Table,
@@ -21,21 +21,21 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { 
-  PackageCheck, 
-  Plus, 
-  Search, 
-  Loader2, 
+import {
+  PackageCheck,
+  Plus,
+  Search,
+  Loader2,
   Eye,
   Printer,
   FileText,
@@ -48,7 +48,8 @@ import {
   CheckCircle,
   AlertCircle
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/lib/auth/hooks';
 import { SearchableItemSelect } from './searchable-item-select';
 
 interface GrnHeader {
@@ -123,6 +124,9 @@ const statusColors: Record<string, string> = {
 };
 
 export function GrnView() {
+  const { toast } = useToast();
+  const { user } = useAuth();
+
   const [grns, setGrns] = useState<GrnHeader[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
@@ -182,7 +186,7 @@ export function GrnView() {
       }
     } catch (error) {
       console.error('Failed to fetch GRNs:', error);
-      toast.error('Failed to load GRNs');
+      toast({ title: 'Error', description: 'Failed to load GRNs', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -260,7 +264,7 @@ export function GrnView() {
       })) || []
     }));
     setShowPoSelectDialog(false);
-    toast.success(`Linked to PO ${po.poNumber}`);
+    toast({ title: 'Success', description: `Linked to PO ${po.poNumber}` });
   };
 
   const handleUnlinkPo = () => {
@@ -274,11 +278,15 @@ export function GrnView() {
 
   const handleCreateGrn = async () => {
     if (!formData.storeId) {
-      toast.error('Please select a store');
+      toast({ title: 'Validation Error', description: 'Please select a store', variant: 'destructive' });
       return;
     }
     if (formData.lines.length === 0) {
-      toast.error('Please add at least one line item');
+      toast({ title: 'Validation Error', description: 'Please add at least one line item', variant: 'destructive' });
+      return;
+    }
+    if (!user?.id) {
+      toast({ title: 'Error', description: 'User not authenticated', variant: 'destructive' });
       return;
     }
 
@@ -290,36 +298,38 @@ export function GrnView() {
         body: JSON.stringify({
           supplierId: formData.supplierId || null,
           storeId: formData.storeId,
-          grnDate: formData.grnDate,
+          deliveryDate: formData.grnDate,
           notes: formData.notes,
           poId: linkedPo?.id || null,
+          createdBy: user.id,
           lines: formData.lines.map(l => ({
             itemId: l.itemId,
-            qtyOrdered: l.qtyOrdered,
-            qtyReceived: l.qtyReceived,
-            qtyAccepted: l.qtyAccepted,
-            qtyRejected: l.qtyRejected,
+            poLineId: l.poLineId || null,
+            receivedQty: l.qtyReceived,
+            acceptedQty: l.qtyAccepted,
+            rejectedQty: l.qtyRejected || 0,
+            rejectionReason: l.remarks || null,
             unitCost: l.unitCost,
-            remarks: l.remarks,
-            batchNumber: l.batchNumber,
-            expiryDate: l.expiryDate || null
+            batchNumber: l.batchNumber || null,
+            expiryDate: l.expiryDate || null,
+            notes: l.remarks || null
           }))
         })
       });
 
       if (response.ok) {
-        toast.success('GRN created successfully');
+        toast({ title: 'Success', description: 'GRN created successfully' });
         setShowCreateDialog(false);
         resetForm();
         fetchGrns();
         fetchStats();
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Failed to create GRN');
+        toast({ title: 'Error', description: error.error || error.message || 'Failed to create GRN', variant: 'destructive' });
       }
     } catch (error) {
       console.error('Failed to create GRN:', error);
-      toast.error('Failed to create GRN');
+      toast({ title: 'Error', description: 'Failed to create GRN', variant: 'destructive' });
     } finally {
       setSubmitting(false);
     }
@@ -335,7 +345,7 @@ export function GrnView() {
       }
     } catch (error) {
       console.error('Failed to fetch GRN details:', error);
-      toast.error('Failed to load GRN details');
+      toast({ title: 'Error', description: 'Failed to load GRN details', variant: 'destructive' });
     }
   };
 
@@ -348,16 +358,56 @@ export function GrnView() {
       });
 
       if (response.ok) {
-        toast.success(`GRN ${newStatus.toLowerCase()} successfully`);
+        toast({ title: 'Success', description: `GRN ${newStatus.toLowerCase()} successfully` });
         fetchGrns();
         fetchStats();
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Failed to update GRN');
+        toast({ title: 'Error', description: error.error || 'Failed to update GRN', variant: 'destructive' });
       }
     } catch (error) {
       console.error('Failed to update GRN:', error);
-      toast.error('Failed to update GRN');
+      toast({ title: 'Error', description: 'Failed to update GRN', variant: 'destructive' });
+    }
+  };
+
+  const handleProcessGRN = async (grnId: string) => {
+    if (!user) {
+      toast({ title: 'Error', description: 'User not authenticated', variant: 'destructive' });
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const response = await fetch(`/api/grn/${grnId}/process`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          postedBy: user.id,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        toast({
+          title: 'Success',
+          description: `GRN posted - ${data.data.transactionsProcessed} stock transactions created`
+        });
+        setShowViewDialog(false);
+        fetchGrns();
+        fetchStats();
+      } else {
+        toast({
+          title: 'Error',
+          description: data.error || data.message || 'Failed to process GRN',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      console.error('Failed to process GRN:', error);
+      toast({ title: 'Error', description: 'Failed to process GRN', variant: 'destructive' });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -366,7 +416,7 @@ export function GrnView() {
     
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
-      toast.error('Please allow popups to print');
+      toast({ title: 'Error', description: 'Please allow popups to print', variant: 'destructive' });
       return;
     }
 
@@ -702,18 +752,19 @@ export function GrnView() {
                           <Eye className="h-4 w-4" />
                         </Button>
                         {grn.status === 'DRAFT' && (
-                          <Button variant="ghost" size="sm" onClick={() => handleStatusChange(grn.id, 'SUBMITTED')}>
-                            Submit
-                          </Button>
+                          <>
+                            <Button variant="ghost" size="sm" onClick={() => handleStatusChange(grn.id, 'SUBMITTED')}>
+                              Submit
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleProcessGRN(grn.id)} disabled={submitting} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                              {submitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-2" />}
+                              Post
+                            </Button>
+                          </>
                         )}
                         {grn.status === 'SUBMITTED' && (
                           <Button variant="ghost" size="sm" onClick={() => handleStatusChange(grn.id, 'VERIFIED')} className="text-emerald-600">
                             Verify
-                          </Button>
-                        )}
-                        {grn.status === 'VERIFIED' && (
-                          <Button variant="ghost" size="sm" onClick={() => handleStatusChange(grn.id, 'POSTED')} className="text-emerald-600">
-                            Post
                           </Button>
                         )}
                       </div>
@@ -949,10 +1000,16 @@ export function GrnView() {
               Print
             </Button>
             {selectedGrn?.status === 'DRAFT' && (
-              <Button onClick={() => { handleStatusChange(selectedGrn.id, 'SUBMITTED'); setShowViewDialog(false); }} className="bg-emerald-600 hover:bg-emerald-700">
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Submit
-              </Button>
+              <>
+                <Button onClick={() => { handleStatusChange(selectedGrn.id, 'SUBMITTED'); setShowViewDialog(false); }} variant="outline">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Submit
+                </Button>
+                <Button onClick={() => handleProcessGRN(selectedGrn.id)} disabled={submitting} className="bg-emerald-600 hover:bg-emerald-700">
+                  {submitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-2" />}
+                  Post GRN
+                </Button>
+              </>
             )}
             {selectedGrn?.status === 'SUBMITTED' && (
               <Button onClick={() => { handleStatusChange(selectedGrn.id, 'VERIFIED'); setShowViewDialog(false); }} className="bg-emerald-600 hover:bg-emerald-700">

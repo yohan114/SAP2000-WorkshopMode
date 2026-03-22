@@ -292,6 +292,19 @@ export function FuelControlView() {
       return;
     }
 
+    const capacity = parseFloat(tankForm.capacity);
+    const currentLevel = parseFloat(tankForm.currentLevel) || 0;
+
+    if (capacity <= 0) {
+      toast({ title: 'Validation Error', description: 'Capacity must be greater than 0', variant: 'destructive' });
+      return;
+    }
+
+    if (currentLevel > capacity) {
+      toast({ title: 'Validation Error', description: 'Current level cannot exceed capacity', variant: 'destructive' });
+      return;
+    }
+
     try {
       setSubmitting(true);
       const res = await fetch('/api/fuel/tanks', {
@@ -301,8 +314,8 @@ export function FuelControlView() {
           tankNumber: tankForm.tankNumber,
           name: tankForm.name,
           fuelType: tankForm.fuelType,
-          capacity: parseFloat(tankForm.capacity),
-          currentLevel: parseFloat(tankForm.currentLevel) || 0,
+          capacity: capacity,
+          currentLevel: currentLevel,
           location: tankForm.location || undefined,
         }),
       });

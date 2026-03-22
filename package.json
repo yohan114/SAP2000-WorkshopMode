@@ -15,7 +15,8 @@
     "seed:privileges": "bun prisma/seed-privileges.ts",
     "seed:roles": "bun prisma/seed-roles.ts",
     "seed:lpa": "bun prisma/seed-lpa.ts",
-    "seed:all": "bun prisma/seed-privileges.ts && bun prisma/seed-roles.ts && bun prisma/seed-lpa.ts"
+    "seed:all": "bun prisma/seed-privileges.ts && bun prisma/seed-roles.ts && bun prisma/seed-lpa.ts",
+    "production:setup": "bun prisma/production-setup.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

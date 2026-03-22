@@ -57,7 +57,7 @@ import {
   Save,
   RotateCcw,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 
 // ============================================
 // INTERFACES
@@ -179,6 +179,7 @@ const LEVEL_LABELS: Record<number, string> = {
 // ============================================
 
 export function RoleManagementView() {
+  const { toast } = useToast();
   // State
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
@@ -233,7 +234,7 @@ export function RoleManagementView() {
       }
     } catch (error) {
       console.error('Failed to fetch roles:', error);
-      toast.error('Failed to load roles');
+      toast({ title: 'Error', description: 'Failed to load roles', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -265,7 +266,7 @@ export function RoleManagementView() {
       }
     } catch (error) {
       console.error('Failed to fetch role privileges:', error);
-      toast.error('Failed to load privileges');
+      toast({ title: 'Error', description: 'Failed to load privileges', variant: 'destructive' });
     } finally {
       setPrivilegesLoading(false);
     }
@@ -274,7 +275,7 @@ export function RoleManagementView() {
   const fetchMatrixData = async () => {
     try {
       setMatrixLoading(true);
-      
+
       // Fetch all roles with their privileges
       const [rolesRes, privRes] = await Promise.all([
         fetch('/api/roles'),
@@ -284,13 +285,13 @@ export function RoleManagementView() {
       if (rolesRes.ok && privRes.ok) {
         const rolesData: RolesResponse = await rolesRes.json();
         const privData = await privRes.json();
-        
+
         setMatrixRoles(rolesData.data || []);
         setAllPrivileges(privData.data || []);
       }
     } catch (error) {
       console.error('Failed to fetch matrix data:', error);
-      toast.error('Failed to load matrix data');
+      toast({ title: 'Error', description: 'Failed to load matrix data', variant: 'destructive' });
     } finally {
       setMatrixLoading(false);
     }
@@ -299,7 +300,7 @@ export function RoleManagementView() {
   // Handlers
   const handleCreateRole = async () => {
     if (!roleForm.code || !roleForm.name) {
-      toast.error('Code and name are required');
+      toast({ title: 'Error', description: 'Code and name are required', variant: 'destructive' });
       return;
     }
 
@@ -312,17 +313,17 @@ export function RoleManagementView() {
       });
 
       if (response.ok) {
-        toast.success('Role created successfully');
+        toast({ title: 'Success', description: 'Role created successfully' });
         setShowRoleDialog(false);
         resetRoleForm();
         fetchRoles();
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Failed to create role');
+        toast({ title: 'Error', description: error.error || 'Failed to create role', variant: 'destructive' });
       }
     } catch (error) {
       console.error('Failed to create role:', error);
-      toast.error('Failed to create role');
+      toast({ title: 'Error', description: 'Failed to create role', variant: 'destructive' });
     } finally {
       setSubmitting(false);
     }
@@ -330,7 +331,7 @@ export function RoleManagementView() {
 
   const handleUpdateRole = async () => {
     if (!selectedRole || !roleForm.name) {
-      toast.error('Name is required');
+      toast({ title: 'Error', description: 'Name is required', variant: 'destructive' });
       return;
     }
 
@@ -348,17 +349,17 @@ export function RoleManagementView() {
       });
 
       if (response.ok) {
-        toast.success('Role updated successfully');
+        toast({ title: 'Success', description: 'Role updated successfully' });
         setShowRoleDialog(false);
         resetRoleForm();
         fetchRoles();
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Failed to update role');
+        toast({ title: 'Error', description: error.error || 'Failed to update role', variant: 'destructive' });
       }
     } catch (error) {
       console.error('Failed to update role:', error);
-      toast.error('Failed to update role');
+      toast({ title: 'Error', description: 'Failed to update role', variant: 'destructive' });
     } finally {
       setSubmitting(false);
     }
@@ -374,17 +375,17 @@ export function RoleManagementView() {
       });
 
       if (response.ok) {
-        toast.success('Role deleted successfully');
+        toast({ title: 'Success', description: 'Role deleted successfully' });
         setShowDeleteDialog(false);
         setSelectedRole(null);
         fetchRoles();
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Failed to delete role');
+        toast({ title: 'Error', description: error.error || 'Failed to delete role', variant: 'destructive' });
       }
     } catch (error) {
       console.error('Failed to delete role:', error);
-      toast.error('Failed to delete role');
+      toast({ title: 'Error', description: 'Failed to delete role', variant: 'destructive' });
     } finally {
       setSubmitting(false);
     }
@@ -407,10 +408,10 @@ export function RoleManagementView() {
 
         if (response.ok) {
           updatePrivilegeInState(privilege.privilegeId, { isGranted });
-          toast.success(isGranted ? 'Privilege granted' : 'Privilege revoked');
+          toast({ title: 'Success', description: isGranted ? 'Privilege granted' : 'Privilege revoked' });
         } else {
           const error = await response.json();
-          toast.error(error.error || 'Failed to update privilege');
+          toast({ title: 'Error', description: error.error || 'Failed to update privilege', variant: 'destructive' });
         }
       } else {
         // Add new privilege
@@ -425,15 +426,15 @@ export function RoleManagementView() {
 
         if (response.ok) {
           fetchRolePrivileges(selectedRole.id);
-          toast.success('Privilege added');
+          toast({ title: 'Success', description: 'Privilege added' });
         } else {
           const error = await response.json();
-          toast.error(error.error || 'Failed to add privilege');
+          toast({ title: 'Error', description: error.error || 'Failed to add privilege', variant: 'destructive' });
         }
       }
     } catch (error) {
       console.error('Failed to toggle privilege:', error);
-      toast.error('Failed to update privilege');
+      toast({ title: 'Error', description: 'Failed to update privilege', variant: 'destructive' });
     }
   };
 
@@ -455,14 +456,14 @@ export function RoleManagementView() {
 
       if (response.ok) {
         updatePrivilegeInState(privilege.privilegeId, updates);
-        toast.success('Privilege settings updated');
+        toast({ title: 'Success', description: 'Privilege settings updated' });
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Failed to update settings');
+        toast({ title: 'Error', description: error.error || 'Failed to update settings', variant: 'destructive' });
       }
     } catch (error) {
       console.error('Failed to update privilege settings:', error);
-      toast.error('Failed to update settings');
+      toast({ title: 'Error', description: 'Failed to update settings', variant: 'destructive' });
     }
   };
 

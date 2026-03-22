@@ -44,7 +44,7 @@ import {
   Eye,
   Paperclip
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 
 interface Document {
   id: string;
@@ -92,6 +92,7 @@ const formatFileSize = (bytes: number): string => {
 };
 
 export function DocumentsView() {
+  const { toast } = useToast();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -126,7 +127,7 @@ export function DocumentsView() {
       }
     } catch (error) {
       console.error('Failed to fetch documents:', error);
-      toast.error('Failed to load documents');
+      toast({ title: 'Error', description: 'Failed to load documents', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -141,7 +142,7 @@ export function DocumentsView() {
 
   const handleUpload = async () => {
     if (!uploadForm.file) {
-      toast.error('Please select a file to upload');
+      toast({ title: 'Error', description: 'Please select a file to upload', variant: 'destructive' });
       return;
     }
 
@@ -162,17 +163,17 @@ export function DocumentsView() {
       });
 
       if (response.ok) {
-        toast.success('Document uploaded successfully');
+        toast({ title: 'Success', description: 'Document uploaded successfully' });
         setShowUploadDialog(false);
         resetUploadForm();
         fetchDocuments();
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Failed to upload document');
+        toast({ title: 'Error', description: error.error || 'Failed to upload document', variant: 'destructive' });
       }
     } catch (error) {
       console.error('Failed to upload document:', error);
-      toast.error('Failed to upload document');
+      toast({ title: 'Error', description: 'Failed to upload document', variant: 'destructive' });
     } finally {
       setUploading(false);
       setUploadProgress(0);
@@ -193,11 +194,11 @@ export function DocumentsView() {
         window.URL.revokeObjectURL(url);
         a.remove();
       } else {
-        toast.error('Failed to download document');
+        toast({ title: 'Error', description: 'Failed to download document', variant: 'destructive' });
       }
     } catch (error) {
       console.error('Failed to download document:', error);
-      toast.error('Failed to download document');
+      toast({ title: 'Error', description: 'Failed to download document', variant: 'destructive' });
     }
   };
 
@@ -212,15 +213,15 @@ export function DocumentsView() {
       });
 
       if (response.ok) {
-        toast.success('Document deleted successfully');
+        toast({ title: 'Success', description: 'Document deleted successfully' });
         fetchDocuments();
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Failed to delete document');
+        toast({ title: 'Error', description: error.error || 'Failed to delete document', variant: 'destructive' });
       }
     } catch (error) {
       console.error('Failed to delete document:', error);
-      toast.error('Failed to delete document');
+      toast({ title: 'Error', description: 'Failed to delete document', variant: 'destructive' });
     }
   };
 

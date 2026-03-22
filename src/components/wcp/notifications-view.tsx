@@ -52,7 +52,7 @@ import {
   Mail,
   Smartphone
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 import { useNotifications, NotificationType } from '@/hooks/use-notifications';
 
 interface Notification {
@@ -89,14 +89,15 @@ const typeColors: Record<string, string> = {
 };
 
 export function NotificationsView() {
-  const { 
-    notifications, 
-    unreadCount, 
+  const { toast } = useToast();
+  const {
+    notifications,
+    unreadCount,
     isConnected,
-    markAsRead, 
-    markAllAsRead, 
+    markAsRead,
+    markAllAsRead,
     deleteNotification,
-    clearAll 
+    clearAll
   } = useNotifications();
   
   const [preferences, setPreferences] = useState<NotificationPreference[]>([]);
@@ -133,14 +134,14 @@ export function NotificationsView() {
       });
 
       if (response.ok) {
-        toast.success('Preference updated');
+        toast({ title: 'Success', description: 'Preference updated' });
         fetchPreferences();
       } else {
-        toast.error('Failed to update preference');
+        toast({ title: 'Error', description: 'Failed to update preference', variant: 'destructive' });
       }
     } catch (error) {
       console.error('Failed to update preference:', error);
-      toast.error('Failed to update preference');
+      toast({ title: 'Error', description: 'Failed to update preference', variant: 'destructive' });
     }
   };
 

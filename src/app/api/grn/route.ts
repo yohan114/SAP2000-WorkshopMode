@@ -172,14 +172,15 @@ import { z } from 'zod';
  */
 
 const createGRNSchema = z.object({
-  poId: z.string().min(1),
+  poId: z.string().optional(),
+  supplierId: z.string().optional(),
   storeId: z.string().min(1),
   deliveryNoteNo: z.string().optional(),
   deliveryDate: z.string().optional(),
   notes: z.string().optional(),
   createdBy: z.string().min(1),
   lines: z.array(z.object({
-    poLineId: z.string(),
+    poLineId: z.string().optional(),
     itemId: z.string(),
     receivedQty: z.number().positive(),
     acceptedQty: z.number().min(0),
@@ -263,30 +264,45 @@ export async function GET(request: Request) {
   }
 }
 
-// POST - Create GRN from PO
+// POST - Create GRN (from PO or standalone)
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const result = createGRNSchema.safeParse(body);
-    
+
     if (!result.success) {
       return apiError('Validation failed', 400, result.error.issues[0]?.message);
     }
 
-    const { poId, storeId, deliveryNoteNo, deliveryDate, notes, createdBy, lines } = result.data;
+    const { poId, supplierId, storeId, deliveryNoteNo, deliveryDate, notes, createdBy, lines } = result.data;
 
-    // Verify PO exists and is in correct status
-    const po = await db.purchaseOrder.findUnique({
-      where: { id: poId },
-      include: { lines: true },
-    });
+    let finalSupplierId = supplierId;
+    let po = null;
 
-    if (!po) {
-      return apiError('Purchase order not found', 404);
-    }
+    // If PO is provided, verify it exists and get supplier
+    if (poId) {
+      po = await db.purchaseOrder.findUnique({
+        where: { id: poId },
+        include: { lines: true },
+      });
 
-    if (!['ISSUED', 'ACKNOWLEDGED', 'PARTIALLY_RECEIVED'].includes(po.status)) {
-      return apiError('PO must be issued or acknowledged to create GRN', 400);
+      if (!po) {
+        return apiError('Purchase order not found', 404);
+      }
+
+      if (!['ISSUED', 'ACKNOWLEDGED', 'PARTIALLY_RECEIVED'].includes(po.status)) {
+        return apiError('PO must be issued or acknowledged to create GRN', 400);
+      }
+
+      finalSupplierId = po.supplierId;
+    } else if (supplierId) {
+      // Verify supplier exists for standalone GRN
+      const supplier = await db.supplier.findUnique({ where: { id: supplierId } });
+      if (!supplier) {
+        return apiError('Supplier not found', 404);
+      }
+    } else {
+      return apiError('Either PO or Supplier must be provided', 400);
     }
 
     // Verify store exists
@@ -323,7 +339,7 @@ export async function POST(request: Request) {
       data: {
         grnNumber,
         poId,
-        supplierId: po.supplierId,
+        supplierId: finalSupplierId,
         storeId,
         deliveryNoteNo,
         deliveryDate: deliveryDate ? new Date(deliveryDate) : undefined,

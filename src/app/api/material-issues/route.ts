@@ -185,6 +185,34 @@ export async function POST(request: Request) {
 
     const miNumber = generateDocumentNumber('MI', count + 1);
 
+    // BUG FIX #41: Validate sufficient stock is available before creating material issue
+    for (const line of data.lines) {
+      const stock = await db.storeStock.findFirst({
+        where: {
+          storeId: data.storeId,
+          itemId: line.itemId,
+        },
+      });
+
+      if (!stock) {
+        return apiError(
+          `Stock not found for item in store. Please ensure stock is set up.`,
+          404
+        );
+      }
+
+      const availableQty = stock.availableQty.toNumber();
+      const reservedQty = stock.reservedQty.toNumber();
+      const actualAvailable = availableQty - reservedQty;
+
+      if (actualAvailable < line.issuedQty) {
+        return apiError(
+          `Insufficient stock for item. Available: ${actualAvailable}, Requested: ${line.issuedQty}`,
+          400
+        );
+      }
+    }
+
     // Calculate total value
     let totalValue = 0;
     const linesData = await Promise.all(
@@ -210,33 +238,74 @@ export async function POST(request: Request) {
       })
     );
 
-    // Create material issue with lines
-    const materialIssue = await db.materialIssue.create({
-      data: {
-        miNumber,
-        mrId: data.mrId,
-        storeId: data.storeId,
-        issuedToId: data.issuedToId,
-        jobCardId: data.jobCardId,
-        issueType: data.issueType,
-        status: MiStatus.DRAFT,
-        totalValue,
-        lines: {
-          create: linesData,
-        },
-      },
-      include: {
-        store: true,
-        issuedTo: true,
-        lines: {
-          include: {
-            item: true,
+    // BUG FIX #42: Create material issue with stock reservations to prevent double-allocation
+    const materialIssue = await db.$transaction(async (tx) => {
+      // Create material issue with lines
+      const mi = await tx.materialIssue.create({
+        data: {
+          miNumber,
+          mrId: data.mrId,
+          storeId: data.storeId,
+          issuedToId: data.issuedToId,
+          jobCardId: data.jobCardId,
+          issueType: data.issueType,
+          status: MiStatus.DRAFT,
+          totalValue,
+          lines: {
+            create: linesData,
           },
         },
-      },
+        include: {
+          store: true,
+          issuedTo: true,
+          lines: {
+            include: {
+              item: true,
+            },
+          },
+        },
+      });
+
+      // Create stock reservations for each line to prevent double-allocation
+      for (const line of linesData) {
+        // Check if stock record exists
+        const stock = await tx.storeStock.findFirst({
+          where: {
+            storeId: data.storeId,
+            itemId: line.itemId,
+          },
+        });
+
+        if (!stock) {
+          throw new Error(`Stock not found for item ${line.itemId} in store ${data.storeId}`);
+        }
+
+        // Create reservation
+        await tx.stockReservation.create({
+          data: {
+            storeId: data.storeId,
+            itemId: line.itemId,
+            reservedQty: line.issuedQty,
+            materialIssueId: mi.id,
+            status: 'ACTIVE',
+          },
+        });
+
+        // Update stock's reserved quantity
+        await tx.storeStock.update({
+          where: { id: stock.id },
+          data: {
+            reservedQty: {
+              increment: line.issuedQty,
+            },
+          },
+        });
+      }
+
+      return mi;
     });
 
-    return apiSuccess(materialIssue, 'Material issue created successfully', 201);
+    return apiSuccess(materialIssue, 'Material issue created successfully with stock reservations', 201);
   } catch (error) {
     console.error('Create material issue error:', error);
     return apiError('Failed to create material issue', 500);

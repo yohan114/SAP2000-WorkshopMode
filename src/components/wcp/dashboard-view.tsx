@@ -339,7 +339,11 @@ const priorityColors: Record<string, string> = {
   'LOW': 'bg-slate-400',
 };
 
-export function DashboardView() {
+interface DashboardViewProps {
+  onNavigate?: (tab: string) => void;
+}
+
+export function DashboardView({ onNavigate }: DashboardViewProps) {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [widgets, setWidgets] = useState<WidgetsData | null>(null);
@@ -1359,7 +1363,7 @@ export function DashboardView() {
                 <Clock className="h-5 w-5 text-emerald-600" />
                 Recent Job Cards
               </CardTitle>
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" onClick={() => onNavigate?.('jobcards')}>
                 View All
                 <ArrowUpRight className="h-4 w-4 ml-1" />
               </Button>
@@ -1451,19 +1455,31 @@ export function DashboardView() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-3">
-            <Button className="bg-emerald-600 hover:bg-emerald-700">
+            <Button
+              className="bg-emerald-600 hover:bg-emerald-700"
+              onClick={() => onNavigate?.('jobcards')}
+            >
               <Wrench className="h-4 w-4 mr-2" />
               New Job Card
             </Button>
-            <Button variant="outline">
+            <Button
+              variant="outline"
+              onClick={() => onNavigate?.('requests')}
+            >
               <Package className="h-4 w-4 mr-2" />
               New Material Request
             </Button>
-            <Button variant="outline">
+            <Button
+              variant="outline"
+              onClick={() => onNavigate?.('assets')}
+            >
               <Truck className="h-4 w-4 mr-2" />
               Register Asset
             </Button>
-            <Button variant="outline">
+            <Button
+              variant="outline"
+              onClick={() => onNavigate?.('pm')}
+            >
               <Calendar className="h-4 w-4 mr-2" />
               Schedule PM
             </Button>

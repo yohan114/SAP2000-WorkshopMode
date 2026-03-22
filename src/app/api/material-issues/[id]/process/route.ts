@@ -77,7 +77,7 @@ export async function POST(
     // Process the issue in a transaction
     const results = await db.$transaction(async (tx) => {
       const transactions = [];
-      
+
       // Process each line
       for (const { line, stock } of stockChecks) {
         if (!stock) continue;
@@ -85,13 +85,42 @@ export async function POST(
         const unitCost = line.unitCost.toNumber();
         const quantity = line.issuedQty.toNumber();
         const totalValue = unitCost * quantity;
-        const newQty = stock.availableQty.toNumber() - quantity;
 
-        // Update stock
+        // BUG FIX #42: Convert reservation to actual stock deduction
+        // Find and consume the reservation
+        const reservation = await tx.stockReservation.findFirst({
+          where: {
+            materialIssueId: id,
+            itemId: line.itemId,
+            status: 'ACTIVE',
+          },
+        });
+
+        if (reservation) {
+          // Mark reservation as fulfilled
+          await tx.stockReservation.update({
+            where: { id: reservation.id },
+            data: {
+              status: 'FULFILLED',
+            },
+          });
+
+          // Decrease reserved quantity
+          await tx.storeStock.update({
+            where: { id: stock.id },
+            data: {
+              reservedQty: {
+                decrement: quantity,
+              },
+            },
+          });
+        }
+
+        // Update available stock
         await tx.storeStock.update({
           where: { id: stock.id },
           data: {
-            availableQty: newQty,
+            availableQty: { decrement: quantity },
             lastMovementAt: new Date(),
           },
         });

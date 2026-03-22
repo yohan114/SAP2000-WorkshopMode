@@ -13,6 +13,8 @@ import path from 'path';
 import { db } from '@/lib/db';
 import { apiSuccess, apiError, apiNotFound } from '@/lib/api-utils';
 
+export const dynamic = 'force-dynamic';
+
 // Default photo categories for job cards
 const DEFAULT_PHOTO_CATEGORIES = [
   { code: 'BEFORE_START', name: 'Before Start', description: 'Photos taken before starting the job', sequence: 1, minPhotos: 0, maxPhotos: 10, categoryType: 'JOB_CARD', isRequired: false },

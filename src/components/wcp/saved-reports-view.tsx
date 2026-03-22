@@ -62,7 +62,7 @@ import {
   Download,
   Eye,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 
 // Types
 interface SavedReport {
@@ -118,6 +118,7 @@ const FORMAT_OPTIONS = [
 ];
 
 export function SavedReportsView() {
+  const { toast } = useToast();
   const [reports, setReports] = useState<SavedReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -159,7 +160,7 @@ export function SavedReportsView() {
       setReports(data.data || []);
     } catch (error) {
       console.error('Error fetching saved reports:', error);
-      toast.error('Failed to fetch saved reports');
+      toast({ title: 'Error', description: 'Failed to fetch saved reports', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -178,7 +179,7 @@ export function SavedReportsView() {
   // Handle form submit
   const handleSubmit = async () => {
     if (!formData.name || !formData.reportType) {
-      toast.error('Please fill in all required fields');
+      toast({ title: 'Error', description: 'Please fill in all required fields', variant: 'destructive' });
       return;
     }
 
@@ -215,13 +216,13 @@ export function SavedReportsView() {
         throw new Error(error.error || 'Failed to save report');
       }
 
-      toast.success(editingReport ? 'Report updated' : 'Report saved');
+      toast({ title: 'Success', description: editingReport ? 'Report updated' : 'Report saved' });
       setShowDialog(false);
       resetForm();
       fetchReports();
     } catch (error) {
       console.error('Error saving report:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to save report');
+      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to save report', variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -235,11 +236,11 @@ export function SavedReportsView() {
       const response = await fetch(`/api/saved-reports/${id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('Failed to delete report');
 
-      toast.success('Report deleted');
+      toast({ title: 'Success', description: 'Report deleted' });
       fetchReports();
     } catch (error) {
       console.error('Error deleting report:', error);
-      toast.error('Failed to delete report');
+      toast({ title: 'Error', description: 'Failed to delete report', variant: 'destructive' });
     }
   };
 
@@ -259,11 +260,11 @@ export function SavedReportsView() {
       setPreviewData(data);
       setShowPreviewDialog(true);
 
-      toast.success(`Report "${report.name}" executed successfully`);
+      toast({ title: 'Success', description: `Report "${report.name}" executed successfully` });
       fetchReports();
     } catch (error) {
       console.error('Error executing report:', error);
-      toast.error('Failed to execute report');
+      toast({ title: 'Error', description: 'Failed to execute report', variant: 'destructive' });
     } finally {
       setExecutingId(null);
     }
@@ -280,11 +281,11 @@ export function SavedReportsView() {
 
       if (!response.ok) throw new Error('Failed to update report');
 
-      toast.success(report.isActive ? 'Report deactivated' : 'Report activated');
+      toast({ title: 'Success', description: report.isActive ? 'Report deactivated' : 'Report activated' });
       fetchReports();
     } catch (error) {
       console.error('Error toggling report:', error);
-      toast.error('Failed to update report');
+      toast({ title: 'Error', description: 'Failed to update report', variant: 'destructive' });
     }
   };
 

@@ -69,6 +69,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/auth/hooks';
+import { useRouter } from 'next/navigation';
 import { ExportButton } from '@/components/wcp/export-button';
 
 interface MaterialRequest {
@@ -181,6 +182,7 @@ const validTransitions: Record<string, Array<{ action: string; label: string; ne
 };
 
 export function MaterialRequestsView() {
+  const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
   const [materialRequests, setMaterialRequests] = useState<MaterialRequest[]>([]);
@@ -345,11 +347,12 @@ export function MaterialRequestsView() {
           setSubmitting(false);
           return;
         }
-        const response = await fetch(`/api/material-requests/${actionDialog.mr.id}/approve`, {
+        const response = await fetch(`/api/material-requests/${actionDialog.mr.id}/transition`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            rejectorId: user.id,
+            toStatus: 'REJECTED',
+            actorId: user.id,
             reason: actionNotes,
           }),
         });
@@ -525,13 +528,13 @@ export function MaterialRequestsView() {
                 New Request
               </Button>
             </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogContent className="max-w-3xl w-[95vw] sm:w-full max-h-[90vh] flex flex-col">
             <DialogHeader>
               <DialogTitle>Create Material Request</DialogTitle>
               <DialogDescription>Request materials for maintenance work</DialogDescription>
             </DialogHeader>
-            <ScrollArea className="flex-1 -mx-6 px-6">
-              <div className="space-y-4 py-4">
+            <div className="max-h-[70vh] overflow-y-auto overflow-x-auto -mx-6 px-6">
+              <div className="space-y-4 py-4 min-w-[600px] sm:min-w-0">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Request Type</Label>
@@ -598,11 +601,11 @@ export function MaterialRequestsView() {
                   ) : (
                     <div className="space-y-3">
                       {formData.lines.map((line, index) => (
-                        <div key={index} className="flex items-end gap-2 p-3 bg-muted/50 rounded-lg">
-                          <div className="flex-1 space-y-1">
+                        <div key={index} className="flex flex-col sm:flex-row items-start sm:items-end gap-3 p-3 bg-muted/50 rounded-lg">
+                          <div className="w-full sm:flex-1 space-y-1 min-w-0">
                             <Label className="text-xs">Item</Label>
                             <Select value={line.itemId} onValueChange={(v) => updateLine(index, 'itemId', v)}>
-                              <SelectTrigger><SelectValue placeholder="Select item" /></SelectTrigger>
+                              <SelectTrigger className="w-full [&>span]:truncate"><SelectValue placeholder="Select item" /></SelectTrigger>
                               <SelectContent>
                                 {items.map((item) => (
                                   <SelectItem key={item.id} value={item.id}>
@@ -612,26 +615,29 @@ export function MaterialRequestsView() {
                               </SelectContent>
                             </Select>
                           </div>
-                          <div className="w-24 space-y-1">
-                            <Label className="text-xs">Qty</Label>
-                            <Input type="number" min="1" value={line.requestedQty} onChange={(e) => updateLine(index, 'requestedQty', parseInt(e.target.value) || 1)} />
-                          </div>
-                          <div className="w-20 space-y-1">
-                            <Label className="text-xs">Unit</Label>
-                            <div className="h-10 px-3 flex items-center text-sm text-muted-foreground bg-card border rounded-md">
-                              {line.item?.unitOfMeasure || '-'}
+                          
+                          <div className="flex items-end gap-2 w-full sm:w-auto">
+                            <div className="flex-1 sm:w-24 space-y-1 shrink-0">
+                              <Label className="text-xs">Qty</Label>
+                              <Input type="number" min="1" value={line.requestedQty} onChange={(e) => updateLine(index, 'requestedQty', parseInt(e.target.value) || 1)} />
                             </div>
+                            <div className="w-20 space-y-1 shrink-0">
+                              <Label className="text-xs">Unit</Label>
+                              <div className="h-10 px-3 flex items-center text-sm text-muted-foreground bg-card border rounded-md">
+                                {line.item?.unitOfMeasure || '-'}
+                              </div>
+                            </div>
+                            <Button variant="ghost" size="icon" className="text-red-500 shrink-0" onClick={() => removeLine(index)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
-                          <Button variant="ghost" size="icon" className="text-red-500" onClick={() => removeLine(index)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
               </div>
-            </ScrollArea>
+            </div>
             <DialogFooter className="mt-4 pt-4 border-t">
               <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
               <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleCreateMR} disabled={submitting || formData.lines.length === 0}>
@@ -766,7 +772,7 @@ export function MaterialRequestsView() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onClick={() => openDetailDialog(mr)}><Eye className="h-4 w-4 mr-2" />View Details</DropdownMenuItem>
                               {mr.status === 'DRAFT' && <DropdownMenuItem><Edit className="h-4 w-4 mr-2" />Edit</DropdownMenuItem>}
-                              {mr.status === 'APPROVED' && <DropdownMenuItem><Package className="h-4 w-4 mr-2" />Process Issue</DropdownMenuItem>}
+                              {mr.status === 'APPROVED' && <DropdownMenuItem onClick={() => router.push('/wcp/material-issues')}><Package className="h-4 w-4 mr-2" />Process Issue</DropdownMenuItem>}
                               <DropdownMenuSeparator />
                               {mr.status === 'DRAFT' && (
                                 <DropdownMenuItem className="text-red-600" onClick={() => setActionDialog({ open: true, action: 'cancel', mr: mr })}>
@@ -871,9 +877,9 @@ export function MaterialRequestsView() {
                       <List className="h-4 w-4" />Requested Items ({selectedMR.lines?.length || 0})
                     </h4>
                     {selectedMR.lines && selectedMR.lines.length > 0 ? (
-                      <div className="rounded-lg border overflow-hidden">
-                        <Table>
-                          <TableHeader className="bg-muted/50">
+                      <div className="rounded-lg border max-h-[300px] overflow-y-auto overflow-x-auto">
+                        <Table className="min-w-[600px]">
+                          <TableHeader className="sticky top-0 z-10 bg-muted shadow-sm">
                             <TableRow>
                               <TableHead className="font-semibold">Item</TableHead>
                               <TableHead className="font-semibold text-center">Requested</TableHead>

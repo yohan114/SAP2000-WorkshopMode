@@ -47,9 +47,10 @@ import {
   BarChart3,
   FileSpreadsheet,
   Eye,
-  RefreshCw
+  RefreshCw,
+  Trash2
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 
 interface StockTake {
   id: string;
@@ -123,6 +124,7 @@ const varianceReasons = [
 ];
 
 export function StockTakeView() {
+  const { toast } = useToast();
   const [stockTakes, setStockTakes] = useState<StockTake[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
   const [stats, setStats] = useState<StockTakeStats | null>(null);
@@ -178,7 +180,7 @@ export function StockTakeView() {
       }
     } catch (error) {
       console.error('Failed to fetch stock takes:', error);
-      toast.error('Failed to load stock takes');
+      toast({ title: 'Error', description: 'Failed to load stock takes', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -213,7 +215,7 @@ export function StockTakeView() {
 
   const handleCreateStockTake = async () => {
     if (!formData.storeId) {
-      toast.error('Please select a store');
+      toast({ title: 'Error', description: 'Please select a store', variant: 'destructive' });
       return;
     }
 
@@ -226,18 +228,18 @@ export function StockTakeView() {
       });
 
       if (response.ok) {
-        toast.success('Stock take created successfully');
+        toast({ title: 'Success', description: 'Stock take created successfully' });
         setShowCreateDialog(false);
         setFormData({ storeId: '', countType: 'FULL', scheduledDate: new Date().toISOString().split('T')[0], notes: '' });
         fetchStockTakes();
         fetchStats();
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Failed to create stock take');
+        toast({ title: 'Error', description: error.error || 'Failed to create stock take', variant: 'destructive' });
       }
     } catch (error) {
       console.error('Failed to create stock take:', error);
-      toast.error('Failed to create stock take');
+      toast({ title: 'Error', description: 'Failed to create stock take', variant: 'destructive' });
     } finally {
       setSubmitting(false);
     }
@@ -252,16 +254,16 @@ export function StockTakeView() {
       });
 
       if (response.ok) {
-        toast.success('Stock take started');
+        toast({ title: 'Success', description: 'Stock take started' });
         fetchStockTakes();
         fetchStats();
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Failed to start stock take');
+        toast({ title: 'Error', description: error.error || 'Failed to start stock take', variant: 'destructive' });
       }
     } catch (error) {
       console.error('Failed to start stock take:', error);
-      toast.error('Failed to start stock take');
+      toast({ title: 'Error', description: 'Failed to start stock take', variant: 'destructive' });
     }
   };
 
@@ -277,7 +279,7 @@ export function StockTakeView() {
       }
     } catch (error) {
       console.error('Failed to fetch stock take details:', error);
-      toast.error('Failed to load stock take details');
+      toast({ title: 'Error', description: 'Failed to load stock take details', variant: 'destructive' });
     }
   };
 
@@ -301,16 +303,16 @@ export function StockTakeView() {
       });
 
       if (response.ok) {
-        toast.success('Count saved successfully');
+        toast({ title: 'Success', description: 'Count saved successfully' });
         setShowCountDialog(false);
         fetchStockTakes();
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Failed to save count');
+        toast({ title: 'Error', description: error.error || 'Failed to save count', variant: 'destructive' });
       }
     } catch (error) {
       console.error('Failed to save count:', error);
-      toast.error('Failed to save count');
+      toast({ title: 'Error', description: 'Failed to save count', variant: 'destructive' });
     } finally {
       setSubmitting(false);
     }
@@ -325,9 +327,13 @@ export function StockTakeView() {
         setVarianceSummary(data.data || data);
         setSelectedStockTake(stockTake);
         setShowVarianceDialog(true);
+      } else {
+        const error = await response.json();
+        toast({ title: 'Error', description: error.error || 'Failed to fetch variance summary', variant: 'destructive' });
       }
     } catch (error) {
       console.error('Failed to fetch variance:', error);
+      toast({ title: 'Error', description: 'Failed to fetch variance summary', variant: 'destructive' });
     }
   };
 
@@ -342,19 +348,39 @@ export function StockTakeView() {
       });
 
       if (response.ok) {
-        toast.success('Stock take completed successfully');
+        toast({ title: 'Success', description: 'Stock take completed successfully' });
         setShowVarianceDialog(false);
         fetchStockTakes();
         fetchStats();
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Failed to complete stock take');
+        toast({ title: 'Error', description: error.error || 'Failed to complete stock take', variant: 'destructive' });
       }
     } catch (error) {
       console.error('Failed to complete stock take:', error);
-      toast.error('Failed to complete stock take');
+      toast({ title: 'Error', description: 'Failed to complete stock take', variant: 'destructive' });
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (stockTake: StockTake) => {
+    if (!confirm('Are you sure you want to delete this stock take?')) return;
+    try {
+      const response = await fetch(`/api/stock-take/${stockTake.id}`, {
+        method: 'DELETE'
+      });
+      if (response.ok) {
+        toast({ title: 'Success', description: 'Stock take deleted successfully' });
+        fetchStockTakes();
+        fetchStats();
+      } else {
+        const error = await response.json();
+        toast({ title: 'Error', description: error.error || 'Failed to delete stock take', variant: 'destructive' });
+      }
+    } catch (error) {
+      console.error('Failed to delete stock take:', error);
+      toast({ title: 'Error', description: 'Failed to delete stock take', variant: 'destructive' });
     }
   };
 
@@ -367,7 +393,7 @@ export function StockTakeView() {
         
         const printWindow = window.open('', '_blank');
         if (!printWindow) {
-          toast.error('Please allow popups to print');
+          toast({ title: 'Error', description: 'Please allow popups to print', variant: 'destructive' });
           return;
         }
 
@@ -448,7 +474,7 @@ export function StockTakeView() {
       }
     } catch (error) {
       console.error('Failed to print count sheet:', error);
-      toast.error('Failed to generate count sheet');
+      toast({ title: 'Error', description: 'Failed to generate count sheet', variant: 'destructive' });
     }
   };
 
@@ -622,6 +648,9 @@ export function StockTakeView() {
                             </Button>
                             <Button variant="outline" size="sm" onClick={() => handleStartCount(st)}>
                               <Play className="h-4 w-4 mr-1" />Start
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => handleDelete(st)} className="text-red-600 hover:bg-red-50 hover:text-red-700 border-red-200">
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                           </>
                         )}

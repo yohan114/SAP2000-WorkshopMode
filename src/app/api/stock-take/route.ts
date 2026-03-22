@@ -191,13 +191,18 @@ export const VARIANCE_REASONS = [
 const VARIANCE_PERCENT_THRESHOLD = 5; // 5%
 const VARIANCE_VALUE_THRESHOLD = 100; // $100
 
+import { getCurrentUser } from '@/lib/auth/session';
+
+// ... other imports ...
+
 const createStockTakeSchema = z.object({
   storeId: z.string().min(1, 'Store is required'),
-  countMethod: z.enum(['FULL', 'CYCLE', 'SPOT_CHECK']).default('FULL'),
+  countMethod: z.enum(['FULL', 'CYCLE', 'SPOT_CHECK']).optional(),
+  countType: z.enum(['FULL', 'CYCLE', 'SPOT_CHECK']).optional(), // Accept frontend's field name
   scheduledDate: z.string().transform(v => new Date(v)),
   blindCount: z.boolean().default(true),
   notes: z.string().optional(),
-  initiatedBy: z.string().min(1, 'Initiator is required'),
+  initiatedBy: z.string().optional(),
   itemIds: z.array(z.string()).optional(), // For cycle/spot check
 });
 
@@ -327,7 +332,13 @@ export async function POST(request: Request) {
       return apiError('Validation failed', 400, result.error.issues[0]?.message);
     }
 
-    const { storeId, countMethod, scheduledDate, blindCount, notes, initiatedBy, itemIds } = result.data;
+    const { storeId, scheduledDate, blindCount, notes, itemIds } = result.data;
+    
+    // Support either frontend formulation
+    const countMethod = result.data.countMethod || result.data.countType || 'FULL';
+    
+    const currentUser = await getCurrentUser();
+    const initiatedBy = result.data.initiatedBy || currentUser?.id || 'unknown';
 
     // Verify store exists
     const store = await db.store.findUnique({

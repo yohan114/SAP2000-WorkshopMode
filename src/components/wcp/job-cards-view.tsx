@@ -467,17 +467,18 @@ export function JobCardsView() {
   }, [searchTerm, statusFilter, priorityFilter, pagination.page]);
 
   // Real-time SLA updates (poll every minute)
+  const hasJobCards = jobCards.length > 0;
   useEffect(() => {
     const interval = setInterval(() => {
       fetchSlaStats();
       // Re-fetch job cards to update SLA timers
-      if (jobCards.length > 0) {
+      if (hasJobCards) {
         fetchJobCards();
       }
     }, 60000); // 1 minute
 
     return () => clearInterval(interval);
-  }, [jobCards.length]);
+  }, [hasJobCards]);
 
   // Clear selection when filters change
   useEffect(() => {

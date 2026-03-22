@@ -88,7 +88,7 @@ import {
   BookmarkCheck,
   Trash2
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 import { exportReportToExcel, exportReportToCSV } from '@/lib/export-utils';
 import { 
   DropdownMenu,
@@ -334,6 +334,7 @@ interface SavedReport {
 }
 
 export function ReportsView() {
+  const { toast } = useToast();
   const [selectedReport, setSelectedReport] = useState<string | null>(null);
   const [dateFrom, setDateFrom] = useState(() => {
     const d = new Date();
@@ -380,7 +381,7 @@ export function ReportsView() {
   // Save current report configuration
   const handleSaveReport = async () => {
     if (!selectedReport || !saveName.trim()) {
-      toast.error('Please enter a name for the saved report');
+      toast({ title: 'Error', description: 'Please enter a name for the saved report', variant: 'destructive' });
       return;
     }
 
@@ -404,17 +405,17 @@ export function ReportsView() {
       });
 
       if (response.ok) {
-        toast.success('Report saved successfully');
+        toast({ title: 'Success', description: 'Report saved successfully' });
         setShowSaveDialog(false);
         setSaveName('');
         setSaveSchedule('');
         fetchSavedReports();
       } else {
-        toast.error('Failed to save report');
+        toast({ title: 'Error', description: 'Failed to save report', variant: 'destructive' });
       }
     } catch (error) {
       console.error('Failed to save report:', error);
-      toast.error('Failed to save report');
+      toast({ title: 'Error', description: 'Failed to save report', variant: 'destructive' });
     }
     setSaving(false);
   };
@@ -428,7 +429,7 @@ export function ReportsView() {
     }
     setSelectedReport(saved.reportType);
     setShowLoadDialog(false);
-    toast.success(`Loaded: ${saved.name}`);
+    toast({ title: 'Success', description: `Loaded: ${saved.name}` });
   };
 
   // Delete a saved report
@@ -439,14 +440,14 @@ export function ReportsView() {
       });
 
       if (response.ok) {
-        toast.success('Report deleted');
+        toast({ title: 'Success', description: 'Report deleted' });
         fetchSavedReports();
       } else {
-        toast.error('Failed to delete report');
+        toast({ title: 'Error', description: 'Failed to delete report', variant: 'destructive' });
       }
     } catch (error) {
       console.error('Failed to delete report:', error);
-      toast.error('Failed to delete report');
+      toast({ title: 'Error', description: 'Failed to delete report', variant: 'destructive' });
     }
   };
 
@@ -508,7 +509,7 @@ export function ReportsView() {
       setPreviewData(data);
       setShowPreviewDialog(true);
     } else {
-      toast.error('Failed to load report data');
+      toast({ title: 'Error', description: 'Failed to load report data', variant: 'destructive' });
     }
     
     setLoading(false);
@@ -522,7 +523,7 @@ export function ReportsView() {
     try {
       const data = await fetchReportData(reportId);
       if (!data) {
-        toast.error('Failed to generate report');
+        toast({ title: 'Error', description: 'Failed to generate report', variant: 'destructive' });
         setExporting(false);
         return;
       }
@@ -530,7 +531,7 @@ export function ReportsView() {
       await generateClientPDF(data);
     } catch (error) {
       console.error('Failed to export PDF:', error);
-      toast.error('Failed to generate PDF');
+      toast({ title: 'Error', description: 'Failed to generate PDF', variant: 'destructive' });
     }
 
     setExporting(false);
@@ -544,16 +545,16 @@ export function ReportsView() {
     try {
       const data = await fetchReportData(reportId);
       if (!data) {
-        toast.error('Failed to generate report');
+        toast({ title: 'Error', description: 'Failed to generate report', variant: 'destructive' });
         setExporting(false);
         return;
       }
 
       exportReportToExcel(data, `${reportId}-${dateFrom}-to-${dateTo}`);
-      toast.success('Excel file downloaded successfully');
+      toast({ title: 'Success', description: 'Excel file downloaded successfully' });
     } catch (error) {
       console.error('Failed to export Excel:', error);
-      toast.error('Failed to generate Excel file');
+      toast({ title: 'Error', description: 'Failed to generate Excel file', variant: 'destructive' });
     }
 
     setExporting(false);
@@ -567,16 +568,16 @@ export function ReportsView() {
     try {
       const data = await fetchReportData(reportId);
       if (!data) {
-        toast.error('Failed to generate report');
+        toast({ title: 'Error', description: 'Failed to generate report', variant: 'destructive' });
         setExporting(false);
         return;
       }
 
       exportReportToCSV(data, `${reportId}-${dateFrom}-to-${dateTo}`);
-      toast.success('CSV file downloaded successfully');
+      toast({ title: 'Success', description: 'CSV file downloaded successfully' });
     } catch (error) {
       console.error('Failed to export CSV:', error);
-      toast.error('Failed to generate CSV file');
+      toast({ title: 'Error', description: 'Failed to generate CSV file', variant: 'destructive' });
     }
 
     setExporting(false);
@@ -660,7 +661,7 @@ export function ReportsView() {
 
     // Save
     doc.save(`${data.title.toLowerCase().replace(/\s+/g, '-')}-${dateFrom}-to-${dateTo}.pdf`);
-    toast.success('Report downloaded successfully');
+    toast({ title: 'Success', description: 'Report downloaded successfully' });
   };
 
   // Filter reports by category

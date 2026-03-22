@@ -20,6 +20,7 @@ import {
   JobCardStatus,
 } from '@/lib/job-card-state-machine';
 import { z } from 'zod';
+import { getCurrentUser } from '@/lib/auth/session';
 
 // Schema for transition request
 const transitionSchema = z.object({
@@ -76,6 +77,8 @@ export async function POST(
     let meterReading: number | undefined;
     let comments: string | undefined;
 
+    const currentUser = await getCurrentUser();
+
     if (body.transition) {
       // New format using state machine
       const result = transitionSchema.safeParse(body);
@@ -84,7 +87,7 @@ export async function POST(
       }
       
       transitionType = result.data.transition;
-      actorId = result.data.actorId;
+      actorId = currentUser?.id || result.data.actorId;
       reason = result.data.reason;
       meterReading = result.data.meterReading;
       comments = result.data.comments;
@@ -96,7 +99,7 @@ export async function POST(
       }
 
       const data = result.data;
-      actorId = data.actorId || 'unknown';
+      actorId = currentUser?.id || data.actorId || 'unknown';
       reason = data.reason || data.notes;
       comments = data.comments || data.notes;
       meterReading = data.meterReading;
@@ -218,7 +221,7 @@ export async function POST(
     if (updatedJobCard && transitionResult.newState) {
       const event = webhookEvents[transitionResult.newState];
       if (event) {
-        await triggerWebhooks(event as 'JOB_CARD_CREATED', {
+        await triggerWebhooks(event, {
           id: updatedJobCard.id,
           jobCardNumber: updatedJobCard.jobCardNumber,
           status: updatedJobCard.status,

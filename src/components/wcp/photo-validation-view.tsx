@@ -530,7 +530,7 @@ export function PhotoValidationView() {
                   onClick={() => fetchPhotoDetail(photo.id)}
                 >
                   <img
-                    src={photo.filePath}
+                    src={photo.filePath?.startsWith('/uploads/') ? `/api${photo.filePath}` : photo.filePath}
                     alt={photo.originalName || photo.fileName}
                     className="w-full h-full object-cover"
                   />
@@ -617,7 +617,7 @@ export function PhotoValidationView() {
               <div className="space-y-4">
                 <div className="relative aspect-square bg-muted rounded-lg overflow-hidden">
                   <img
-                    src={selectedPhoto.filePath}
+                    src={selectedPhoto.filePath?.startsWith('/uploads/') ? `/api${selectedPhoto.filePath}` : selectedPhoto.filePath}
                     alt={selectedPhoto.originalName || selectedPhoto.fileName}
                     className="w-full h-full object-contain"
                   />

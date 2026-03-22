@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSwaggerSpec } from '@/lib/swagger';
+import { swaggerSpec } from '@/lib/swagger';
 
 /**
  * @openapi
@@ -20,8 +20,7 @@ import { getSwaggerSpec } from '@/lib/swagger';
  */
 export async function GET() {
   try {
-    const spec = getSwaggerSpec();
-    return NextResponse.json(spec, {
+    return NextResponse.json(swaggerSpec, {
       headers: {
         'Content-Type': 'application/json',
         'Cache-Control': 'public, max-age=3600',

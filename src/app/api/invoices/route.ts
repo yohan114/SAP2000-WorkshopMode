@@ -138,6 +138,73 @@ export async function POST(request: Request) {
       return apiError('Invoice number already exists', 400);
     }
 
+    // BUG FIX #38: Validate invoice amount doesn't exceed PO total
+    const poTotal = po.lines.reduce((sum, l) => sum + l.totalPrice.toNumber(), 0);
+
+    if (data.totalValue > poTotal) {
+      return apiError(
+        `Invoice total (${data.totalValue.toFixed(2)}) exceeds PO total (${poTotal.toFixed(2)}). ` +
+        `Variance: ${(data.totalValue - poTotal).toFixed(2)}`,
+        400
+      );
+    }
+
+    // Validate against received quantities from GRNs
+    const grns = await db.grnHeader.findMany({
+      where: {
+        poId: data.poId,
+        status: 'POSTED',
+      },
+      include: { lines: true },
+    });
+
+    // Calculate total received quantities per item
+    const receivedItems = new Map<string, number>();
+    for (const grn of grns) {
+      for (const line of grn.lines) {
+        const current = receivedItems.get(line.itemId) || 0;
+        receivedItems.set(line.itemId, current + line.acceptedQty.toNumber());
+      }
+    }
+
+    // Check each invoice line against PO and received quantities
+    for (const invoiceLine of data.lines) {
+      const poLine = po.lines.find(l =>
+        l.description.toLowerCase() === invoiceLine.description.toLowerCase()
+      );
+
+      if (!poLine) {
+        return apiError(`Invoice line "${invoiceLine.description}" not found in PO`, 400);
+      }
+
+      const poQty = poLine.orderedQty.toNumber();
+      const receivedQty = receivedItems.get(poLine.itemId || '') || 0;
+
+      if (invoiceLine.invoicedQty > poQty) {
+        return apiError(
+          `Invoice quantity (${invoiceLine.invoicedQty}) for "${invoiceLine.description}" ` +
+          `exceeds PO quantity (${poQty})`,
+          400
+        );
+      }
+
+      if (invoiceLine.invoicedQty > receivedQty) {
+        return apiError(
+          `Invoice quantity (${invoiceLine.invoicedQty}) for "${invoiceLine.description}" ` +
+          `exceeds received quantity (${receivedQty}). Please verify GRNs.`,
+          400
+        );
+      }
+
+      if (invoiceLine.invoicedPrice > poLine.unitPrice.toNumber() * 1.1) {
+        return apiError(
+          `Invoice unit price (${invoiceLine.invoicedPrice}) for "${invoiceLine.description}" ` +
+          `exceeds PO price (${poLine.unitPrice.toNumber()}) by more than 10%`,
+          400
+        );
+      }
+    }
+
     // Calculate total from lines
     let calculatedTotal = 0;
     const linesData = data.lines.map(line => {

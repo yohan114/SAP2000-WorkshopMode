@@ -122,9 +122,9 @@ export function QuotationComparisonView() {
   const fetchQuotations = async () => {
     try {
       setLoading(true);
-      let url = '/api/quotations?page=1&limit=50';
+      let url = '/api/quotation?page=1&limit=50';
       if (statusFilter !== 'all') url += `&status=${statusFilter}`;
-      
+
       const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
@@ -158,7 +158,7 @@ export function QuotationComparisonView() {
 
     try {
       setComparing(true);
-      const response = await fetch('/api/quotations/compare', {
+      const response = await fetch('/api/quotation/compare', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ quotationIds: selectedQuotations })

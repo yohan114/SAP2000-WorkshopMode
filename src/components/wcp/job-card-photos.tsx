@@ -117,13 +117,14 @@ export function JobCardPhotos({
   const [showBulkMoveDialog, setShowBulkMoveDialog] = useState(false);
   const [bulkMoveCategory, setBulkMoveCategory] = useState('');
   const [processingBulk, setProcessingBulk] = useState(false);
+  const [brokenImages, setBrokenImages] = useState<Set<string>>(new Set());
 
   // Fetch photos and categories
   const fetchPhotos = useCallback(async () => {
     try {
       setLoading(true);
       console.log('[JobCardPhotos] Fetching photos for job card:', jobCardId);
-      const response = await fetch(`/api/job-cards/${jobCardId}/photos`);
+      const response = await fetch(`/api/job-cards/${jobCardId}/photos?t=${Date.now()}`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -520,7 +521,8 @@ export function JobCardPhotos({
   // Copy photo URL to clipboard
   const copyPhotoUrl = async (photo: JcPhoto) => {
     try {
-      const url = window.location.origin + photo.filePath;
+      const processedPath = photo.filePath.startsWith('/uploads/') ? `/api${photo.filePath}` : photo.filePath;
+      const url = window.location.origin + processedPath;
       await navigator.clipboard.writeText(url);
       toast({
         title: 'URL copied',
@@ -534,6 +536,25 @@ export function JobCardPhotos({
       });
     }
   };
+
+  // Handle broken image
+  const handleImageError = (photoId: string, e: React.SyntheticEvent<HTMLImageElement>) => {
+    setBrokenImages(prev => new Set(prev).add(photoId));
+    e.currentTarget.style.display = 'none';
+  };
+
+  // Get image URL from file path
+  const getImageUrl = (filePath: string) => {
+    return filePath?.startsWith('/uploads/') ? `/api${filePath}` : filePath;
+  };
+
+  // Broken image placeholder component
+  const BrokenImagePlaceholder = ({ className = '' }: { className?: string }) => (
+    <div className={cn('flex flex-col items-center justify-center bg-muted/80 text-muted-foreground', className)}>
+      <ImageIcon className="h-8 w-8 mb-1 opacity-50" />
+      <span className="text-xs opacity-60">Image unavailable</span>
+    </div>
+  );
 
   // Format file size
   const formatSize = (bytes?: number) => {
@@ -959,11 +980,16 @@ export function JobCardPhotos({
                             }
                           }}
                         >
-                          <img
-                            src={photo.filePath}
-                            alt={photo.originalName || photo.fileName}
-                            className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                          />
+                          {brokenImages.has(photo.id) ? (
+                            <BrokenImagePlaceholder className="w-full h-full" />
+                          ) : (
+                            <img
+                              src={getImageUrl(photo.filePath)}
+                              alt={photo.originalName || photo.fileName}
+                              className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                              onError={(e) => handleImageError(photo.id, e)}
+                            />
+                          )}
                           
                           {/* Selection checkbox */}
                           {bulkMode && (
@@ -1006,7 +1032,7 @@ export function JobCardPhotos({
                                   className="h-8 w-8"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    window.open(photo.filePath, '_blank');
+                                    window.open(getImageUrl(photo.filePath), '_blank');
                                   }}
                                 >
                                   <Download className="h-4 w-4" />
@@ -1062,11 +1088,22 @@ export function JobCardPhotos({
           {viewingPhoto && (
             <>
               <div className="relative">
-                <img
-                  src={viewingPhoto.filePath}
-                  alt={viewingPhoto.originalName || viewingPhoto.fileName}
-                  className="w-full max-h-[70vh] object-contain bg-black"
-                />
+                {brokenImages.has(viewingPhoto.id) ? (
+                  <div className="w-full h-[50vh] flex items-center justify-center bg-black">
+                    <div className="flex flex-col items-center gap-3 text-white/60">
+                      <ImageIcon className="h-16 w-16" />
+                      <p className="text-lg">Image unavailable</p>
+                      <p className="text-sm text-white/40">{viewingPhoto.originalName || viewingPhoto.fileName}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <img
+                    src={getImageUrl(viewingPhoto.filePath)}
+                    alt={viewingPhoto.originalName || viewingPhoto.fileName}
+                    className="w-full max-h-[70vh] object-contain bg-black"
+                    onError={(e) => handleImageError(viewingPhoto.id, e)}
+                  />
+                )}
                 <Button
                   variant="ghost"
                   size="icon"
@@ -1142,7 +1179,7 @@ export function JobCardPhotos({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => window.open(viewingPhoto.filePath, '_blank')}
+                      onClick={() => window.open(getImageUrl(viewingPhoto.filePath), '_blank')}
                     >
                       <Download className="h-4 w-4 mr-2" />
                       Download
@@ -1196,11 +1233,16 @@ export function JobCardPhotos({
             <div className="space-y-4 py-4">
               {/* Preview */}
               <div className="aspect-video rounded-lg overflow-hidden border bg-muted">
-                <img
-                  src={editingPhoto.filePath}
-                  alt={editingPhoto.originalName || editingPhoto.fileName}
-                  className="w-full h-full object-contain"
-                />
+                {brokenImages.has(editingPhoto.id) ? (
+                  <BrokenImagePlaceholder className="w-full h-full" />
+                ) : (
+                  <img
+                    src={getImageUrl(editingPhoto.filePath)}
+                    alt={editingPhoto.originalName || editingPhoto.fileName}
+                    className="w-full h-full object-contain"
+                    onError={(e) => handleImageError(editingPhoto.id, e)}
+                  />
+                )}
               </div>
               
               {/* Category */}

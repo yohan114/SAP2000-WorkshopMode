@@ -133,6 +133,14 @@ export function AssetsView() {
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 0 });
+
+  // Category creation state
+  const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
+  const [categoryForm, setCategoryForm] = useState({
+    code: '',
+    name: '',
+    description: '',
+  });
   
   // Form state
   const [formData, setFormData] = useState({
@@ -398,6 +406,52 @@ export function AssetsView() {
     }
   };
 
+  const handleCreateCategory = async () => {
+    if (!categoryForm.code || !categoryForm.name) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please fill in all required fields',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const response = await fetch('/api/asset-categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(categoryForm),
+      });
+
+      if (response.ok) {
+        toast({
+          title: 'Success',
+          description: 'Category created successfully',
+        });
+        setCategoryDialogOpen(false);
+        setCategoryForm({ code: '', name: '', description: '' });
+        fetchCategories();
+      } else {
+        const error = await response.json();
+        toast({
+          title: 'Error',
+          description: error.error || error.message || 'Failed to create category',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Create category error:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create category',
+        variant: 'destructive',
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const resetJobCardForm = () => {
     setJobCardForm({
       jobType: 'CORRECTIVE',
@@ -452,7 +506,19 @@ export function AssetsView() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="category">Category *</Label>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="category">Category *</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-xs"
+                    onClick={() => setCategoryDialogOpen(true)}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    New
+                  </Button>
+                </div>
                 <Select value={formData.categoryId} onValueChange={(v) => setFormData({ ...formData, categoryId: v })}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select category" />
@@ -817,8 +883,8 @@ export function AssetsView() {
           </DialogHeader>
           {qrDialogAsset && (
             <div className="flex flex-col items-center py-6">
-              <div className="bg-card p-6 rounded-xl shadow-lg border">
-                <QRCodeSVG 
+              <div id="qr-code-display" className="bg-card p-6 rounded-xl shadow-lg border">
+                <QRCodeSVG
                   value={qrDialogAsset.qrCode || `WCP-${qrDialogAsset.assetNumber}`}
                   size={200}
                   level="H"
@@ -847,38 +913,98 @@ export function AssetsView() {
                 >
                   Copy Code
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => {
-                    const svg = document.querySelector('.bg-card svg');
-                    if (svg) {
+                    try {
+                      // BUG FIX #4: Improved QR code download with better error handling
+                      const qrContainer = document.getElementById('qr-code-display');
+                      const svg = qrContainer?.querySelector('svg');
+
+                      if (!svg) {
+                        toast({
+                          title: 'Error',
+                          description: 'QR code not found. Please try again.',
+                          variant: 'destructive',
+                        });
+                        return;
+                      }
+
+                      // Get SVG styles to preserve appearance
+                      const computedStyle = window.getComputedStyle(svg);
                       const svgClone = svg.cloneNode(true) as SVGElement;
+
+                      // Set high resolution dimensions
                       svgClone.setAttribute('width', '1000');
                       svgClone.setAttribute('height', '1000');
+                      svgClone.setAttribute('viewBox', svg.getAttribute('viewBox') || '0 0 100 100');
+
+                      // Apply computed styles to clone
+                      svgClone.style.cssText = computedStyle.cssText;
+
+                      // Serialize SVG to string with proper encoding
                       const svgData = new XMLSerializer().serializeToString(svgClone);
+                      const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+                      const url = URL.createObjectURL(svgBlob);
+
                       const canvas = document.createElement('canvas');
                       const ctx = canvas.getContext('2d');
                       const img = new Image();
+
                       img.onload = () => {
                         canvas.width = 1000;
                         canvas.height = 1000;
+
                         if (ctx) {
+                          // White background
                           ctx.fillStyle = '#ffffff';
                           ctx.fillRect(0, 0, 1000, 1000);
+                          // Draw QR code
                           ctx.drawImage(img, 0, 0, 1000, 1000);
                         }
-                        const pngFile = canvas.toDataURL('image/png', 1.0);
-                        const downloadLink = document.createElement('a');
-                        downloadLink.download = `QR-${qrDialogAsset.assetNumber}-HD.png`;
-                        downloadLink.href = pngFile;
-                        downloadLink.click();
+
+                        // Clean up URL
+                        URL.revokeObjectURL(url);
+
+                        // Convert to PNG and download
+                        canvas.toBlob((blob) => {
+                          if (blob) {
+                            const downloadLink = document.createElement('a');
+                            downloadLink.download = `QR-${qrDialogAsset.assetNumber}-HD.png`;
+                            downloadLink.href = URL.createObjectURL(blob);
+                            downloadLink.click();
+                            URL.revokeObjectURL(downloadLink.href);
+
+                            toast({
+                              title: 'Success',
+                              description: 'QR code downloaded successfully',
+                            });
+                          }
+                        }, 'image/png');
                       };
-                      img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+
+                      img.onerror = () => {
+                        toast({
+                          title: 'Error',
+                          description: 'Failed to generate QR code image',
+                          variant: 'destructive',
+                        });
+                        URL.revokeObjectURL(url);
+                      };
+
+                      img.src = url;
+                    } catch (error) {
+                      console.error('QR download error:', error);
+                      toast({
+                        title: 'Error',
+                        description: 'Failed to download QR code',
+                        variant: 'destructive',
+                      });
                     }
                   }}
                 >
-                  Download PNG
+                  Download HD
                 </Button>
               </div>
             </div>
@@ -1101,6 +1227,64 @@ export function AssetsView() {
             >
               {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Create Job Card
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Category Dialog */}
+      <Dialog open={categoryDialogOpen} onOpenChange={setCategoryDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              New Asset Category
+            </DialogTitle>
+            <DialogDescription>
+              Create a new asset category for organizing assets
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="catCode">Category Code *</Label>
+              <Input
+                id="catCode"
+                placeholder="e.g., VEHICLE, EQUIPMENT"
+                value={categoryForm.code}
+                onChange={(e) => setCategoryForm({ ...categoryForm, code: e.target.value.toUpperCase() })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="catName">Category Name *</Label>
+              <Input
+                id="catName"
+                placeholder="e.g., Vehicles, Heavy Equipment"
+                value={categoryForm.name}
+                onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="catDescription">Description</Label>
+              <Textarea
+                id="catDescription"
+                placeholder="Optional description..."
+                value={categoryForm.description}
+                onChange={(e) => setCategoryForm({ ...categoryForm, description: e.target.value })}
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCategoryDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-emerald-600 hover:bg-emerald-700"
+              onClick={handleCreateCategory}
+              disabled={submitting}
+            >
+              {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Create Category
             </Button>
           </DialogFooter>
         </DialogContent>

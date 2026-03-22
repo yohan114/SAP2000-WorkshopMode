@@ -415,7 +415,7 @@ export function MaterialIssuesView() {
                 <DialogDescription>Select an approved material request to process</DialogDescription>
               </DialogHeader>
               
-              <ScrollArea className="flex-1 -mx-6 px-6">
+              <div className="flex-1 overflow-y-auto -mx-6 px-6">
                 <div className="space-y-4 py-4">
                   {!selectedMR ? (
                     <>
@@ -430,26 +430,31 @@ export function MaterialIssuesView() {
                           availableMRs.map((mr) => (
                             <div
                               key={mr.id}
-                              className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer"
+                              className="p-3 border rounded-lg hover:bg-muted/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer"
                               onClick={() => fetchMRDetails(mr.id)}
                             >
-                              <div className="flex justify-between items-start">
-                                <div>
-                                  <div className="font-medium">{mr.mrNumber}</div>
-                                  <div className="text-sm text-muted-foreground">
-                                    {mr.jobCard?.jobCardNumber || 'No job card'}
+                              <div className="flex-1">
+                                <div className="flex justify-between items-start">
+                                  <div>
+                                    <div className="font-medium">{mr.mrNumber}</div>
+                                    <div className="text-sm text-muted-foreground">
+                                      {mr.jobCard?.jobCardNumber || 'No job card'}
+                                    </div>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Badge variant="outline" className={PRIORITY_COLORS[mr.priority]}>
+                                      {mr.priority}
+                                    </Badge>
+                                    <Badge>{mr.linesCount} items</Badge>
                                   </div>
                                 </div>
-                                <div className="flex gap-2">
-                                  <Badge variant="outline" className={PRIORITY_COLORS[mr.priority]}>
-                                    {mr.priority}
-                                  </Badge>
-                                  <Badge>{mr.linesCount} items</Badge>
+                                <div className="text-xs text-muted-foreground mt-1">
+                                  Requested by: {mr.requestor.name}
                                 </div>
                               </div>
-                              <div className="text-xs text-muted-foreground mt-1">
-                                Requested by: {mr.requestor.name}
-                              </div>
+                              <Button variant="ghost" size="sm" className="hidden sm:flex" onClick={(e) => { e.stopPropagation(); fetchMRDetails(mr.id); }}>
+                                Select <ArrowRight className="ml-2 h-4 w-4" />
+                              </Button>
                             </div>
                           ))
                         )}
@@ -516,11 +521,11 @@ export function MaterialIssuesView() {
                     </>
                   )}
                 </div>
-              </ScrollArea>
+              </div>
 
-              {selectedMR && (
-                <DialogFooter className="mt-4 pt-4 border-t">
-                  <Button variant="outline" onClick={() => setIsFromMROpen(false)}>Cancel</Button>
+              <DialogFooter className="mt-4 pt-4 border-t flex flex-row items-center justify-between sm:justify-between w-full">
+                <Button variant="outline" onClick={() => { setIsFromMROpen(false); setSelectedMR(null); }}>Cancel</Button>
+                {selectedMR && (
                   <Button 
                     className="bg-emerald-600 hover:bg-emerald-700"
                     onClick={handleCreateFromMR}
@@ -529,8 +534,8 @@ export function MaterialIssuesView() {
                     {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                     Create & Issue
                   </Button>
-                </DialogFooter>
-              )}
+                )}
+              </DialogFooter>
             </DialogContent>
           </Dialog>
 
@@ -837,8 +842,17 @@ export function MaterialIssuesView() {
               {selectedMI.status === 'DRAFT' && (
                 <div className="pt-4 border-t">
                   <Button className="w-full bg-emerald-600 hover:bg-emerald-700" onClick={() => handleProcessIssue(selectedMI.id)} disabled={submitting}>
-                    {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                    <CheckCircle className="h-4 w-4 mr-2" />Process & Issue
+                    {submitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Process & Issue
+                      </>
+                    )}
                   </Button>
                 </div>
               )}

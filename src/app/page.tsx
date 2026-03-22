@@ -99,7 +99,7 @@ const navigationItems = [
   { id: 'requests', label: 'Requests', icon: FileText },
   { id: 'issues', label: 'Issues', icon: ClipboardList },
   { id: 'purchase', label: 'Purchase', icon: ShoppingCart },
-  { id: 'grn', label: 'GRN', icon: PackageCheck },
+  // { id: 'grn', label: 'GRN', icon: PackageCheck },
   { id: 'quotations', label: 'Quotations', icon: Scale },
   { id: 'invoices', label: 'Invoices', icon: FileCheck },
   { id: 'stocktake', label: 'Stock Take', icon: ClipboardCheck },
@@ -263,7 +263,7 @@ export default function Home() {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'dashboard': return <DashboardView />;
+      case 'dashboard': return <DashboardView onNavigate={setActiveTab} />;
       case 'assets': return <AssetsView />;
       case 'jobcards': return <JobCardsView />;
       case 'timelogs': return <TimeLogsView />;
