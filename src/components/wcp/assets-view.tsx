@@ -92,6 +92,12 @@ interface PaginatedResponse {
     total: number;
     totalPages: number;
   };
+  meta?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 const statusColors: Record<string, string> = {

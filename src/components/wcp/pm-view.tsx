@@ -262,7 +262,7 @@ export function PmView() {
   });
 
   const scheduleForm = useForm<ScheduleFormData>({
-    resolver: zodResolver(scheduleSchema),
+    resolver: zodResolver(scheduleSchema) as any,
     defaultValues: {
       assetId: '',
       templateId: null,
