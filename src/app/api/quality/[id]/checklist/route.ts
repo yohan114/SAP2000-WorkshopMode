@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { z } from 'zod';
 
 const updateChecklistItemSchema = z.object({
+  itemId: z.string(),
   status: z.enum(['PENDING', 'PASS', 'FAIL', 'NA']),
   actualResult: z.string().optional().nullable(),
   remarks: z.string().optional().nullable(),
@@ -11,12 +12,13 @@ const updateChecklistItemSchema = z.object({
 // PATCH - Update a checklist item
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string; itemId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id, itemId } = await params;
+    const { id } = await params;
     const body = await request.json();
     const data = updateChecklistItemSchema.parse(body);
+    const { itemId } = data;
 
     // Verify inspection exists and is in progress
     const inspection = await db.qualityInspection.findUnique({
