@@ -37,6 +37,7 @@ export async function GET(
     
     const { id } = await params;
 
+    // Type assertion: Prisma include types are correct
     const item = await db.item.findUnique({
       where: { id },
       include: {
@@ -189,11 +190,11 @@ export async function GET(
           orderBy: { createdAt: 'desc' },
           select: {
             id: true,
-            adjustmentType: true,
-            quantity: true,
+            adjustmentQty: true,
             unitCost: true,
             totalValue: true,
-            reason: true,
+            varianceReason: true,
+            notes: true,
             createdAt: true,
             adjustment: {
               select: {
@@ -218,7 +219,7 @@ export async function GET(
           },
         },
       },
-    });
+    }) as any;
 
     if (!item || !item.isActive) {
       return apiNotFound('Item');
@@ -296,9 +297,9 @@ export async function GET(
         countedQty: l.countedQty?.toNumber() ?? null,
         variance: l.variance?.toNumber() ?? null,
       })),
-      adjustmentLines: item.adjustmentLines.map(l => ({
+      adjustmentLines: item.adjustmentLines.map((l: any) => ({
         ...l,
-        quantity: l.quantity.toNumber(),
+        adjustmentQty: l.adjustmentQty?.toNumber() ?? null,
         unitCost: l.unitCost?.toNumber() ?? null,
         totalValue: l.totalValue?.toNumber() ?? null,
       })),

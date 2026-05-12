@@ -290,7 +290,7 @@ export async function calculateWorkOrderBacklog(): Promise<KPIResult> {
     orderBy: { snapshotDate: 'desc' },
   });
 
-  const previous = previousSnapshot ? previousSnapshot.value : current;
+  const previous = previousSnapshot ? Number(previousSnapshot.value) : current;
 
   return createKPIResult({
     id: 'WO_BACKLOG',
@@ -424,7 +424,7 @@ export async function calculateAssetAvailabilityRate(): Promise<KPIResult> {
     orderBy: { snapshotDate: 'desc' },
   });
 
-  const previous = previousSnapshot ? previousSnapshot.value : current;
+  const previous = previousSnapshot ? Number(previousSnapshot.value) : current;
 
   return createKPIResult({
     id: 'ASSET_AVAILABILITY',
@@ -786,7 +786,7 @@ export async function calculateBudgetCompliance(
     orderBy: { snapshotDate: 'desc' },
   });
 
-  const previous = previousSnapshot ? previousSnapshot.value : 0;
+  const previous = previousSnapshot ? Number(previousSnapshot.value) : 0;
 
   return createKPIResult({
     id: 'BUDGET_COMPLIANCE',
@@ -897,7 +897,7 @@ export async function calculateStockoutRate(
     orderBy: { snapshotDate: 'desc' },
   });
 
-  const previous = previousSnapshot ? previousSnapshot.value : 0;
+  const previous = previousSnapshot ? Number(previousSnapshot.value) : 0;
 
   return createKPIResult({
     id: 'STOCKOUT_RATE',
@@ -934,12 +934,12 @@ export async function calculateInventoryAccuracy(
 
   for (const st of stockTakes) {
     const lines = await db.stockTakeLine.findMany({
-      where: { headerId: st.id },
-      select: { varianceQty: true },
+      where: { stockTakeId: st.id },
+      select: { variance: true },
     });
 
     totalCounts += lines.length;
-    correctCounts += lines.filter((l) => Number(l.varianceQty || 0) === 0).length;
+    correctCounts += lines.filter((l) => Number(l.variance || 0) === 0).length;
   }
 
   const current = totalCounts > 0 ? (correctCounts / totalCounts) * 100 : 100;
@@ -961,12 +961,12 @@ export async function calculateInventoryAccuracy(
 
   for (const st of prevStockTakes) {
     const lines = await db.stockTakeLine.findMany({
-      where: { headerId: st.id },
-      select: { varianceQty: true },
+      where: { stockTakeId: st.id },
+      select: { variance: true },
     });
 
     prevTotal += lines.length;
-    prevCorrect += lines.filter((l) => Number(l.varianceQty || 0) === 0).length;
+    prevCorrect += lines.filter((l) => Number(l.variance || 0) === 0).length;
   }
 
   const previous = prevTotal > 0 ? (prevCorrect / prevTotal) * 100 : 100;
@@ -1019,7 +1019,7 @@ export async function calculateObsolescenceRate(): Promise<KPIResult> {
     orderBy: { snapshotDate: 'desc' },
   });
 
-  const previous = previousSnapshot ? previousSnapshot.value : 0;
+  const previous = previousSnapshot ? Number(previousSnapshot.value) : 0;
 
   return createKPIResult({
     id: 'OBSOLESCENCE_RATE',
@@ -1323,7 +1323,7 @@ export async function getAllKPIs(
       if (snapshots.length >= 3) {
         const historicalValues: HistoricalValue[] = snapshots.map((s) => ({
           date: s.snapshotDate,
-          value: s.value,
+          value: Number(s.value),
         }));
 
         const prediction = predictLinear(historicalValues, 1);

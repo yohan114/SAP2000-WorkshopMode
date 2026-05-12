@@ -152,7 +152,7 @@ export async function POST(
         // Update PO line received quantity
         if (grn.purchaseOrder) {
           const poLine = grn.purchaseOrder.lines.find(
-            (l: { itemId: string }) => l.itemId === line.itemId
+            (l: { itemId: string | null }) => l.itemId === line.itemId
           );
           if (poLine) {
             const currentReceived = poLine.receivedQty?.toNumber() || 0;

@@ -48,15 +48,15 @@ export async function GET(
     const varianceSummary = {
       totalLines: stockTake.lines.length,
       countedLines: stockTake.lines.filter(l => l.countedQty !== null).length,
-      varianceLines: stockTake.lines.filter(l => l.variance !== null && l.variance !== 0).length,
+      varianceLines: stockTake.lines.filter(l => l.variance !== null && l.variance?.toNumber() !== 0).length,
       significantVariances: stockTake.lines.filter(l => l.isSignificant).length,
-      positiveVarianceCount: stockTake.lines.filter(l => l.variance && l.variance > 0).length,
-      negativeVarianceCount: stockTake.lines.filter(l => l.variance && l.variance < 0).length,
+      positiveVarianceCount: stockTake.lines.filter(l => l.variance && l.variance.toNumber() > 0).length,
+      negativeVarianceCount: stockTake.lines.filter(l => l.variance && l.variance.toNumber() < 0).length,
     };
 
     // Group variances by reason
     const variancesByReason = stockTake.lines.reduce((acc, line) => {
-      if (line.variance !== 0 && line.variance !== null) {
+      if (line.variance?.toNumber() !== 0 && line.variance !== null) {
         const reason = line.varianceReason || 'UNEXPLAINED';
         if (!acc[reason]) {
           acc[reason] = { count: 0, totalValue: 0, lines: [] };

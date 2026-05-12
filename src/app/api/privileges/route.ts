@@ -42,11 +42,11 @@ export async function GET(request: NextRequest) {
 
     const privileges = await db.privilegeDefinition.findMany({
       where,
-      include: includeUsage ? {
+      include: {
         _count: {
           select: { rolePrivileges: true },
         },
-      } : false,
+      },
       orderBy: [
         { category: 'asc' },
         { code: 'asc' },
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
       isActive: priv.isActive,
       createdAt: priv.createdAt,
       updatedAt: priv.updatedAt,
-      roleCount: includeUsage ? (priv._count as { rolePrivileges: number })?.rolePrivileges : undefined,
+      roleCount: includeUsage ? (priv as any)._count?.rolePrivileges : undefined,
     }));
 
     // Group by category

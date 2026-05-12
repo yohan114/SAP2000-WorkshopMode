@@ -127,6 +127,7 @@ export async function GET(request: Request) {
               quotationNumber: true,
               amount: true,
               status: true,
+              createdAt: true,
             },
           },
         },

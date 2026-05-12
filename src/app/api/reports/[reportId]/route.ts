@@ -87,14 +87,14 @@ async function getMonthlyClosedJobs(startDate: Date, endDate: Date) {
       isActive: true,
     },
     include: {
-      asset: { select: { assetNumber: true, name: true, category: true } },
+      asset: { select: { assetNumber: true, name: true, categoryId: true } },
     },
     orderBy: { closedAt: 'desc' },
     take: 100,
-  });
+  }) as any[];
 
-  const totalEstimated = jobCards.reduce((sum, jc) => sum + (jc.estimatedCost || 0), 0);
-  const totalActual = jobCards.reduce((sum, jc) => sum + (jc.actualCost || 0), 0);
+  const totalEstimated = jobCards.reduce((sum: number, jc: any) => sum + (Number(jc.estimatedCost) || 0), 0);
+  const totalActual = jobCards.reduce((sum: number, jc: any) => sum + (Number(jc.actualCost) || 0), 0);
 
   // Chart data: Status distribution
   const statusDistribution = [
@@ -111,14 +111,14 @@ async function getMonthlyClosedJobs(startDate: Date, endDate: Date) {
   ].filter(d => d.value > 0);
 
   // Chart data: Costs by asset category
-  const costsByCategory = jobCards.reduce((acc, jc) => {
-    const category = jc.asset?.category || 'Uncategorized';
-    const existing = acc.find(a => a.category === category);
+  const costsByCategory = jobCards.reduce((acc: any[], jc: any) => {
+    const category = jc.asset?.categoryId || 'Uncategorized';
+    const existing = acc.find((a: any) => a.category === category);
     if (existing) {
-      existing.actualCost += jc.actualCost || 0;
+      existing.actualCost += Number(jc.actualCost) || 0;
       existing.count += 1;
     } else {
-      acc.push({ category, actualCost: jc.actualCost || 0, count: 1 });
+      acc.push({ category, actualCost: Number(jc.actualCost) || 0, count: 1 });
     }
     return acc;
   }, [] as { category: string; actualCost: number; count: number }[])
@@ -137,8 +137,8 @@ async function getMonthlyClosedJobs(startDate: Date, endDate: Date) {
         if (!monthlyData[monthKey]) {
           monthlyData[monthKey] = { estimated: 0, actual: 0, count: 0 };
         }
-        monthlyData[monthKey].estimated += jc.estimatedCost || 0;
-        monthlyData[monthKey].actual += jc.actualCost || 0;
+        monthlyData[monthKey].estimated += Number(jc.estimatedCost) || 0;
+        monthlyData[monthKey].actual += Number(jc.actualCost) || 0;
         monthlyData[monthKey].count += 1;
       }
     });
@@ -249,12 +249,12 @@ async function getMaterialUsage(startDate: Date, endDate: Date) {
 
 // External Costs Report
 async function getExternalCosts(startDate: Date, endDate: Date) {
-  const externalRepairs = await db.externalRepair.findMany({
+  const externalRepairs = await db.externalJob.findMany({
     where: {
       createdAt: { gte: startDate, lte: endDate },
     },
     include: {
-      supplier: { select: { name: true } },
+      subcontractor: { select: { name: true } },
       jobCard: { 
         include: { 
           asset: { select: { assetNumber: true, name: true } }
@@ -262,10 +262,10 @@ async function getExternalCosts(startDate: Date, endDate: Date) {
       },
     },
     orderBy: { createdAt: 'desc' },
-  });
+  }) as any[];
 
-  const totalCost = externalRepairs.reduce((sum, er) => sum + (er.actualCost || er.estimatedCost || 0), 0);
-  const completed = externalRepairs.filter(er => er.status === 'COMPLETED').length;
+  const totalCost = externalRepairs.reduce((sum: number, er: any) => sum + (Number(er.actualCost) || Number(er.estimatedCost) || 0), 0);
+  const completed = externalRepairs.filter((er: any) => er.status === 'COMPLETED').length;
 
   return {
     title: 'External Costs Report',
@@ -325,7 +325,7 @@ async function getFleetAvailability() {
       no: idx + 1,
       assetNumber: a.assetNumber,
       name: a.name,
-      category: a.category || '-',
+      category: a.categoryId || '-',
       status: a.status,
       jobCards: a._count.jobCards,
     })),
@@ -396,7 +396,7 @@ async function getProcurementSpend(startDate: Date, endDate: Date) {
     orderBy: { orderDate: 'desc' },
   });
 
-  const totalValue = purchaseOrders.reduce((sum, po) => sum + (po.totalValue || 0), 0);
+  const totalValue = purchaseOrders.reduce((sum, po) => sum + Number(po.totalValue || 0), 0);
 
   return {
     title: 'Procurement Spend Analysis',
@@ -410,9 +410,9 @@ async function getProcurementSpend(startDate: Date, endDate: Date) {
       no: idx + 1,
       poNumber: po.poNumber,
       supplier: po.supplier?.name || '-',
-      orderDate: new Date(po.orderDate).toLocaleDateString(),
+      orderDate: po.orderDate ? new Date(po.orderDate).toLocaleDateString() : '-',
       status: po.status,
-      totalValue: `LKR ${(po.totalValue || 0).toLocaleString()}`,
+      totalValue: `LKR ${Number(po.totalValue || 0).toLocaleString()}`,
     })),
     columns: [
       { key: 'no', label: '#' },
@@ -762,10 +762,10 @@ async function getStockValuation() {
     itemCode: ss.item?.itemCode || '-',
     itemName: ss.item?.name || '-',
     store: ss.store?.name || '-',
-    quantity: ss.availableQty,
+    quantity: Number(ss.availableQty),
     unit: ss.item?.unitOfMeasure || '-',
-    wac: ss.wac || 0,
-    value: (ss.availableQty * (ss.wac || 0)),
+    wac: Number(ss.wac) || 0,
+    value: (Number(ss.availableQty) * (Number(ss.wac) || 0)),
   }));
 
   const totalValue = itemsWithValue.reduce((sum, item) => sum + item.value, 0);

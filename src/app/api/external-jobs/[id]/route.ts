@@ -82,7 +82,7 @@ export async function GET(
 
     // Get subcontractor info (stored in subcontractorId field but we need to fetch it)
     // Note: The schema doesn't have a direct relation to Subcontractor, but has subcontractorId
-    let subcontractor = null;
+    let subcontractor: any = null;
     if (externalJob.subcontractorId) {
       subcontractor = await db.subcontractor.findUnique({
         where: { id: externalJob.subcontractorId },

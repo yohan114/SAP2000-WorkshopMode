@@ -61,7 +61,7 @@ export async function GET(
     const pendingItems = inspection.checklistItems.filter(i => i.status === 'PENDING').length;
 
     // Get entity details if available
-    let entityDetails = null;
+    let entityDetails: any = null;
     if (inspection.entityId && inspection.entityType) {
       if (inspection.entityType === 'JOB_CARD') {
         entityDetails = await db.jobCard.findUnique({

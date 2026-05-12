@@ -277,7 +277,7 @@ export async function POST(request: Request) {
     const { poId, supplierId, storeId, deliveryNoteNo, deliveryDate, notes, createdBy, lines } = result.data;
 
     let finalSupplierId = supplierId;
-    let po = null;
+    let po: any = null;
 
     // If PO is provided, verify it exists and get supplier
     if (poId) {
@@ -339,7 +339,7 @@ export async function POST(request: Request) {
       data: {
         grnNumber,
         poId,
-        supplierId: finalSupplierId,
+        supplierId: finalSupplierId!,
         storeId,
         deliveryNoteNo,
         deliveryDate: deliveryDate ? new Date(deliveryDate) : undefined,
@@ -355,7 +355,7 @@ export async function POST(request: Request) {
         purchaseOrder: true,
         lines: { include: { item: true } },
       },
-    });
+    }) as any;
 
     return apiSuccess({
       id: grn.id,

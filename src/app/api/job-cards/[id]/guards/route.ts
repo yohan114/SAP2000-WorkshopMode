@@ -186,7 +186,7 @@ export async function GET(
         qrCodes: jobCard.asset.qrCodes?.map(q => ({ id: q.id, qrCode: q.qrCode })) || [],
       } : null,
       tasks: jobCard.tasks,
-      technicianAssignments: jobCard.technicianAssignments,
+      technicianAssignments: jobCard.technicianAssignments as any,
       materialRequests: jobCard.materialRequests,
       toolLoans: jobCard.toolLoans,
       stateTransitions: jobCard.stateTransitions,

@@ -116,8 +116,8 @@ export async function POST(request: Request) {
 
       comparisonResults.push({
         itemId,
-        itemCode: item.itemCode,
-        itemName: item.name,
+        itemCode: item?.itemCode || '',
+        itemName: item?.name || '',
         quantity: bestPrice.quantity,
         quotations: itemLines.map(line => ({
           supplierId: line.supplierId,

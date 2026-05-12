@@ -254,7 +254,7 @@ export async function POST(request: Request) {
           lines: {
             create: linesData,
           },
-        },
+        } as any,
         include: {
           store: true,
           issuedTo: true,

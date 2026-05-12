@@ -190,7 +190,7 @@ export async function POST(
           (l: { status: string }) => l.status === 'ISSUED'
         );
         const someIssued = mrLines.some(
-          (l: { issuedQty: { toNumber: () => number } }) => (l.issuedQty?.toNumber() || 0) > 0
+          (l: { issuedQty: { toNumber: () => number } | null }) => (l.issuedQty?.toNumber() || 0) > 0
         );
 
         let newMRStatus = mi.materialRequest.status;

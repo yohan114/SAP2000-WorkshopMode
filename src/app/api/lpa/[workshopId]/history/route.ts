@@ -71,10 +71,6 @@ export async function GET(
         skip,
         take: limit,
         orderBy,
-        include: {
-          // Note: We need to get the user who made the change
-          // Since LpaChangeHistory doesn't have a relation to User, we'll fetch separately
-        },
       }),
     ]);
 

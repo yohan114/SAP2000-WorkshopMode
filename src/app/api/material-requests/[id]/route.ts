@@ -352,7 +352,7 @@ export async function GET(
     );
 
     // Get approver info if exists
-    let approver = null;
+    let approver: any = null;
     if (materialRequest.approvedBy) {
       approver = await db.user.findUnique({
         where: { id: materialRequest.approvedBy },

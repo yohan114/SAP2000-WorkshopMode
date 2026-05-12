@@ -76,7 +76,7 @@ export async function GET(request: Request) {
     ]);
 
     // Calculate consumption between readings if tankId is provided
-    let enrichedReadings = readings;
+    let enrichedReadings: any = readings;
     
     if (tankId && readings.length > 0) {
       // Get previous readings for consumption calculation
@@ -99,7 +99,7 @@ export async function GET(request: Request) {
       enrichedReadings = readings.map(reading => {
         const readingIndex = allReadingsForTank.findIndex(r => r.id === reading.id);
         let consumption: number | null = null;
-        let previousReading: { readingValue: bigint; readingAt: Date } | null = null;
+        let previousReading: any = null;
 
         if (readingIndex > 0) {
           previousReading = allReadingsForTank[readingIndex - 1];
@@ -130,7 +130,7 @@ export async function GET(request: Request) {
       });
     }
 
-    return apiPaginated(enrichedReadings, total, page, limit);
+    return apiPaginated(enrichedReadings as any, total, page, limit);
   } catch (error) {
     console.error('Get fuel readings error:', error);
     return apiError('Failed to fetch fuel readings', 500);
