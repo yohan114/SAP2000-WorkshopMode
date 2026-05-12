@@ -57,6 +57,7 @@ model User {
   grnVerifiedBy       GrnHeader[]         @relation("GrnVerifier")
   stockTransactions   StockTransaction[]
   auditLogs           AuditLog[]
+  auditLogsAsUser     AuditLog[]          @relation("AuditLogUser")
   approvalRequests    ApprovalRequest[]
   approvalSteps       ApprovalStep[]
   qualityInspections  QualityInspection[] @relation("QualityInspector")
@@ -67,6 +68,10 @@ model User {
   uploadedJcPhotos    JcPhoto[]           @relation("JcPhotoUploader")
   notificationPreferences NotificationPreferences?
   emailDigests        EmailDigestQueue[]
+  jcStateTransitions  JcStateTransition[] @relation("JcStateTransitionActor")
+  prApprovals         PrApproval[]        @relation("PrApprovalApprover")
+  prRequests          PurchaseRequest[]   @relation("PrRequestor")
+  prApproved          PurchaseRequest[]   @relation("PrApprover")
 
   @@index([email])
   @@index([employeeId])
@@ -359,6 +364,13 @@ model JobCard {
   reopenedAt        DateTime?
   reopenedBy        String?
   isActive          Boolean  @default(true)
+  escalatedTo       String?
+  escalatedAt       DateTime?
+  notes             String?
+  slaFirstResponseDue DateTime?
+  slaCompletionDue  DateTime?
+  slaStatus         String?
+  firstResponseAt   DateTime?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   createdBy         String?
@@ -514,6 +526,7 @@ model JcStateTransition {
   createdAt       DateTime @default(now())
 
   jobCard         JobCard  @relation(fields: [jobCardId], references: [id], onDelete: Cascade)
+  actor           User?    @relation("JcStateTransitionActor", fields: [actorId], references: [id])
 
   @@index([jobCardId])
   @@index([createdAt])
@@ -887,6 +900,7 @@ model Item {
   forceHoChannel  Boolean  @default(false)
   highValueThreshold Decimal?
   isActive        Boolean  @default(true)
+  unitPrice       Decimal?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   createdBy       String?
@@ -901,6 +915,11 @@ model Item {
   toolLoans       ToolLoanTracking[]
   stockTakeLines  StockTakeLine[]
   adjustmentLines StockAdjustmentLine[]
+  grnLines        GrnLine[]
+  rfqLines        RfqLine[]
+  prLines         PrLine[]
+  poLines         PoLine[]
+  quotationLines  QuotationLine[]
 
   @@index([itemCode])
   @@index([itemClass])
@@ -942,11 +961,12 @@ model StoreStock {
 
 model StockReservation {
   id              String   @id @default(cuid())
-  mrLineId        String
+  mrLineId        String?
   storeId         String
   itemId          String
+  materialIssueId String?
   reservedQty     Decimal
-  wacAtReservation Decimal
+  wacAtReservation Decimal?
   status          String   @default("ACTIVE")
   expiresAt       DateTime?
   releasedAt      DateTime?
@@ -954,7 +974,7 @@ model StockReservation {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  mrLine          MrLine   @relation(fields: [mrLineId], references: [id], onDelete: Cascade)
+  mrLine          MrLine?  @relation(fields: [mrLineId], references: [id], onDelete: Cascade)
   store           Store    @relation(fields: [storeId], references: [id])
   item            Item     @relation(fields: [itemId], references: [id])
 
@@ -1053,6 +1073,7 @@ model GrnLine {
   updatedAt       DateTime @updatedAt
 
   grnHeader       GrnHeader @relation(fields: [grnId], references: [id], onDelete: Cascade)
+  item            Item      @relation(fields: [itemId], references: [id])
 
   @@index([grnId])
   @@index([itemId])
@@ -1089,6 +1110,8 @@ model PurchaseRequest {
   approvals       PrApproval[]
   channelDecision PrChannelDecision?
   rfqs            RfqHeader[]
+  requestor       User?           @relation("PrRequestor", fields: [requestorId], references: [id])
+  approver        User?           @relation("PrApprover", fields: [approvedBy], references: [id])
 
   @@index([prNumber])
   @@index([requestorId])
@@ -1114,6 +1137,7 @@ model PrLine {
   updatedAt       DateTime @updatedAt
 
   purchaseRequest PurchaseRequest @relation(fields: [prId], references: [id], onDelete: Cascade)
+  item            Item?           @relation(fields: [itemId], references: [id])
   rfqLines        RfqLine[]
 
   @@unique([prId, lineNumber])
@@ -1132,6 +1156,7 @@ model PrApproval {
   updatedAt       DateTime @updatedAt
 
   purchaseRequest PurchaseRequest @relation(fields: [prId], references: [id], onDelete: Cascade)
+  approver        User            @relation("PrApprovalApprover", fields: [approverId], references: [id])
 
   @@index([prId])
   @@index([approverId])
@@ -1171,6 +1196,7 @@ model RfqLine {
 
   rfqHeader       RfqHeader @relation(fields: [rfqId], references: [id], onDelete: Cascade)
   prLine          PrLine?   @relation(fields: [prLineId], references: [id])
+  item            Item?     @relation(fields: [itemId], references: [id])
 
   @@index([rfqId])
 }
@@ -1220,6 +1246,7 @@ model Quotation {
 model QuotationLine {
   id              String   @id @default(cuid())
   quotationId     String
+  rfqLineId       String?
   itemId          String?
   description     String
   quantity        Decimal
@@ -1230,6 +1257,7 @@ model QuotationLine {
   createdAt       DateTime @default(now())
 
   quotation       Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  item            Item?     @relation(fields: [itemId], references: [id])
 
   @@index([quotationId])
 }
@@ -1256,6 +1284,7 @@ model PurchaseOrder {
   id              String   @id @default(cuid())
   poNumber        String   @unique
   prId            String?
+  rfqId           String?
   quotationId     String?
   supplierId      String
   procurementChannel String?
@@ -1308,6 +1337,7 @@ model PoLine {
   updatedAt       DateTime @updatedAt
 
   purchaseOrder   PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Cascade)
+  item            Item?         @relation(fields: [itemId], references: [id])
 
   @@unique([poId, lineNumber])
   @@index([poId])
@@ -1528,6 +1558,7 @@ model Supplier {
   status          String   @default("ACTIVE")
   performanceRating Decimal?
   isHoApproved    Boolean  @default(false)
+  isActive        Boolean  @default(true)
   notes           String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -1672,6 +1703,7 @@ model ExternalJob {
   updatedAt       DateTime @updatedAt
 
   jobCard         JobCard? @relation(fields: [jobCardId], references: [id])
+  subcontractor   Subcontractor? @relation(fields: [subcontractorId], references: [id])
   costs           ExtJobCost[]
   quotations      ExternalQuotation[]
 
@@ -1728,6 +1760,8 @@ model Subcontractor {
   notes           String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+
+  externalJobs    ExternalJob[]
 
   @@index([code])
 }
@@ -2133,6 +2167,8 @@ model AuditLog {
   oldValue        String?
   newValue        String?
   actorId         String
+  userId          String?
+  metadata        String?
   ipAddress       String?
   userAgent       String?
   hash            String?
@@ -2145,6 +2181,7 @@ model AuditLog {
   createdAt       DateTime @default(now())
 
   actor           User?    @relation(fields: [actorId], references: [id])
+  user            User?    @relation("AuditLogUser", fields: [userId], references: [id])
 
   @@index([entityType, entityId])
   @@index([actorId])
@@ -2361,6 +2398,20 @@ model StockAdjustmentLine {
 // ============================================
 // 20. BUDGET CONTROL DOMAIN
 // ============================================
+
+model Budget {
+  id              String   @id @default(cuid())
+  name            String?
+  startDate       DateTime
+  endDate         DateTime
+  totalAmount     Decimal
+  status          String   @default("DRAFT")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([startDate, endDate])
+  @@index([status])
+}
 
 model BudgetLine {
   id              String   @id @default(cuid())
@@ -2657,10 +2708,29 @@ model SavedReport {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
+  history         SavedReportHistory[]
+
   @@index([reportType])
   @@index([createdBy])
   @@index([nextRunAt])
   @@index([isActive])
+}
+
+model SavedReportHistory {
+  id            String   @id @default(cuid())
+  savedReportId String
+  executedAt    DateTime @default(now())
+  executedBy    String?
+  status        String   @default("SUCCESS")
+  resultData    String?
+  errorMessage  String?
+  recordCount   Int?
+  duration      Int?
+  createdAt     DateTime @default(now())
+
+  savedReport   SavedReport @relation(fields: [savedReportId], references: [id], onDelete: Cascade)
+
+  @@index([savedReportId])
 }
 
 // ============================================
