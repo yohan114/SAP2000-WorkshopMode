@@ -40,7 +40,7 @@ export function CommandPalette({ isAdminUser, open: controlledOpen, onOpenChange
   const handleSelect = useCallback((href: string) => {
     setOpen(false);
     router.push(href);
-  }, [router]);
+  }, [router, setOpen]);
 
   const visibleGroups = navigationGroups.filter(group => {
     if (group.adminOnly && !isAdminUser) return false;
@@ -78,29 +78,5 @@ export function CommandPalette({ isAdminUser, open: controlledOpen, onOpenChange
         })}
       </CommandList>
     </CommandDialog>
-  );
-}
-
-export function CommandPaletteTrigger({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-400 bg-slate-50 rounded-lg hover:bg-slate-100 hover:text-slate-600 transition-colors"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-4 w-4"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth={2}
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-      </svg>
-      <span className="flex-1 text-left">Search...</span>
-      <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium text-slate-400 bg-white border rounded">
-        <span className="text-xs">&#8984;</span>K
-      </kbd>
-    </button>
   );
 }

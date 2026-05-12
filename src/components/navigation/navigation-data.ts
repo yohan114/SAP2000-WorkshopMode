@@ -134,11 +134,6 @@ export const navigationGroups: NavGroup[] = [
   },
 ];
 
-// Flat list of all nav items for search/lookup
-export function getAllNavItems(): NavItem[] {
-  return navigationGroups.flatMap(group => group.items);
-}
-
 // Find the group and item for a given pathname
 export function findNavContext(pathname: string): { group: NavGroup | null; item: NavItem | null } {
   for (const group of navigationGroups) {
