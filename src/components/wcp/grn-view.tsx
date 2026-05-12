@@ -162,6 +162,7 @@ export function GrnView() {
       remarks: string;
       batchNumber: string;
       expiryDate: string;
+      poLineId?: string;
     }[]
   });
 

@@ -53,7 +53,7 @@ export async function GET(request: Request) {
     }
 
     // Build orderBy - must be an array for Prisma
-    let orderBy: Array<Record<string, string>>;
+    let orderBy: Array<Record<string, unknown>>;
     if (sortBy) {
       orderBy = [{ [sortBy]: sortOrder }];
     } else {
@@ -152,7 +152,7 @@ export async function POST(request: Request) {
     // Calculate total minutes and cost
     const startTime = new Date(data.startTime);
     let totalMinutes = 0;
-    let totalCost = null;
+    let totalCost: number | null = null;
 
     if (data.endTime) {
       const endTime = new Date(data.endTime);

@@ -214,7 +214,7 @@ export async function GET(request: Request) {
     }
 
     // Build orderBy - must be an array for Prisma
-    let orderBy: Array<Record<string, string>>;
+    let orderBy: Array<Record<string, unknown>>;
     if (sortBy) {
       orderBy = [{ [sortBy]: sortOrder }];
     } else {

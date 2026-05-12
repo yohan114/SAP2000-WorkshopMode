@@ -15,7 +15,7 @@ const createFuelTankSchema = z.object({
   tankNumber: z.string().min(1, 'Tank number is required'),
   name: z.string().min(1, 'Name is required'),
   fuelType: z.enum(['DIESEL', 'PETROL', 'OIL', 'KEROSENE'], {
-    errorMap: () => ({ message: 'Invalid fuel type' })
+    message: 'Invalid fuel type'
   }),
   capacity: z.number().positive('Capacity must be positive'),
   currentLevel: z.number().min(0).optional().default(0),

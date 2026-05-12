@@ -458,7 +458,7 @@ export function QualityView() {
           <table>
             <thead><tr><th>Severity</th><th>Description</th><th>Location</th><th>Status</th></tr></thead>
             <tbody>
-              ${selectedInspection.defects.map(d => `
+              ${selectedInspection.defects?.map(d => `
                 <tr>
                   <td>LKR {d.severity}</td>
                   <td>LKR {d.description}</td>

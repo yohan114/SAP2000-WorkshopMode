@@ -109,8 +109,10 @@ export async function calculateMTTR(
     where: {
       status: { in: ['COMPLETED', 'CLOSED'] },
       actualStart: { not: null },
-      actualEnd: { not: null },
-      actualEnd: { gte: periodStart, lte: periodEnd },
+      AND: [
+        { actualEnd: { not: null } },
+        { actualEnd: { gte: periodStart, lte: periodEnd } },
+      ],
     },
     select: { actualStart: true, actualEnd: true },
   });
@@ -133,8 +135,10 @@ export async function calculateMTTR(
     where: {
       status: { in: ['COMPLETED', 'CLOSED'] },
       actualStart: { not: null },
-      actualEnd: { not: null },
-      actualEnd: { gte: previousPeriodStart, lt: periodStart },
+      AND: [
+        { actualEnd: { not: null } },
+        { actualEnd: { gte: previousPeriodStart, lt: periodStart } },
+      ],
     },
     select: { actualStart: true, actualEnd: true },
   });

@@ -76,7 +76,7 @@ export async function POST(
 
     // Process the issue in a transaction
     const results = await db.$transaction(async (tx) => {
-      const transactions = [];
+      const transactions: any[] = [];
 
       // Process each line
       for (const { line, stock } of stockChecks) {
@@ -142,7 +142,7 @@ export async function POST(
           },
         });
 
-        transactions.push(transaction);
+        transactions.push(transaction as any);
 
         // Update MR line if linked to MR
         if (mi.mrId && mi.materialRequest) {

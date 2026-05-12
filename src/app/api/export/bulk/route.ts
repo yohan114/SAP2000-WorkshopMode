@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
     for (const [sheetName, data] of Object.entries(exportData)) {
       if (data.length > 0) {
         const worksheet = XLSX.utils.json_to_sheet(
-          data.map(row => convertDecimals(row))
+          data.map(row => convertDecimals(row as Record<string, unknown>))
         );
         XLSX.utils.book_append_sheet(workbook, worksheet, sheetName.slice(0, 31)); // Excel sheet name limit
       }
@@ -200,7 +200,7 @@ function convertDecimals(obj: Record<string, unknown>): Record<string, unknown> 
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj)) {
     if (value && typeof value === 'object' && 'toNumber' in value) {
-      result[key] = value.toNumber();
+      result[key] = (value as any).toNumber();
     } else if (value instanceof Date) {
       result[key] = value.toISOString();
     } else {

@@ -5,7 +5,7 @@ import { z } from 'zod';
 // Schema for updating a saved report
 const updateSavedReportSchema = z.object({
   name: z.string().min(1, 'Name is required').optional(),
-  filters: z.record(z.any()).optional(),
+  filters: z.record(z.string(), z.any()).optional(),
   schedule: z.enum(['DAILY', 'WEEKLY', 'MONTHLY']).optional().nullable(),
   recipients: z.array(z.string().email()).optional().nullable(),
   format: z.enum(['PDF', 'EXCEL', 'CSV']).optional(),
@@ -115,7 +115,7 @@ export async function PUT(
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
+        { error: 'Validation failed', details: error.issues },
         { status: 400 }
       );
     }

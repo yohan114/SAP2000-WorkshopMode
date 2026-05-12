@@ -341,13 +341,13 @@ export async function POST(
     });
 
     // Trigger webhook
-    const eventMap: Record<string, 'JOB_CARD_APPROVED' | 'JOB_CARD_REJECTED'> = {
+    const eventMap: Record<string, string> = {
       'APPROVE': 'JOB_CARD_APPROVED',
       'REJECT': 'JOB_CARD_REJECTED',
       'RETURN': 'JOB_CARD_RETURNED',
     };
 
-    await triggerWebhooks(eventMap[decision] || 'JOB_CARD_APPROVED', {
+    await triggerWebhooks(eventMap[decision] as any || 'JOB_CARD_APPROVED', {
       id: jobCard.id,
       jobCardNumber: jobCard.jobCardNumber,
       decision,

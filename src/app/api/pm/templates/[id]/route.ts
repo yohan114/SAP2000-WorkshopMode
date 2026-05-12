@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { Decimal } from '@prisma/client/runtime/library';
 
 // Helper to serialize Decimal values
-function serializeTemplate(template: Record<string, unknown>) {
+function serializeTemplate(template: Record<string, unknown>): any {
   return {
     ...template,
     estimatedHours: template.estimatedHours instanceof Decimal ? template.estimatedHours.toNumber() : template.estimatedHours,

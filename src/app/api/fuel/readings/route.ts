@@ -103,7 +103,7 @@ export async function GET(request: Request) {
 
         if (readingIndex > 0) {
           previousReading = allReadingsForTank[readingIndex - 1];
-          consumption = Number(reading.readingValue) - Number(previousReading.readingValue);
+          consumption = Number(reading.readingValue) - Number(previousReading!.readingValue);
         }
 
         // Calculate percentage of capacity

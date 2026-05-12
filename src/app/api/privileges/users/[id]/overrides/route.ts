@@ -121,7 +121,7 @@ export async function GET(
     });
 
     // Group available privileges by category
-    const privilegesByCategory = availablePrivileges.reduce<Record<string, typeof availablePrivileges>>((acc, p) => {
+    const privilegesByCategory = availablePrivileges.reduce((acc: Record<string, typeof availablePrivileges>, p) => {
       if (!acc[p.category]) {
         acc[p.category] = [];
       }
@@ -240,7 +240,7 @@ export async function POST(
 
       await auditLog({
         action: 'UPDATE',
-        entityType: 'USER_PRIVILEGE_OVERRIDE',
+        entityType: 'USER_PRIVILEGE_OVERRIDE' as any,
         entityId: updated.id,
         newValue: {
           userId: id,
@@ -285,7 +285,7 @@ export async function POST(
 
     await auditLog({
       action: 'CREATE',
-      entityType: 'USER_PRIVILEGE_OVERRIDE',
+      entityType: 'USER_PRIVILEGE_OVERRIDE' as any,
       entityId: override.id,
       newValue: {
         userId: id,
@@ -309,7 +309,7 @@ export async function POST(
       grantedBy: override.grantedBy,
       grantedByName: grantor.name,
       message: 'Privilege override created successfully',
-    }, 201);
+    }, undefined, 201);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return apiValidationError(error);
@@ -382,7 +382,7 @@ export async function PUT(
 
     await auditLog({
       action: 'UPDATE',
-      entityType: 'USER_PRIVILEGE_OVERRIDE',
+      entityType: 'USER_PRIVILEGE_OVERRIDE' as any,
       entityId: updated.id,
       newValue: {
         privilegeCode: updated.privilege.code,
@@ -459,7 +459,7 @@ export async function DELETE(
 
     await auditLog({
       action: 'DELETE',
-      entityType: 'USER_PRIVILEGE_OVERRIDE',
+      entityType: 'USER_PRIVILEGE_OVERRIDE' as any,
       entityId: override.id,
       newValue: { removed: true },
       oldValue: {

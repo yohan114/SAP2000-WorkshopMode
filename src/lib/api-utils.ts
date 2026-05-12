@@ -20,8 +20,8 @@ export interface ApiResponse<T = unknown> {
 }
 
 export interface PaginatedParams {
-  page?: number;
-  limit?: number;
+  page: number;
+  limit: number;
   search?: string;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
@@ -80,7 +80,7 @@ export function apiError(
  * Validation error helper
  */
 export function apiValidationError(error: ZodError): NextResponse<ApiResponse> {
-  const messages = error.errors.map(e => `${e.path.join('.')}: ${e.message}`);
+  const messages = error.issues.map(e => `${e.path.join('.')}: ${e.message}`);
   return NextResponse.json(
     { 
       success: false, 

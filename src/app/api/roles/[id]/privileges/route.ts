@@ -60,7 +60,7 @@ export async function GET(
 
     // Create a map of existing role privileges
     const privilegeMap = new Map(
-      rolePrivileges.map(rp => [rp.privilegeId, rp])
+      (rolePrivileges as any[]).map(rp => [rp.privilegeId, rp])
     );
 
     // Combine all privileges with role's settings
@@ -81,7 +81,7 @@ export async function GET(
     });
 
     // Group by category
-    const byCategory = privileges.reduce<Record<string, typeof privileges>>((acc, p) => {
+    const byCategory = privileges.reduce((acc: Record<string, typeof privileges>, p) => {
       const cat = p.category;
       if (!acc[cat]) {
         acc[cat] = [];
@@ -95,7 +95,7 @@ export async function GET(
       total: privileges.length,
       assigned: privileges.filter(p => p.isAssigned).length,
       granted: privileges.filter(p => p.isGranted).length,
-      byCategory: Object.entries(byCategory).map(([category, items]) => ({
+      byCategory: (Object.entries(byCategory) as [string, any[]][]).map(([category, items]) => ({
         category,
         total: items.length,
         assigned: items.filter(p => p.isAssigned).length,
@@ -181,7 +181,7 @@ export async function POST(
         roleId: id,
         privilegeId: validated.privilegeId,
         isGranted: validated.isGranted,
-        maxAmount: validated.maxAmount != null ? new Prisma.Decimal(validated.maxAmount) : null,
+        maxAmount: validated.maxAmount != null ? validated.maxAmount : null,
         workshopScope: validated.workshopScope,
       },
       include: {
@@ -205,7 +205,7 @@ export async function POST(
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
+        { error: 'Validation failed', details: error.issues },
         { status: 400 }
       );
     }
@@ -259,7 +259,7 @@ export async function PUT(
     // Build update data
     const updateData: {
       isGranted?: boolean;
-      maxAmount?: Prisma.Decimal | null;
+      maxAmount?: number | null;
       workshopScope?: boolean;
     } = {};
     
@@ -267,7 +267,7 @@ export async function PUT(
       updateData.isGranted = validated.isGranted;
     }
     if (validated.maxAmount !== undefined) {
-      updateData.maxAmount = validated.maxAmount != null ? new Prisma.Decimal(validated.maxAmount) : null;
+      updateData.maxAmount = validated.maxAmount != null ? validated.maxAmount : null;
     }
     if (validated.workshopScope !== undefined) {
       updateData.workshopScope = validated.workshopScope;
@@ -303,7 +303,7 @@ export async function PUT(
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
+        { error: 'Validation failed', details: error.issues },
         { status: 400 }
       );
     }

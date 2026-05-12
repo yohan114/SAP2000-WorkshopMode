@@ -341,11 +341,11 @@ async function parseTiffData(
         break;
         
       case 0x8769: // ExifIFDPointer
-        exifIfdOffset = tiffStart + getNumericValue(buffer, valueOffset, type, count, bigEndian);
+        exifIfdOffset = tiffStart + (getNumericValue(buffer, valueOffset, type, count, bigEndian) || 0);
         break;
         
       case 0x8825: // GPSInfoIFDPointer
-        gpsIfdOffset = tiffStart + getNumericValue(buffer, valueOffset, type, count, bigEndian);
+        gpsIfdOffset = tiffStart + (getNumericValue(buffer, valueOffset, type, count, bigEndian) || 0);
         break;
     }
   }
@@ -425,12 +425,14 @@ async function parseTiffData(
           break;
           
         case 0x0005: // GPSAltitudeRef
-          altitudeRef = getNumericValue(buffer, valueOffset, type, count, bigEndian);
+          altitudeRef = getNumericValue(buffer, valueOffset, type, count, bigEndian) || 0;
           break;
           
         case 0x0006: // GPSAltitude
           const alt = getRationalValue(buffer, valueOffset, type, count, bigEndian, tiffStart);
-          exifData.altitude = altitudeRef === 1 ? -alt : alt;
+          if (alt !== undefined) {
+            exifData.altitude = altitudeRef === 1 ? -alt : alt;
+          }
           break;
       }
     }

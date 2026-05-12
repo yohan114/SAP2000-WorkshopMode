@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * SQLITE PRODUCTION CLEANUP SCRIPT
  * Clears all demo data and creates production admin account

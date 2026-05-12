@@ -113,7 +113,7 @@ export async function GET(
       },
       breakdown: {
         byType: breakdownByType,
-        byTypeSummary: Object.entries(breakdownByType).map(([type, data]) => ({
+        byTypeSummary: Object.entries(breakdownByType).map(([type, data]: [string, any]) => ({
           type,
           total: data.total,
           count: data.count,

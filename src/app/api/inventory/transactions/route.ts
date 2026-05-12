@@ -36,7 +36,7 @@ export async function GET(request: Request) {
       if (endDate) where.createdAt = { ...where.createdAt as object, lte: new Date(endDate) };
     }
 
-    const orderBy: Record<string, string> = {};
+    const orderBy: Record<string, unknown> = {};
     if (sortBy) {
       orderBy[sortBy] = sortOrder;
     } else {

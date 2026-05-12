@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     
     const validationResult = createFromMRSchema.safeParse(body);
     if (!validationResult.success) {
-      return apiError('Validation failed', 400, validationResult.error.errors[0]?.message);
+      return apiError('Validation failed', 400, validationResult.error.issues[0]?.message);
     }
 
     const { mrId, storeId, issuedToId, issuedBy, lineSelections, notes } = validationResult.data;
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
     }
 
     // Build lines from selections
-    const linesData = [];
+    const linesData: any[] = [];
     let totalValue = 0;
 
     for (const selection of lineSelections) {

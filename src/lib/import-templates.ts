@@ -831,13 +831,13 @@ export function validateRow(
         case 'min':
           if (rule.params?.min !== undefined) {
             const num = parseFloat(String(value));
-            isValid = !isNaN(num) && num >= rule.params.min;
+            isValid = !isNaN(num) && num >= (rule.params.min as number);
           }
           break;
         case 'max':
           if (rule.params?.max !== undefined) {
             const num = parseFloat(String(value));
-            isValid = !isNaN(num) && num <= rule.params.max;
+            isValid = !isNaN(num) && num <= (rule.params.max as number);
           }
           break;
         case 'enum':
