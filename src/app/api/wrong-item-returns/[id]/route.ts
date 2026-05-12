@@ -6,6 +6,37 @@ import {
 } from '@/lib/api-utils';
 import { z } from 'zod';
 
+// DELETE /api/wrong-item-returns/[id] - Soft-delete a wrong item return record
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const dbModel = (db as any).wrongItemReturn;
+
+    // Find existing record
+    const existing = await dbModel.findUnique({
+      where: { id },
+    });
+
+    if (!existing || !existing.isActive) {
+      return apiError('Wrong item return record not found', 404);
+    }
+
+    // Soft-delete by setting isActive to false
+    const updated = await dbModel.update({
+      where: { id },
+      data: { isActive: false },
+    });
+
+    return apiSuccess(updated, 'Wrong item return record deleted successfully');
+  } catch (error) {
+    console.error('Delete wrong item return error:', error);
+    return apiError('Failed to delete wrong item return record', 500);
+  }
+}
+
 // Valid status transitions
 const VALID_TRANSITIONS: Record<string, string[]> = {
   IDENTIFIED: ['RETURN_INITIATED'],

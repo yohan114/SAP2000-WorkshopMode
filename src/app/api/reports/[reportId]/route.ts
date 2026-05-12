@@ -1062,57 +1062,48 @@ async function getMonthlyHoPurchasing(startDate: Date, endDate: Date) {
 
 // Same Item Price Variation Report
 async function getPriceVariation(startDate: Date, endDate: Date) {
-  const grnLines = await db.grnLine.findMany({
-    where: {
-      grnHeader: {
-        createdAt: { gte: startDate, lte: endDate },
-        isActive: true,
-      },
-    },
-    include: {
-      grnHeader: { select: { grnNumber: true, createdAt: true } },
-    },
+  // Use raw SQL to aggregate in the database, avoiding unbounded in-memory fetch
+  interface PriceVariationRow {
+    itemId: string;
+    occurrences: number;
+    minPrice: number;
+    maxPrice: number;
+    avgPrice: number;
+  }
+
+  const variations: PriceVariationRow[] = await (db as any).$queryRaw`
+    SELECT
+      gl."itemId" AS "itemId",
+      COUNT(*) AS "occurrences",
+      MIN(CAST(gl."unitCost" AS REAL)) AS "minPrice",
+      MAX(CAST(gl."unitCost" AS REAL)) AS "maxPrice",
+      AVG(CAST(gl."unitCost" AS REAL)) AS "avgPrice"
+    FROM "GrnLine" gl
+    INNER JOIN "GrnHeader" gh ON gl."grnId" = gh."id"
+    WHERE gh."createdAt" >= ${startDate}
+      AND gh."createdAt" <= ${endDate}
+      AND gh."isActive" = true
+    GROUP BY gl."itemId"
+    HAVING COUNT(DISTINCT CAST(gl."unitCost" AS TEXT)) > 1
+    ORDER BY (MAX(CAST(gl."unitCost" AS REAL)) - MIN(CAST(gl."unitCost" AS REAL))) / NULLIF(MIN(CAST(gl."unitCost" AS REAL)), 0) DESC
+    LIMIT 100
+  `;
+
+  const processedVariations = variations.map(row => {
+    const minPrice = Number(row.minPrice);
+    const maxPrice = Number(row.maxPrice);
+    const variationPct = minPrice > 0 ? ((maxPrice - minPrice) / minPrice * 100) : 0;
+    return {
+      itemId: row.itemId,
+      occurrences: Number(row.occurrences),
+      minPrice,
+      maxPrice,
+      avgPrice: Number(row.avgPrice),
+      variationPct,
+    };
   });
 
-  // Group by itemId
-  const itemPrices: Record<string, { itemId: string; prices: { unitCost: number; grnNumber: string; date: Date }[] }> = {};
-
-  grnLines.forEach(line => {
-    if (!itemPrices[line.itemId]) {
-      itemPrices[line.itemId] = { itemId: line.itemId, prices: [] };
-    }
-    itemPrices[line.itemId].prices.push({
-      unitCost: Number(line.unitCost),
-      grnNumber: line.grnHeader.grnNumber,
-      date: line.grnHeader.createdAt,
-    });
-  });
-
-  // Find items with price variations (more than one distinct price)
-  const variations = Object.values(itemPrices)
-    .filter(item => {
-      const distinctPrices = new Set(item.prices.map(p => p.unitCost));
-      return distinctPrices.size > 1;
-    })
-    .map(item => {
-      const prices = item.prices.map(p => p.unitCost);
-      const minPrice = Math.min(...prices);
-      const maxPrice = Math.max(...prices);
-      const avgPrice = prices.reduce((s, p) => s + p, 0) / prices.length;
-      const variationPct = minPrice > 0 ? ((maxPrice - minPrice) / minPrice * 100) : 0;
-
-      return {
-        itemId: item.itemId,
-        occurrences: item.prices.length,
-        minPrice,
-        maxPrice,
-        avgPrice,
-        variationPct,
-      };
-    })
-    .sort((a, b) => b.variationPct - a.variationPct);
-
-  const data = variations.slice(0, 100).map((v, idx) => ({
+  const data = processedVariations.map((v, idx) => ({
     no: idx + 1,
     itemId: v.itemId,
     occurrences: v.occurrences,
@@ -1127,9 +1118,8 @@ async function getPriceVariation(startDate: Date, endDate: Date) {
     generatedAt: new Date().toISOString(),
     period: { start: startDate.toISOString().split('T')[0], end: endDate.toISOString().split('T')[0] },
     summary: {
-      'Items with Variation': variations.length.toString(),
-      'Total GRN Lines Analysed': grnLines.length.toString(),
-      'Max Variation': variations.length > 0 ? `${variations[0].variationPct.toFixed(1)}%` : '0%',
+      'Items with Variation': processedVariations.length.toString(),
+      'Max Variation': processedVariations.length > 0 ? `${processedVariations[0].variationPct.toFixed(1)}%` : '0%',
     },
     data,
     columns: [

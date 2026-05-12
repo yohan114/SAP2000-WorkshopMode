@@ -15,7 +15,7 @@ const createWrongItemReturnSchema = z.object({
   grnLineId: z.string().optional(),
   poId: z.string().optional(),
   itemId: z.string().min(1, 'Item ID is required'),
-  identifiedAt: z.string().min(1, 'Identified date is required'),
+  identifiedAt: z.string().min(1, 'Identified date is required').refine(v => !isNaN(Date.parse(v)), 'Invalid date format'),
   reason: z.string().min(1, 'Reason is required'),
   notes: z.string().optional(),
 });
