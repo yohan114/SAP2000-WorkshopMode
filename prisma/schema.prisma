@@ -1022,6 +1022,7 @@ model GrnHeader {
   creator           User         @relation("GrnCreator", fields: [createdBy], references: [id])
   verifier          User?        @relation("GrnVerifier", fields: [verifiedBy], references: [id])
   lines             GrnLine[]
+  wrongItemReturns  WrongItemReturn[]
 
   @@index([grnNumber])
   @@index([poId])
@@ -2764,4 +2765,34 @@ model EmailDigestQueue {
   @@index([userId])
   @@index([status])
   @@index([scheduledAt])
+}
+
+// ============================================
+// WRONG ITEM RETURN TRACKING
+// ============================================
+
+model WrongItemReturn {
+  id                    String    @id @default(cuid())
+  grnId                 String
+  grnLineId             String?
+  poId                  String?
+  itemId                String
+  identifiedAt          DateTime
+  returnInitiatedAt     DateTime?
+  returnCompletedAt     DateTime?
+  replacementReceivedAt DateTime?
+  delayDays             Int?
+  reason                String
+  status                String    @default("IDENTIFIED")
+  notes                 String?
+  isActive              Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  grn                   GrnHeader @relation(fields: [grnId], references: [id])
+
+  @@index([grnId])
+  @@index([itemId])
+  @@index([status])
+  @@index([identifiedAt])
 }

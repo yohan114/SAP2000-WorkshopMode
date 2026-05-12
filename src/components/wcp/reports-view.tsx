@@ -210,6 +210,62 @@ const REPORT_TYPES = [
     bgColor: 'bg-pink-100',
     category: REPORT_CATEGORIES.INVENTORY,
   },
+  
+  // NEW REPORTS
+  {
+    id: 'total-outside-cost',
+    name: 'Total Outside Cost',
+    description: 'Aggregated external/subcontractor costs by job type',
+    icon: DollarSign,
+    color: 'text-red-600',
+    bgColor: 'bg-red-100',
+    category: REPORT_CATEGORIES.FINANCIAL,
+  },
+  {
+    id: 'monthly-report',
+    name: 'Monthly Report',
+    description: 'Comprehensive monthly summary of all workshop activities',
+    icon: FileText,
+    color: 'text-slate-600',
+    bgColor: 'bg-slate-100',
+    category: REPORT_CATEGORIES.OPERATIONAL,
+  },
+  {
+    id: 'monthly-local-purchasing',
+    name: 'Monthly Local Purchasing',
+    description: 'Local procurement POs for the selected period',
+    icon: Building2,
+    color: 'text-green-600',
+    bgColor: 'bg-green-100',
+    category: REPORT_CATEGORIES.FINANCIAL,
+  },
+  {
+    id: 'monthly-ho-purchasing',
+    name: 'Monthly Head Office Purchasing',
+    description: 'Head Office procurement POs for the selected period',
+    icon: Building2,
+    color: 'text-violet-600',
+    bgColor: 'bg-violet-100',
+    category: REPORT_CATEGORIES.FINANCIAL,
+  },
+  {
+    id: 'price-variation',
+    name: 'Same Item Price Variation',
+    description: 'Identifies items received at different prices across GRNs',
+    icon: TrendingUp,
+    color: 'text-yellow-600',
+    bgColor: 'bg-yellow-100',
+    category: REPORT_CATEGORIES.INVENTORY,
+  },
+  {
+    id: 'wrong-item-return-delay',
+    name: 'Wrong Item Return Delay Time',
+    description: 'Tracks delay from wrong item identification to return completion',
+    icon: Clock,
+    color: 'text-gray-600',
+    bgColor: 'bg-gray-100',
+    category: REPORT_CATEGORIES.OPERATIONAL,
+  },
 ];
 
 // Chart colors

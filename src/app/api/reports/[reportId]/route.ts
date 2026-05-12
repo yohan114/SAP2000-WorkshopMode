@@ -49,6 +49,24 @@ export async function GET(
       case 'stock-valuation':
         reportData = await getStockValuation();
         break;
+      case 'total-outside-cost':
+        reportData = await getTotalOutsideCost(startDate, endDate);
+        break;
+      case 'monthly-report':
+        reportData = await getMonthlyReport(startDate, endDate);
+        break;
+      case 'monthly-local-purchasing':
+        reportData = await getMonthlyLocalPurchasing(startDate, endDate);
+        break;
+      case 'monthly-ho-purchasing':
+        reportData = await getMonthlyHoPurchasing(startDate, endDate);
+        break;
+      case 'price-variation':
+        reportData = await getPriceVariation(startDate, endDate);
+        break;
+      case 'wrong-item-return-delay':
+        reportData = await getWrongItemReturnDelay(startDate, endDate);
+        break;
       default:
         return NextResponse.json({ error: 'Invalid report type' }, { status: 400 });
     }
@@ -785,5 +803,400 @@ async function getStockValuation() {
     totals: {
       'Total Stock Value': totalValue,
     },
+  };
+}
+
+// Total Outside Cost Report
+async function getTotalOutsideCost(startDate: Date, endDate: Date) {
+  const externalJobs = await db.externalJob.findMany({
+    where: {
+      isActive: true,
+      createdAt: { gte: startDate, lte: endDate },
+    },
+    include: {
+      costs: true,
+    },
+  });
+
+  // Group by subcontractor and job type
+  const grouped: Record<string, { subcontractor: string; jobType: string; jobCount: number; estimatedCost: number; actualCost: number; additionalCosts: number }> = {};
+
+  externalJobs.forEach(job => {
+    const key = `${job.subcontractorId || 'unknown'}-${job.jobType}`;
+    if (!grouped[key]) {
+      grouped[key] = {
+        subcontractor: job.subcontractorId || 'Unknown',
+        jobType: job.jobType,
+        jobCount: 0,
+        estimatedCost: 0,
+        actualCost: 0,
+        additionalCosts: 0,
+      };
+    }
+    grouped[key].jobCount += 1;
+    grouped[key].estimatedCost += Number(job.estimatedCost || 0);
+    grouped[key].actualCost += Number(job.actualCost || 0);
+    grouped[key].additionalCosts += job.costs.reduce((sum, c) => sum + Number(c.amount || 0), 0);
+  });
+
+  const data = Object.values(grouped).map((g, idx) => ({
+    no: idx + 1,
+    subcontractor: g.subcontractor,
+    jobType: g.jobType,
+    jobCount: g.jobCount,
+    estimatedCost: `LKR ${g.estimatedCost.toLocaleString()}`,
+    actualCost: `LKR ${g.actualCost.toLocaleString()}`,
+    additionalCosts: `LKR ${g.additionalCosts.toLocaleString()}`,
+    totalCost: `LKR ${(g.actualCost + g.additionalCosts).toLocaleString()}`,
+  }));
+
+  const totalEstimated = Object.values(grouped).reduce((s, g) => s + g.estimatedCost, 0);
+  const totalActual = Object.values(grouped).reduce((s, g) => s + g.actualCost, 0);
+  const totalAdditional = Object.values(grouped).reduce((s, g) => s + g.additionalCosts, 0);
+  const grandTotal = totalActual + totalAdditional;
+
+  return {
+    title: 'Total Outside Cost Report',
+    generatedAt: new Date().toISOString(),
+    period: { start: startDate.toISOString().split('T')[0], end: endDate.toISOString().split('T')[0] },
+    summary: {
+      'Total Jobs': externalJobs.length.toString(),
+      'Total Estimated': `LKR ${totalEstimated.toLocaleString()}`,
+      'Total Actual Cost': `LKR ${totalActual.toLocaleString()}`,
+      'Additional Costs': `LKR ${totalAdditional.toLocaleString()}`,
+      'Grand Total': `LKR ${grandTotal.toLocaleString()}`,
+    },
+    data,
+    columns: [
+      { key: 'no', label: '#' },
+      { key: 'subcontractor', label: 'Subcontractor' },
+      { key: 'jobType', label: 'Job Type' },
+      { key: 'jobCount', label: 'Jobs', align: 'right' },
+      { key: 'estimatedCost', label: 'Estimated', align: 'right' },
+      { key: 'actualCost', label: 'Actual Cost', align: 'right' },
+      { key: 'additionalCosts', label: 'Additional', align: 'right' },
+      { key: 'totalCost', label: 'Total', align: 'right' },
+    ],
+    charts: {
+      costByJobType: Object.values(grouped).reduce((acc, g) => {
+        const existing = acc.find(a => a.name === g.jobType);
+        if (existing) {
+          existing.value += g.actualCost + g.additionalCosts;
+        } else {
+          acc.push({ name: g.jobType, value: g.actualCost + g.additionalCosts });
+        }
+        return acc;
+      }, [] as { name: string; value: number }[]),
+    },
+  };
+}
+
+// Monthly Report - Comprehensive Monthly Summary
+async function getMonthlyReport(startDate: Date, endDate: Date) {
+  const [jobCardsCreated, jobCardsClosed, purchaseOrders, grnHeaders, materialIssues] = await Promise.all([
+    db.jobCard.count({
+      where: { createdAt: { gte: startDate, lte: endDate }, isActive: true },
+    }),
+    db.jobCard.count({
+      where: { closedAt: { gte: startDate, lte: endDate }, isActive: true, status: { in: ['COMPLETED', 'CLOSED'] } },
+    }),
+    db.purchaseOrder.findMany({
+      where: { orderDate: { gte: startDate, lte: endDate }, isActive: true },
+    }),
+    db.grnHeader.count({
+      where: { createdAt: { gte: startDate, lte: endDate }, isActive: true },
+    }),
+    db.materialIssue.findMany({
+      where: { issuedAt: { gte: startDate, lte: endDate } },
+      include: { lines: true },
+    }),
+  ]);
+
+  const totalPOValue = purchaseOrders.reduce((s, po) => s + Number(po.totalValue || 0), 0);
+  const totalMaterialCost = materialIssues.reduce((s, mi) =>
+    s + mi.lines.reduce((ls, l) => ls + Number(l.totalCost || 0), 0), 0);
+
+  // Get external job costs
+  const externalJobs = await db.externalJob.findMany({
+    where: { createdAt: { gte: startDate, lte: endDate }, isActive: true },
+  });
+  const totalExternalCost = externalJobs.reduce((s, ej) => s + Number(ej.actualCost || ej.estimatedCost || 0), 0);
+
+  // Get labour cost from time logs
+  const timeLogs = await db.timeLog.findMany({
+    where: { logDate: { gte: startDate, lte: endDate } },
+  });
+  const totalLabourCost = timeLogs.reduce((s, tl) => s + Number(tl.totalCost || 0), 0);
+
+  const grandTotalCost = totalMaterialCost + totalLabourCost + totalExternalCost;
+
+  const data = [
+    { no: 1, metric: 'Job Cards Created', value: jobCardsCreated.toString(), category: 'Operations' },
+    { no: 2, metric: 'Job Cards Closed', value: jobCardsClosed.toString(), category: 'Operations' },
+    { no: 3, metric: 'Purchase Orders Raised', value: purchaseOrders.length.toString(), category: 'Procurement' },
+    { no: 4, metric: 'Total PO Value', value: `LKR ${totalPOValue.toLocaleString()}`, category: 'Procurement' },
+    { no: 5, metric: 'GRNs Received', value: grnHeaders.toString(), category: 'Stores' },
+    { no: 6, metric: 'Material Issues', value: materialIssues.length.toString(), category: 'Stores' },
+    { no: 7, metric: 'Material Cost', value: `LKR ${totalMaterialCost.toLocaleString()}`, category: 'Costs' },
+    { no: 8, metric: 'Labour Cost', value: `LKR ${totalLabourCost.toLocaleString()}`, category: 'Costs' },
+    { no: 9, metric: 'External Cost', value: `LKR ${totalExternalCost.toLocaleString()}`, category: 'Costs' },
+    { no: 10, metric: 'Grand Total Cost', value: `LKR ${grandTotalCost.toLocaleString()}`, category: 'Costs' },
+  ];
+
+  return {
+    title: 'Monthly Report',
+    generatedAt: new Date().toISOString(),
+    period: { start: startDate.toISOString().split('T')[0], end: endDate.toISOString().split('T')[0] },
+    summary: {
+      'JCs Created': jobCardsCreated.toString(),
+      'JCs Closed': jobCardsClosed.toString(),
+      'Total PO Value': `LKR ${totalPOValue.toLocaleString()}`,
+      'Total Cost': `LKR ${grandTotalCost.toLocaleString()}`,
+    },
+    data,
+    columns: [
+      { key: 'no', label: '#' },
+      { key: 'metric', label: 'Metric' },
+      { key: 'value', label: 'Value', align: 'right' },
+      { key: 'category', label: 'Category' },
+    ],
+    charts: {
+      costBreakdown: [
+        { name: 'Material', value: totalMaterialCost, color: '#10b981' },
+        { name: 'Labour', value: totalLabourCost, color: '#3b82f6' },
+        { name: 'External', value: totalExternalCost, color: '#f59e0b' },
+      ].filter(d => d.value > 0),
+    },
+  };
+}
+
+// Monthly Local Purchasing Report
+async function getMonthlyLocalPurchasing(startDate: Date, endDate: Date) {
+  const purchaseOrders = await db.purchaseOrder.findMany({
+    where: {
+      orderDate: { gte: startDate, lte: endDate },
+      procurementChannel: 'LOCAL',
+      isActive: true,
+    },
+    include: {
+      supplier: { select: { name: true } },
+    },
+    orderBy: { orderDate: 'desc' },
+  });
+
+  const totalValue = purchaseOrders.reduce((sum, po) => sum + Number(po.totalValue || 0), 0);
+  const approved = purchaseOrders.filter(po => po.status === 'APPROVED' || po.status === 'ISSUED' || po.status === 'COMPLETED').length;
+
+  return {
+    title: 'Monthly Local Purchasing Report',
+    generatedAt: new Date().toISOString(),
+    period: { start: startDate.toISOString().split('T')[0], end: endDate.toISOString().split('T')[0] },
+    summary: {
+      'Total POs': purchaseOrders.length.toString(),
+      'Approved/Issued': approved.toString(),
+      'Total Value': `LKR ${totalValue.toLocaleString()}`,
+    },
+    data: purchaseOrders.map((po, idx) => ({
+      no: idx + 1,
+      poNumber: po.poNumber,
+      supplier: po.supplier?.name || '-',
+      orderDate: po.orderDate ? new Date(po.orderDate).toLocaleDateString() : '-',
+      status: po.status,
+      totalValue: `LKR ${Number(po.totalValue || 0).toLocaleString()}`,
+    })),
+    columns: [
+      { key: 'no', label: '#' },
+      { key: 'poNumber', label: 'PO Number' },
+      { key: 'supplier', label: 'Supplier' },
+      { key: 'orderDate', label: 'Order Date' },
+      { key: 'status', label: 'Status' },
+      { key: 'totalValue', label: 'Value', align: 'right' },
+    ],
+  };
+}
+
+// Monthly Head Office Purchasing Report
+async function getMonthlyHoPurchasing(startDate: Date, endDate: Date) {
+  const purchaseOrders = await db.purchaseOrder.findMany({
+    where: {
+      orderDate: { gte: startDate, lte: endDate },
+      procurementChannel: 'HEAD_OFFICE',
+      isActive: true,
+    },
+    include: {
+      supplier: { select: { name: true } },
+    },
+    orderBy: { orderDate: 'desc' },
+  });
+
+  const totalValue = purchaseOrders.reduce((sum, po) => sum + Number(po.totalValue || 0), 0);
+  const approved = purchaseOrders.filter(po => po.status === 'APPROVED' || po.status === 'ISSUED' || po.status === 'COMPLETED').length;
+
+  return {
+    title: 'Monthly Head Office Purchasing Report',
+    generatedAt: new Date().toISOString(),
+    period: { start: startDate.toISOString().split('T')[0], end: endDate.toISOString().split('T')[0] },
+    summary: {
+      'Total POs': purchaseOrders.length.toString(),
+      'Approved/Issued': approved.toString(),
+      'Total Value': `LKR ${totalValue.toLocaleString()}`,
+    },
+    data: purchaseOrders.map((po, idx) => ({
+      no: idx + 1,
+      poNumber: po.poNumber,
+      supplier: po.supplier?.name || '-',
+      orderDate: po.orderDate ? new Date(po.orderDate).toLocaleDateString() : '-',
+      status: po.status,
+      totalValue: `LKR ${Number(po.totalValue || 0).toLocaleString()}`,
+    })),
+    columns: [
+      { key: 'no', label: '#' },
+      { key: 'poNumber', label: 'PO Number' },
+      { key: 'supplier', label: 'Supplier' },
+      { key: 'orderDate', label: 'Order Date' },
+      { key: 'status', label: 'Status' },
+      { key: 'totalValue', label: 'Value', align: 'right' },
+    ],
+  };
+}
+
+// Same Item Price Variation Report
+async function getPriceVariation(startDate: Date, endDate: Date) {
+  const grnLines = await db.grnLine.findMany({
+    where: {
+      grnHeader: {
+        createdAt: { gte: startDate, lte: endDate },
+        isActive: true,
+      },
+    },
+    include: {
+      grnHeader: { select: { grnNumber: true, createdAt: true } },
+    },
+  });
+
+  // Group by itemId
+  const itemPrices: Record<string, { itemId: string; prices: { unitCost: number; grnNumber: string; date: Date }[] }> = {};
+
+  grnLines.forEach(line => {
+    if (!itemPrices[line.itemId]) {
+      itemPrices[line.itemId] = { itemId: line.itemId, prices: [] };
+    }
+    itemPrices[line.itemId].prices.push({
+      unitCost: Number(line.unitCost),
+      grnNumber: line.grnHeader.grnNumber,
+      date: line.grnHeader.createdAt,
+    });
+  });
+
+  // Find items with price variations (more than one distinct price)
+  const variations = Object.values(itemPrices)
+    .filter(item => {
+      const distinctPrices = new Set(item.prices.map(p => p.unitCost));
+      return distinctPrices.size > 1;
+    })
+    .map(item => {
+      const prices = item.prices.map(p => p.unitCost);
+      const minPrice = Math.min(...prices);
+      const maxPrice = Math.max(...prices);
+      const avgPrice = prices.reduce((s, p) => s + p, 0) / prices.length;
+      const variationPct = minPrice > 0 ? ((maxPrice - minPrice) / minPrice * 100) : 0;
+
+      return {
+        itemId: item.itemId,
+        occurrences: item.prices.length,
+        minPrice,
+        maxPrice,
+        avgPrice,
+        variationPct,
+      };
+    })
+    .sort((a, b) => b.variationPct - a.variationPct);
+
+  const data = variations.slice(0, 100).map((v, idx) => ({
+    no: idx + 1,
+    itemId: v.itemId,
+    occurrences: v.occurrences,
+    minPrice: `LKR ${v.minPrice.toLocaleString()}`,
+    maxPrice: `LKR ${v.maxPrice.toLocaleString()}`,
+    avgPrice: `LKR ${v.avgPrice.toFixed(2)}`,
+    variationPct: `${v.variationPct.toFixed(1)}%`,
+  }));
+
+  return {
+    title: 'Same Item Price Variation Report',
+    generatedAt: new Date().toISOString(),
+    period: { start: startDate.toISOString().split('T')[0], end: endDate.toISOString().split('T')[0] },
+    summary: {
+      'Items with Variation': variations.length.toString(),
+      'Total GRN Lines Analysed': grnLines.length.toString(),
+      'Max Variation': variations.length > 0 ? `${variations[0].variationPct.toFixed(1)}%` : '0%',
+    },
+    data,
+    columns: [
+      { key: 'no', label: '#' },
+      { key: 'itemId', label: 'Item ID' },
+      { key: 'occurrences', label: 'Receipts', align: 'right' },
+      { key: 'minPrice', label: 'Min Price', align: 'right' },
+      { key: 'maxPrice', label: 'Max Price', align: 'right' },
+      { key: 'avgPrice', label: 'Avg Price', align: 'right' },
+      { key: 'variationPct', label: 'Variation %', align: 'right' },
+    ],
+  };
+}
+
+// Wrong Item Return Delay Time Report
+async function getWrongItemReturnDelay(startDate: Date, endDate: Date) {
+  const wrongItemReturns = await (db as any).wrongItemReturn.findMany({
+    where: {
+      identifiedAt: { gte: startDate, lte: endDate },
+      isActive: true,
+    },
+    include: {
+      grn: { select: { grnNumber: true } },
+    },
+    orderBy: { identifiedAt: 'desc' },
+  });
+
+  const completedReturns = wrongItemReturns.filter((r: any) => r.returnCompletedAt);
+  const avgDelay = completedReturns.length > 0
+    ? completedReturns.reduce((s: number, r: any) => s + (r.delayDays || 0), 0) / completedReturns.length
+    : 0;
+  const maxDelay = completedReturns.length > 0
+    ? Math.max(...completedReturns.map((r: any) => r.delayDays || 0))
+    : 0;
+
+  const data = wrongItemReturns.map((r: any, idx: number) => ({
+    no: idx + 1,
+    grnNumber: r.grn?.grnNumber || '-',
+    itemId: r.itemId,
+    reason: r.reason,
+    status: r.status,
+    identifiedAt: new Date(r.identifiedAt).toLocaleDateString(),
+    returnInitiatedAt: r.returnInitiatedAt ? new Date(r.returnInitiatedAt).toLocaleDateString() : '-',
+    returnCompletedAt: r.returnCompletedAt ? new Date(r.returnCompletedAt).toLocaleDateString() : '-',
+    delayDays: r.delayDays != null ? `${r.delayDays} days` : '-',
+  }));
+
+  return {
+    title: 'Wrong Item Return Delay Time Report',
+    generatedAt: new Date().toISOString(),
+    period: { start: startDate.toISOString().split('T')[0], end: endDate.toISOString().split('T')[0] },
+    summary: {
+      'Total Returns': wrongItemReturns.length.toString(),
+      'Completed Returns': completedReturns.length.toString(),
+      'Average Delay': `${avgDelay.toFixed(1)} days`,
+      'Max Delay': `${maxDelay} days`,
+    },
+    data,
+    columns: [
+      { key: 'no', label: '#' },
+      { key: 'grnNumber', label: 'GRN Number' },
+      { key: 'itemId', label: 'Item ID' },
+      { key: 'reason', label: 'Reason' },
+      { key: 'status', label: 'Status' },
+      { key: 'identifiedAt', label: 'Identified' },
+      { key: 'returnCompletedAt', label: 'Completed' },
+      { key: 'delayDays', label: 'Delay', align: 'right' },
+    ],
   };
 }
