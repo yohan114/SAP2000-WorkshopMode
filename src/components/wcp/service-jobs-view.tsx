@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -110,24 +110,33 @@ export function ServiceJobsView() {
   const [alerts, setAlerts] = useState<ServiceAlert[]>([]);
   const [history, setHistory] = useState<ServiceJob[]>([]);
 
+  // Meta state for totals
+  const [totalJobsCount, setTotalJobsCount] = useState(0);
+
   // Loading states
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
   // Search and filter
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [siteFilter, setSiteFilter] = useState('');
+  const [debouncedSiteFilter, setDebouncedSiteFilter] = useState('');
   const [historyVehicle, setHistoryVehicle] = useState('');
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const siteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Dialog states
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [isIntervalDialogOpen, setIsIntervalDialogOpen] = useState(false);
   const [isEditIntervalDialogOpen, setIsEditIntervalDialogOpen] = useState(false);
   const [isManHourDialogOpen, setIsManHourDialogOpen] = useState(false);
   const [isConsumableDialogOpen, setIsConsumableDialogOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState<ServiceJob | null>(null);
+  const [editingJob, setEditingJob] = useState<ServiceJob | null>(null);
   const [selectedInterval, setSelectedInterval] = useState<ServiceInterval | null>(null);
 
   // Form states
@@ -174,22 +183,47 @@ export function ServiceJobsView() {
     fetchAlerts();
   }, []);
 
+  // Debounce search input
+  useEffect(() => {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    };
+  }, [search]);
+
+  // Debounce site filter input
+  useEffect(() => {
+    if (siteTimerRef.current) clearTimeout(siteTimerRef.current);
+    siteTimerRef.current = setTimeout(() => {
+      setDebouncedSiteFilter(siteFilter);
+    }, 300);
+    return () => {
+      if (siteTimerRef.current) clearTimeout(siteTimerRef.current);
+    };
+  }, [siteFilter]);
+
   useEffect(() => {
     fetchJobs();
-  }, [search, statusFilter, siteFilter]);
+  }, [debouncedSearch, statusFilter, debouncedSiteFilter]);
 
   const fetchJobs = async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams({ limit: '50' });
-      if (search) params.set('search', search);
+      if (debouncedSearch) params.set('search', debouncedSearch);
       if (statusFilter && statusFilter !== 'all') params.set('status', statusFilter);
-      if (siteFilter) params.set('site', siteFilter);
+      if (debouncedSiteFilter) params.set('site', debouncedSiteFilter);
 
       const res = await fetch(`/api/service-jobs?${params}`);
       const data = await res.json();
       if (data.success) {
         setJobs(data.data);
+        if (data.meta?.total !== undefined) {
+          setTotalJobsCount(data.meta.total);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch service jobs:', error);
@@ -313,6 +347,71 @@ export function ServiceJobsView() {
     } catch (error) {
       console.error('Create job error:', error);
       toast({ title: 'Error', description: 'Failed to create service job', variant: 'destructive' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const openEditJob = (job: ServiceJob) => {
+    setEditingJob(job);
+    setJobForm({
+      serviceDate: new Date(job.serviceDate).toISOString().split('T')[0],
+      vehicleNumber: job.vehicleNumber,
+      site: job.site,
+      lastServiceMeter: String(Number(job.lastServiceMeter)),
+      currentServiceMeter: String(Number(job.currentServiceMeter)),
+      intervalId: job.intervalId || '',
+      serviceInterval: String(Number(job.serviceInterval)),
+      oilQuantity: job.oilQuantity != null ? String(Number(job.oilQuantity)) : '',
+      filterUsed: job.filterUsed || '',
+      remarks: job.remarks || '',
+      industrialUse: job.industrialUse || '',
+      minimumCharge: job.minimumCharge != null ? String(Number(job.minimumCharge)) : '',
+      totalCharge: job.totalCharge != null ? String(Number(job.totalCharge)) : '',
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditJob = async () => {
+    if (!editingJob) return;
+    if (!jobForm.vehicleNumber || !jobForm.site || !jobForm.currentServiceMeter) {
+      toast({ title: 'Validation Error', description: 'Vehicle, site, and current meter are required', variant: 'destructive' });
+      return;
+    }
+    try {
+      setSubmitting(true);
+      const res = await fetch(`/api/service-jobs/${editingJob.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          serviceDate: jobForm.serviceDate,
+          vehicleNumber: jobForm.vehicleNumber,
+          site: jobForm.site,
+          lastServiceMeter: parseFloat(jobForm.lastServiceMeter) || 0,
+          currentServiceMeter: parseFloat(jobForm.currentServiceMeter),
+          serviceInterval: parseFloat(jobForm.serviceInterval) || 0,
+          intervalId: jobForm.intervalId || undefined,
+          oilQuantity: jobForm.oilQuantity ? parseFloat(jobForm.oilQuantity) : undefined,
+          filterUsed: jobForm.filterUsed || undefined,
+          remarks: jobForm.remarks || undefined,
+          industrialUse: jobForm.industrialUse || undefined,
+          minimumCharge: jobForm.minimumCharge ? parseFloat(jobForm.minimumCharge) : undefined,
+          totalCharge: jobForm.totalCharge ? parseFloat(jobForm.totalCharge) : undefined,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: 'Success', description: 'Service job updated successfully' });
+        setIsEditDialogOpen(false);
+        setEditingJob(null);
+        resetJobForm();
+        fetchJobs();
+      } else {
+        toast({ title: 'Error', description: data.error || 'Failed to update job', variant: 'destructive' });
+      }
+    } catch (error) {
+      console.error('Update job error:', error);
+      toast({ title: 'Error', description: 'Failed to update service job', variant: 'destructive' });
     } finally {
       setSubmitting(false);
     }
@@ -507,7 +606,7 @@ export function ServiceJobsView() {
   };
 
   // Stats
-  const totalJobs = jobs.length;
+  const totalJobs = totalJobsCount;
   const activeJobs = jobs.filter(j => j.status === 'ACTIVE').length;
   const overdueAlerts = alerts.filter(a => a.isOverdue).length;
   const thisMonthJobs = jobs.filter(j => {
@@ -775,6 +874,9 @@ export function ServiceJobsView() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onClick={() => { fetchJobDetail(job.id); setIsDetailDialogOpen(true); }}>
                                 <Eye className="h-4 w-4 mr-2" />View
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => openEditJob(job)}>
+                                <Edit className="h-4 w-4 mr-2" />Edit
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => handleDeleteJob(job)} className="text-red-600">
@@ -1238,6 +1340,100 @@ export function ServiceJobsView() {
               <Button onClick={handleAddConsumable} className="bg-emerald-600 hover:bg-emerald-700" disabled={submitting}>
                 {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 Add
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Job Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={(open) => { setIsEditDialogOpen(open); if (!open) { setEditingJob(null); resetJobForm(); } }}>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Service Job</DialogTitle>
+            <DialogDescription>Update service job: {editingJob?.jobNumber}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Service Date *</Label>
+                <Input type="date" value={jobForm.serviceDate} onChange={(e) => setJobForm({ ...jobForm, serviceDate: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Vehicle Number *</Label>
+                <Input value={jobForm.vehicleNumber} onChange={(e) => setJobForm({ ...jobForm, vehicleNumber: e.target.value })} placeholder="e.g. VH-001" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Site *</Label>
+                <Input value={jobForm.site} onChange={(e) => setJobForm({ ...jobForm, site: e.target.value })} placeholder="Site name" />
+              </div>
+              <div className="space-y-2">
+                <Label>Service Interval</Label>
+                <Select value={jobForm.intervalId} onValueChange={handleIntervalSelect}>
+                  <SelectTrigger><SelectValue placeholder="Select interval" /></SelectTrigger>
+                  <SelectContent>
+                    {intervals.map((i) => (
+                      <SelectItem key={i.id} value={i.id}>{i.name} ({i.intervalValue} {i.unit})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-2">
+                <Label>Last Meter</Label>
+                <Input type="number" value={jobForm.lastServiceMeter} onChange={(e) => setJobForm({ ...jobForm, lastServiceMeter: e.target.value })} placeholder="0" />
+              </div>
+              <div className="space-y-2">
+                <Label>Current Meter *</Label>
+                <Input type="number" value={jobForm.currentServiceMeter} onChange={(e) => setJobForm({ ...jobForm, currentServiceMeter: e.target.value })} placeholder="0" />
+              </div>
+              <div className="space-y-2">
+                <Label>Next Meter</Label>
+                <Input type="number" value={String(computedNextMeter())} readOnly className="bg-muted" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Oil Quantity</Label>
+                <Input type="number" value={jobForm.oilQuantity} onChange={(e) => setJobForm({ ...jobForm, oilQuantity: e.target.value })} placeholder="Litres" />
+              </div>
+              <div className="space-y-2">
+                <Label>Filter Used</Label>
+                <Input value={jobForm.filterUsed} onChange={(e) => setJobForm({ ...jobForm, filterUsed: e.target.value })} placeholder="Filter details" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Remarks</Label>
+              <Textarea value={jobForm.remarks} onChange={(e) => setJobForm({ ...jobForm, remarks: e.target.value })} placeholder="Notes..." rows={2} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Industrial Use</Label>
+                <Input value={jobForm.industrialUse} onChange={(e) => setJobForm({ ...jobForm, industrialUse: e.target.value })} placeholder="Usage type" />
+              </div>
+              <div className="space-y-2">
+                <Label>Interval Value</Label>
+                <Input type="number" value={jobForm.serviceInterval} onChange={(e) => setJobForm({ ...jobForm, serviceInterval: e.target.value })} placeholder="Manual override" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Minimum Charge</Label>
+                <Input type="number" step="0.01" value={jobForm.minimumCharge} onChange={(e) => setJobForm({ ...jobForm, minimumCharge: e.target.value })} placeholder="0.00" />
+              </div>
+              <div className="space-y-2">
+                <Label>Total Charge</Label>
+                <Input type="number" step="0.01" value={jobForm.totalCharge} onChange={(e) => setJobForm({ ...jobForm, totalCharge: e.target.value })} placeholder="0.00" />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setIsEditDialogOpen(false); setEditingJob(null); resetJobForm(); }}>Cancel</Button>
+              <Button onClick={handleEditJob} className="bg-emerald-600 hover:bg-emerald-700" disabled={submitting}>
+                {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Save Changes
               </Button>
             </DialogFooter>
           </div>

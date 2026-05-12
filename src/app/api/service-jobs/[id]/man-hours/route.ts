@@ -82,6 +82,32 @@ export async function POST(
       },
     });
 
+    // Update parent job's totalCharge from line items
+    const [manHoursAgg, consumablesAgg, job] = await Promise.all([
+      db.serviceManHour.aggregate({
+        where: { serviceJobId: id },
+        _sum: { totalCost: true },
+      }),
+      db.serviceConsumable.aggregate({
+        where: { serviceJobId: id },
+        _sum: { totalCost: true },
+      }),
+      db.serviceJob.findUnique({
+        where: { id },
+        select: { minimumCharge: true },
+      }),
+    ]);
+
+    const manHourTotal = Number(manHoursAgg._sum.totalCost) || 0;
+    const consumableTotal = Number(consumablesAgg._sum.totalCost) || 0;
+    const minimumCharge = Number(job?.minimumCharge) || 0;
+    const computedTotal = manHourTotal + consumableTotal + minimumCharge;
+
+    await db.serviceJob.update({
+      where: { id },
+      data: { totalCharge: computedTotal },
+    });
+
     return apiSuccess(manHour, 'Man hour entry added successfully', 201);
   } catch (error) {
     console.error('Create man hour error:', error);
