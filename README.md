@@ -10,6 +10,7 @@ A comprehensive workshop management system for tracking job cards, service jobs,
 - [Prerequisites](#prerequisites)
 - [Installation Steps](#installation-steps)
 - [Running the Application](#running-the-application)
+- [Production Deployment Guide](#production-deployment-guide)
 - [Available Scripts](#available-scripts)
 - [Project Structure](#project-structure)
 - [Key Features / Modules](#key-features--modules)
@@ -189,6 +190,355 @@ Start the production server (after building):
 ```bash
 bun run start
 ```
+
+---
+
+## Production Deployment Guide
+
+This section provides a complete guide to deploying the Workshop Control Platform in a production environment. Follow these steps carefully.
+
+### Step 1: Server Requirements
+
+Make sure your production server has:
+
+| Requirement | Minimum | Recommended |
+|-------------|---------|-------------|
+| OS | Ubuntu 20.04 / Windows Server 2019 | Ubuntu 22.04 / Windows Server 2022 |
+| RAM | 2 GB | 4 GB or more |
+| Disk Space | 5 GB | 20 GB or more |
+| CPU | 2 cores | 4 cores |
+| Node.js | v18 | v22 |
+| Bun | v1.0+ | Latest |
+
+### Step 2: Clone and Install on Server
+
+```bash
+# Clone the repository
+git clone https://github.com/yohan114/SAP2000-WorkshopMode.git
+cd SAP2000-WorkshopMode
+git checkout fix/typescript-errors-v6.0
+
+# Install dependencies
+bun install
+```
+
+### Step 3: Configure Production Environment Variables
+
+Create a `.env` file in the project root with the following variables:
+
+```bash
+# Database - SQLite file path (use absolute path in production)
+DATABASE_URL="file:/var/data/wcp/production.db"
+
+# Authentication - MUST be a strong random secret in production
+NEXTAUTH_SECRET="REPLACE_WITH_A_STRONG_RANDOM_STRING"
+
+# Application URL - Your actual domain or server IP
+NEXTAUTH_URL="https://your-domain.com"
+
+# Optional: Custom port (defaults to 3000)
+PORT=3000
+```
+
+To generate a secure NEXTAUTH_SECRET:
+
+```bash
+openssl rand -base64 32
+```
+
+Important notes on environment variables:
+
+| Variable | Production Value | Notes |
+|----------|-----------------|-------|
+| `DATABASE_URL` | `file:/absolute/path/to/production.db` | Use an absolute path outside the project folder for data safety |
+| `NEXTAUTH_SECRET` | Random 32+ character string | Never use the default. Generate a unique secret for each deployment |
+| `NEXTAUTH_URL` | `https://your-domain.com` | Must match the actual URL users access. Include https:// if using SSL |
+| `PORT` | `3000` (or your preferred port) | The port the Node.js server listens on |
+
+### Step 4: Set Up the Database
+
+```bash
+# Generate Prisma client
+bun run db:generate
+
+# Create database tables
+bun run db:push
+
+# Seed initial data (privileges, roles, lookup data)
+bun run seed:all
+```
+
+### Step 5: Create the Production Admin User
+
+Run the production setup script. This will:
+- Remove any demo data from the database
+- Create the System Administrator account
+
+```bash
+bun run production:setup
+```
+
+When prompted, type `PRODUCTION` to confirm.
+
+The script will display the admin credentials:
+
+| Field | Value |
+|-------|-------|
+| Email | `christiegroup@gmail.com` |
+| Password | Displayed in terminal (save it immediately) |
+| Role | System Administrator (full access) |
+
+Important: Change the admin password after your first login.
+
+### Step 6: Create Additional Users
+
+After logging in as admin, you can create users through the UI:
+
+1. Go to **Users** in the sidebar (Admin section)
+2. Click **Create User**
+3. Fill in: Name, Email, Employee ID, Department
+4. Assign one or more Roles (determines permissions)
+5. The system generates a temporary password
+
+Alternatively, you can create users via the API:
+
+```bash
+curl -X POST http://localhost:3000/api/users \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_SESSION_TOKEN" \
+  -d '{
+    "email": "user@company.com",
+    "name": "John Smith",
+    "employeeId": "EMP-001",
+    "department": "Workshop",
+    "roleIds": ["ROLE_ID_HERE"]
+  }'
+```
+
+### Step 7: Understanding Roles and Privileges
+
+The system uses role-based access control (RBAC):
+
+| Role | Level | Description |
+|------|-------|-------------|
+| System Administrator | 10 | Full access to all modules |
+| Workshop Manager | 8 | Manage job cards, approvals, reports |
+| Supervisor | 6 | Create/edit job cards, manage team |
+| Technician | 4 | View and update assigned job cards |
+| Store Keeper | 4 | Manage inventory, material issues |
+| Clerk | 2 | View-only access to most modules |
+
+To create custom roles:
+1. Go to **Roles** in the sidebar
+2. Click **Create Role**
+3. Set name, code, and level (higher = more authority)
+4. Go to **Privileges** to assign specific permissions to the role
+
+### Step 8: Build for Production
+
+```bash
+# Create the optimized production build
+bun run build
+```
+
+This generates a standalone build in `.next/standalone/` that includes everything needed to run the server.
+
+### Step 9: Start the Production Server
+
+```bash
+# Start the production server
+bun run start
+```
+
+The server will start on the configured PORT (default: 3000).
+
+For Windows servers, you can use the provided batch file:
+
+```bash
+start-server.bat
+```
+
+### Step 10: Run as a Background Service
+
+#### Linux (using systemd)
+
+Create a service file at `/etc/systemd/system/wcp.service`:
+
+```ini
+[Unit]
+Description=Workshop Control Platform
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/path/to/SAP2000-WorkshopMode
+ExecStart=/root/.bun/bin/bun .next/standalone/server.js
+Restart=on-failure
+RestartSec=10
+Environment=NODE_ENV=production
+Environment=PORT=3000
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Then enable and start the service:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable wcp
+sudo systemctl start wcp
+
+# Check status
+sudo systemctl status wcp
+
+# View logs
+sudo journalctl -u wcp -f
+```
+
+#### Windows (using NSSM)
+
+Download [NSSM](https://nssm.cc/) and install the service:
+
+```cmd
+nssm install WCP "C:\path\to\bun.exe" ".next\standalone\server.js"
+nssm set WCP AppDirectory "C:\path\to\SAP2000-WorkshopMode"
+nssm set WCP AppEnvironmentExtra NODE_ENV=production PORT=3000
+nssm start WCP
+```
+
+### Step 11: Set Up a Reverse Proxy (Recommended)
+
+A reverse proxy handles SSL, load balancing, and serves as a security layer.
+
+#### Using Caddy (Recommended - Auto SSL)
+
+Install Caddy: [https://caddyserver.com/docs/install](https://caddyserver.com/docs/install)
+
+Create a `Caddyfile`:
+
+```
+your-domain.com {
+    reverse_proxy localhost:3000 {
+        header_up Host {host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Real-IP {remote_host}
+    }
+}
+```
+
+Start Caddy:
+
+```bash
+sudo caddy start
+```
+
+Caddy automatically provisions SSL certificates from Let's Encrypt.
+
+#### Using Nginx
+
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name your-domain.com;
+
+    ssl_certificate /path/to/cert.pem;
+    ssl_certificate_key /path/to/key.pem;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+### Step 12: Database Backup Strategy
+
+Since this uses SQLite, backing up is simple - copy the database file:
+
+```bash
+# Create a backup
+cp /var/data/wcp/production.db /var/data/wcp/backups/production_$(date +%Y%m%d_%H%M%S).db
+
+# Automate with cron (daily at 2 AM)
+echo "0 2 * * * cp /var/data/wcp/production.db /var/data/wcp/backups/production_\$(date +\%Y\%m\%d).db" | crontab -
+```
+
+For Windows, use Task Scheduler with:
+
+```cmd
+copy "C:\data\wcp\production.db" "C:\data\wcp\backups\production_%date:~-4%%date:~3,2%%date:~0,2%.db"
+```
+
+### Step 13: Security Checklist
+
+Before going live, verify:
+
+- [ ] `NEXTAUTH_SECRET` is a unique, strong random string (not the default)
+- [ ] `NEXTAUTH_URL` uses HTTPS
+- [ ] Database file is stored outside the web-accessible directory
+- [ ] Database file has restrictive file permissions (`chmod 600`)
+- [ ] Reverse proxy is configured with SSL
+- [ ] Default admin password has been changed
+- [ ] Unused demo accounts are deleted (run `bun run production:setup`)
+- [ ] Server firewall allows only ports 80, 443, and SSH
+- [ ] Regular database backups are configured
+- [ ] Server OS and dependencies are up to date
+
+### Step 14: Updating to a New Version
+
+When a new version is released:
+
+```bash
+# Stop the server
+sudo systemctl stop wcp
+
+# Pull the latest code
+git pull origin fix/typescript-errors-v6.0
+
+# Install any new dependencies
+bun install
+
+# Regenerate Prisma client (in case schema changed)
+bun run db:generate
+
+# Apply database changes
+bun run db:push
+
+# Rebuild
+bun run build
+
+# Restart the server
+sudo systemctl start wcp
+```
+
+### Quick Reference: Production Commands
+
+| Action | Command |
+|--------|---------|
+| Start server | `bun run start` |
+| Stop server (systemd) | `sudo systemctl stop wcp` |
+| View logs (systemd) | `sudo journalctl -u wcp -f` |
+| Backup database | `cp production.db backups/production_$(date +%Y%m%d).db` |
+| Update schema | `bun run db:push` |
+| Regenerate client | `bun run db:generate` |
+| Rebuild | `bun run build` |
+| Check status | `sudo systemctl status wcp` |
 
 ---
 
