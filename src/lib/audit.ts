@@ -138,8 +138,8 @@ export async function getUserActivity(
   
   if (options?.fromDate || options?.toDate) {
     where.createdAt = {};
-    if (options.fromDate) where.createdAt.gte = options.fromDate;
-    if (options.toDate) where.createdAt.lte = options.toDate;
+    if (options.fromDate) (where.createdAt as Record<string, unknown>).gte = options.fromDate;
+    if (options.toDate) (where.createdAt as Record<string, unknown>).lte = options.toDate;
   }
 
   return db.auditLog.findMany({

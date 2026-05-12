@@ -206,11 +206,10 @@ export async function getAssetReliability(
       assetId,
       status: { in: ['COMPLETED', 'CLOSED'] },
       actualStart: { not: null },
-      actualEnd: { not: null },
-      actualEnd: {
-        gte: periodStart,
-        lte: periodEnd,
-      },
+      AND: [
+        { actualEnd: { not: null } },
+        { actualEnd: { gte: periodStart, lte: periodEnd } },
+      ],
     },
     select: {
       actualStart: true,
@@ -323,11 +322,10 @@ export async function getCategoryReliability(
       assetId: { in: assetIds },
       status: { in: ['COMPLETED', 'CLOSED'] },
       actualStart: { not: null },
-      actualEnd: { not: null },
-      actualEnd: {
-        gte: periodStart,
-        lte: periodEnd,
-      },
+      AND: [
+        { actualEnd: { not: null } },
+        { actualEnd: { gte: periodStart, lte: periodEnd } },
+      ],
     },
     select: {
       actualStart: true,
@@ -427,11 +425,10 @@ export async function getFleetReliability(
       assetId: { in: assetIds },
       status: { in: ['COMPLETED', 'CLOSED'] },
       actualStart: { not: null },
-      actualEnd: { not: null },
-      actualEnd: {
-        gte: periodStart,
-        lte: periodEnd,
-      },
+      AND: [
+        { actualEnd: { not: null } },
+        { actualEnd: { gte: periodStart, lte: periodEnd } },
+      ],
     },
     select: {
       actualStart: true,
@@ -606,11 +603,10 @@ export async function getMttrByCategory(
         assetId: { in: assetIds },
         status: { in: ['COMPLETED', 'CLOSED'] },
         actualStart: { not: null },
-        actualEnd: { not: null },
-        actualEnd: {
-          gte: periodStart,
-          lte: periodEnd,
-        },
+        AND: [
+          { actualEnd: { not: null } },
+          { actualEnd: { gte: periodStart, lte: periodEnd } },
+        ],
       },
       select: {
         actualStart: true,
@@ -694,11 +690,10 @@ export async function getAssetReliabilityRanking(
     where: {
       status: { in: ['COMPLETED', 'CLOSED'] },
       actualStart: { not: null },
-      actualEnd: { not: null },
-      actualEnd: {
-        gte: periodStart,
-        lte: periodEnd,
-      },
+      AND: [
+        { actualEnd: { not: null } },
+        { actualEnd: { gte: periodStart, lte: periodEnd } },
+      ],
     },
     select: {
       assetId: true,

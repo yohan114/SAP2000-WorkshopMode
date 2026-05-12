@@ -5,6 +5,7 @@ interface EmailOptions {
   to: string[];
   subject: string;
   html: string;
+  text?: string;
   attachments?: Array<{
     filename: string;
     content: Buffer | string;
@@ -206,8 +207,8 @@ export async function sendScheduledReportEmail(
     };
   }
 ): Promise<{ success: boolean; sent: number; failed: string[] }> {
-  const html = generateReportEmailHTML(reportData);
-  const text = generateReportEmailText(reportData);
+  const html = generateReportEmailHTML({ ...reportData, recipientCount: recipients.length });
+  const text = generateReportEmailText({ ...reportData, recipientCount: recipients.length });
 
   const results = {
     success: true,
@@ -370,4 +371,19 @@ function calculateNextRun(schedule: string): Date {
   }
 
   return next;
+}
+
+// Stub exports for email-templates/index.ts
+export type EmailTemplate = {
+  id: string;
+  name: string;
+  subject: string;
+  html: string;
+  category?: string;
+};
+
+export type NotificationEvent = string;
+
+export function getEmailTemplates(): EmailTemplate[] {
+  return [];
 }

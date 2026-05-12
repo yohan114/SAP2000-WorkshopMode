@@ -62,7 +62,7 @@ function formatDate(value: unknown): string {
 /**
  * Auto-size columns based on content
  */
-function autoSizeColumns(ws: XLSX.WorkSheet, data: Record<string, unknown>[]) {
+function autoSizeSheetColumns(ws: XLSX.WorkSheet, data: Record<string, unknown>[]) {
   const colWidths: { [key: string]: number } = {};
   
   // Get headers
@@ -118,7 +118,7 @@ export function exportToExcel(
       if (sheet.totals && sheet.data.length > 0) {
         const totalsRow: Record<string, unknown> = { _row: 'TOTALS' };
         Object.keys(sheet.data[0]).forEach(key => {
-          if (key in sheet.totals) {
+          if (key in sheet.totals!) {
             totalsRow[key] = sheet.totals![key];
           } else if (key !== '_row') {
             totalsRow[key] = '';
@@ -130,7 +130,7 @@ export function exportToExcel(
       const ws = XLSX.utils.json_to_sheet(sheetData);
       
       if (autoSizeColumns) {
-        autoSizeColumns(ws, sheet.data);
+        autoSizeSheetColumns(ws, sheet.data);
       }
       
       XLSX.utils.book_append_sheet(wb, ws, sheet.name.substring(0, 31)); // Excel limit
@@ -161,7 +161,7 @@ export function exportToExcel(
     const ws = XLSX.utils.json_to_sheet(sheetData);
     
     if (autoSizeColumns && sheetData.length > 0) {
-      autoSizeColumns(ws, sheetData);
+      autoSizeSheetColumns(ws, sheetData);
     }
     
     XLSX.utils.book_append_sheet(wb, ws, sheetName.substring(0, 31));
@@ -330,7 +330,7 @@ export function createMultiSheetWorkbook(
   sheets.forEach(sheet => {
     if (sheet.data.length > 0) {
       const ws = XLSX.utils.json_to_sheet(sheet.data);
-      autoSizeColumns(ws, sheet.data);
+      autoSizeSheetColumns(ws, sheet.data);
       XLSX.utils.book_append_sheet(wb, ws, sheet.name.substring(0, 31));
     }
   });
