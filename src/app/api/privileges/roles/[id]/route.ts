@@ -83,7 +83,7 @@ export async function GET(
 
     // Create a map of existing role privileges
     const privilegeMap = new Map(
-      rolePrivileges.map(rp => [rp.privilegeId, rp])
+      (rolePrivileges as any[]).map(rp => [rp.privilegeId, rp])
     );
 
     // Combine all privileges with role's settings
@@ -104,7 +104,7 @@ export async function GET(
     });
 
     // Group by category
-    const byCategory = privileges.reduce<Record<string, typeof privileges>>((acc, p) => {
+    const byCategory = privileges.reduce((acc: Record<string, typeof privileges>, p) => {
       const cat = p.category;
       if (!acc[cat]) {
         acc[cat] = [];
@@ -118,7 +118,7 @@ export async function GET(
       total: privileges.length,
       assigned: privileges.filter(p => p.isAssigned).length,
       granted: privileges.filter(p => p.isGranted).length,
-      byCategory: Object.entries(byCategory).map(([category, items]) => ({
+      byCategory: (Object.entries(byCategory) as [string, any[]][]).map(([category, items]) => ({
         category,
         total: items.length,
         assigned: items.filter(p => p.isAssigned).length,
@@ -216,7 +216,7 @@ async function handleSingleUpdate(roleId: string, body: unknown) {
         roleId,
         privilegeId: validated.privilegeId,
         isGranted: validated.isGranted ?? true,
-        maxAmount: validated.maxAmount != null ? new Prisma.Decimal(validated.maxAmount) : null,
+        maxAmount: validated.maxAmount != null ? validated.maxAmount : null,
         workshopScope: validated.workshopScope ?? false,
       },
       include: {
@@ -240,7 +240,7 @@ async function handleSingleUpdate(roleId: string, body: unknown) {
   // Build update data
   const updateData: {
     isGranted?: boolean;
-    maxAmount?: Prisma.Decimal | null;
+    maxAmount?: number | null;
     workshopScope?: boolean;
   } = {};
 
@@ -248,7 +248,7 @@ async function handleSingleUpdate(roleId: string, body: unknown) {
     updateData.isGranted = validated.isGranted;
   }
   if (validated.maxAmount !== undefined) {
-    updateData.maxAmount = validated.maxAmount != null ? new Prisma.Decimal(validated.maxAmount) : null;
+    updateData.maxAmount = validated.maxAmount != null ? validated.maxAmount : null;
   }
   if (validated.workshopScope !== undefined) {
     updateData.workshopScope = validated.workshopScope;
@@ -330,12 +330,12 @@ async function handleBatchUpdate(roleId: string, body: unknown) {
             roleId,
             privilegeId: privUpdate.privilegeId,
             isGranted: privUpdate.isGranted,
-            maxAmount: privUpdate.maxAmount != null ? new Prisma.Decimal(privUpdate.maxAmount) : null,
+            maxAmount: privUpdate.maxAmount != null ? privUpdate.maxAmount : null,
             workshopScope: privUpdate.workshopScope ?? false,
           },
           update: {
             isGranted: privUpdate.isGranted,
-            maxAmount: privUpdate.maxAmount != null ? new Prisma.Decimal(privUpdate.maxAmount) : null,
+            maxAmount: privUpdate.maxAmount != null ? privUpdate.maxAmount : null,
             workshopScope: privUpdate.workshopScope,
           },
         });

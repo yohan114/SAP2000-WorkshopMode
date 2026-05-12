@@ -82,7 +82,7 @@ async function generatePDFFromData(reportType: string, reportData: Record<string
   const template = getTemplate(reportType);
   const filename = template ? template.name.toLowerCase().replace(/\s+/g, '-') : reportType;
 
-  return new NextResponse(pdfBuffer, {
+  return new NextResponse(pdfBuffer as unknown as BodyInit, {
     headers: {
       'Content-Type': 'application/pdf',
       'Content-Disposition': `attachment; filename="${filename}-${new Date().toISOString().split('T')[0]}.pdf"`,
@@ -163,7 +163,7 @@ async function generatePDFFromDatabase(reportType: string, startDate: Date, endD
       return NextResponse.json({ error: `Unknown report type: ${reportType}` }, { status: 400 });
   }
 
-  return new NextResponse(pdfBuffer, {
+  return new NextResponse(pdfBuffer as unknown as BodyInit, {
     headers: {
       'Content-Type': 'application/pdf',
       'Content-Disposition': `attachment; filename="${filename}.pdf"`,

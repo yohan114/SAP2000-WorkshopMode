@@ -214,7 +214,7 @@ export async function PATCH(
             if (variance !== 0) {
               varianceItems++;
               totalVarianceValue += varianceValue || 0;
-              if (variance > 0) positiveVariance += varianceValue || 0;
+              if (variance! > 0) positiveVariance += varianceValue || 0;
               else negativeVariance += Math.abs(varianceValue || 0);
             }
           }

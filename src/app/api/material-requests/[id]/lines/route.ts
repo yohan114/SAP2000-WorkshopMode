@@ -51,7 +51,7 @@ export async function GET(
       },
     });
 
-    const stockMap = new Map(stockInfo.map(s => [s.itemId, s]));
+    const stockMap = new Map((stockInfo as any[]).map(s => [s.itemId, s]));
 
     return apiSuccess(lines.map(line => ({
       id: line.id,

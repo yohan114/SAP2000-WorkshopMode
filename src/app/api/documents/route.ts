@@ -94,7 +94,7 @@ export async function GET(request: Request) {
     }
 
     // Determine sort
-    const orderBy: Record<string, string> = {};
+    const orderBy: Record<string, unknown> = {};
     if (sortBy) {
       orderBy[sortBy] = sortOrder;
     } else {

@@ -99,7 +99,7 @@ export async function POST(
         data: {
           savedReportId: id,
           executedAt: new Date(),
-          executedBy: session?.user?.id || 'unknown',
+          executedBy: 'unknown',
           status: 'FAILED',
           errorMessage: error instanceof Error ? error.message : 'Unknown error',
         },

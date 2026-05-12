@@ -69,8 +69,8 @@ export async function GET(request: NextRequest) {
     
     if (fromDate || toDate) {
       where.createdAt = {};
-      if (fromDate) where.createdAt.gte = new Date(fromDate);
-      if (toDate) where.createdAt.lte = new Date(toDate + 'T23:59:59');
+      if (fromDate) (where.createdAt as Record<string, unknown>).gte = new Date(fromDate);
+      if (toDate) (where.createdAt as Record<string, unknown>).lte = new Date(toDate + 'T23:59:59');
     }
 
     const [logs, total] = await Promise.all([

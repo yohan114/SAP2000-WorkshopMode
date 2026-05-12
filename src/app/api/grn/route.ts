@@ -290,11 +290,11 @@ export async function POST(request: Request) {
         return apiError('Purchase order not found', 404);
       }
 
-      if (!['ISSUED', 'ACKNOWLEDGED', 'PARTIALLY_RECEIVED'].includes(po.status)) {
+      if (!['ISSUED', 'ACKNOWLEDGED', 'PARTIALLY_RECEIVED'].includes((po as any).status)) {
         return apiError('PO must be issued or acknowledged to create GRN', 400);
       }
 
-      finalSupplierId = po.supplierId;
+      finalSupplierId = (po as any).supplierId;
     } else if (supplierId) {
       // Verify supplier exists for standalone GRN
       const supplier = await db.supplier.findUnique({ where: { id: supplierId } });

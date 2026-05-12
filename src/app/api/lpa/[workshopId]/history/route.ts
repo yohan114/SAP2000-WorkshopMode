@@ -85,7 +85,7 @@ export async function GET(
       select: { id: true, name: true, email: true },
     });
 
-    const userMap = new Map(users.map(u => [u.id, u]));
+    const userMap = new Map((users as any[]).map(u => [u.id, u]));
 
     // Enrich history with user details
     const enrichedHistory = history.map(h => {

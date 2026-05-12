@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
     }));
 
     // Group by category
-    const byCategory = data.reduce<Record<string, typeof data>>((acc, p) => {
+    const byCategory = data.reduce((acc: Record<string, typeof data>, p) => {
       const cat = p.category;
       if (!acc[cat]) {
         acc[cat] = [];
@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
+        { error: 'Validation failed', details: error.issues },
         { status: 400 }
       );
     }

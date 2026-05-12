@@ -38,6 +38,7 @@ const transitionSchema = z.object({
 
 // Schema for legacy transition (supports both action and toStatus for backward compatibility)
 const legacyTransitionSchema = z.object({
+  transition: z.string().optional(),
   action: z.string().optional(),
   toStatus: z.string().optional(),
   actorId: z.string().optional(),
@@ -221,7 +222,7 @@ export async function POST(
     if (updatedJobCard && transitionResult.newState) {
       const event = webhookEvents[transitionResult.newState];
       if (event) {
-        await triggerWebhooks(event, {
+        await triggerWebhooks(event as any, {
           id: updatedJobCard.id,
           jobCardNumber: updatedJobCard.jobCardNumber,
           status: updatedJobCard.status,

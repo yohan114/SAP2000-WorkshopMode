@@ -67,10 +67,10 @@ export async function GET(request: NextRequest) {
       }
 
       // Parse EXIF data from stored JSON
-      let exifData = null;
+      let exifData: any = null;
       let validation = null;
-      let formattedExif = null;
-      let warnings = [];
+      let formattedExif: Record<string, string> | null = null;
+      let warnings: any[] = [];
 
       if (photo.exifData) {
         try {
@@ -253,7 +253,7 @@ export async function POST(request: NextRequest) {
     const revalidate = formData.get('revalidate') === 'true';
 
     let buffer: Buffer | null = null;
-    let existingPhoto = null;
+    let existingPhoto: any = null;
 
     // If photoId is provided, fetch existing photo
     if (photoId) {
@@ -461,8 +461,8 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const results = [];
-    const errors = [];
+    const results: any[] = [];
+    const errors: any[] = [];
 
     // Get job card context if provided
     let jobCardContext: ExifValidationContext = {};
@@ -490,7 +490,7 @@ export async function PATCH(request: NextRequest) {
       try {
         const photo = await db.jcPhoto.findUnique({
           where: { id: photoId }
-        });
+        }) as any;
 
         if (!photo) {
           errors.push({ photoId, error: 'Photo not found' });
@@ -556,7 +556,7 @@ export async function PATCH(request: NextRequest) {
       success: true,
       data: {
         processed: results.length,
-        errors: errors.length,
+        errorCount: errors.length,
         results,
         errors,
       }

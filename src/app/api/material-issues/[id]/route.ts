@@ -211,7 +211,7 @@ export async function GET(
         totalLines,
         totalIssuedQty,
         totalCost,
-        linesByClass: Object.entries(linesByClass).map(([itemClass, data]) => ({
+        linesByClass: Object.entries(linesByClass).map(([itemClass, data]: [string, any]) => ({
           itemClass,
           lineCount: data.lines.length,
           totalCost: data.totalCost,

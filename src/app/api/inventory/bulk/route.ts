@@ -73,7 +73,7 @@ async function handleBulkAdjustment(body: Record<string, unknown>) {
   }
 
   const results = await db.$transaction(async (tx) => {
-    const updates = [];
+    const updates: any[] = [];
 
     for (const stock of stockItems) {
       const currentQty = Number(stock.availableQty);
@@ -114,7 +114,7 @@ async function handleBulkAdjustment(body: Record<string, unknown>) {
         previousQty: currentQty,
         newQty: newQty,
         store: stock.store.name,
-      });
+      } as any);
     }
 
     return updates;
@@ -173,7 +173,7 @@ async function handleBulkTransfer(body: Record<string, unknown>) {
   }
 
   const results = await db.$transaction(async (tx) => {
-    const transfers = [];
+    const transfers: any[] = [];
 
     for (const stock of stockItems) {
       const transferQty = Number(stock.availableQty);
@@ -258,7 +258,7 @@ async function handleBulkTransfer(body: Record<string, unknown>) {
         quantity: transferQty,
         fromStore: stock.store.name,
         toStore: targetStore.name,
-      });
+      } as any);
     }
 
     return transfers;

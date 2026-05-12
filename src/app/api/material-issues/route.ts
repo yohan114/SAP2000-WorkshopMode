@@ -72,7 +72,7 @@ export async function GET(request: Request) {
     }
 
     // Build orderBy
-    let orderBy: Array<Record<string, string>>;
+    let orderBy: Array<Record<string, unknown>>;
     if (sortBy) {
       orderBy = [{ [sortBy]: sortOrder }];
     } else {

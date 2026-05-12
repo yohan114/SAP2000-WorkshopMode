@@ -43,21 +43,7 @@ export async function GET(request: Request) {
     // Note: Using raw query since StockTakeSession might not be in schema
     // For now, return empty list if model doesn't exist
     try {
-      const stockTakes = await db.$queryRaw<Array<{
-        id: string;
-        stockTakeNumber: string;
-        storeId: string;
-        storeName: string;
-        stockTakeType: string;
-        status: string;
-        initiatedAt: string;
-        initiatedBy: string;
-        completedAt: string | null;
-        completedBy: string | null;
-        totalItems: number;
-        countedItems: number;
-        varianceCount: number;
-      }>`
+      const stockTakes: any[] = await (db.$queryRaw as any)`
         SELECT 
           'demo-1' as id,
           'ST-2025-001' as stockTakeNumber,

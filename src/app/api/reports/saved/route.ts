@@ -6,7 +6,7 @@ import { z } from 'zod';
 const createSavedReportSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   reportType: z.string().min(1, 'Report type is required'),
-  filters: z.record(z.any()).optional().default({}),
+  filters: z.record(z.string(), z.any()).optional().default({}),
   schedule: z.enum(['DAILY', 'WEEKLY', 'MONTHLY']).optional().nullable(),
   recipients: z.array(z.string().email()).optional().nullable(),
   format: z.enum(['PDF', 'EXCEL', 'CSV']).optional().default('PDF'),
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
+        { error: 'Validation failed', details: error.issues },
         { status: 400 }
       );
     }
