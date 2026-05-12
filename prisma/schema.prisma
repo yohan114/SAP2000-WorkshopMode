@@ -250,6 +250,7 @@ model Asset {
   assetSpecificity AssetSpecificity[]
   fuelIssues       FuelIssue[]
   downtimeLogs     DowntimeLog[]
+  serviceJobs      ServiceJob[]
 
   @@index([assetNumber])
   @@index([categoryId])
@@ -2795,4 +2796,93 @@ model WrongItemReturn {
   @@index([itemId])
   @@index([status])
   @@index([identifiedAt])
+}
+
+// ============================================
+// 22. SERVICE JOBS DOMAIN
+// ============================================
+
+model ServiceJob {
+  id                  String   @id @default(cuid())
+  jobNumber           String   @unique
+  serviceDate         DateTime
+  vehicleNumber       String
+  assetId             String?
+  site                String
+  lastServiceMeter    Decimal
+  currentServiceMeter Decimal
+  serviceInterval     Decimal
+  nextServiceMeter    Decimal
+  intervalId          String?
+  oilQuantity         Decimal?
+  filterUsed          String?
+  remarks             String?
+  industrialUse       String?
+  minimumCharge       Decimal?
+  totalCharge         Decimal?
+  status              String   @default("ACTIVE")
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  createdBy           String?
+  updatedBy           String?
+
+  asset               Asset?           @relation(fields: [assetId], references: [id])
+  interval            ServiceInterval? @relation(fields: [intervalId], references: [id])
+  manHours            ServiceManHour[]
+  consumables         ServiceConsumable[]
+
+  @@index([jobNumber])
+  @@index([vehicleNumber])
+  @@index([assetId])
+  @@index([site])
+  @@index([serviceDate])
+  @@index([status])
+}
+
+model ServiceInterval {
+  id            String   @id @default(cuid())
+  name          String
+  intervalValue Decimal
+  unit          String
+  description   String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  serviceJobs   ServiceJob[]
+
+  @@index([name])
+}
+
+model ServiceManHour {
+  id              String   @id @default(cuid())
+  serviceJobId    String
+  technicianName  String
+  hoursWorked     Decimal
+  hourlyRate      Decimal?
+  totalCost       Decimal?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  serviceJob      ServiceJob @relation(fields: [serviceJobId], references: [id], onDelete: Cascade)
+
+  @@index([serviceJobId])
+}
+
+model ServiceConsumable {
+  id           String   @id @default(cuid())
+  serviceJobId String
+  itemName     String
+  quantity     Decimal
+  unitCost     Decimal?
+  totalCost    Decimal?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  serviceJob   ServiceJob @relation(fields: [serviceJobId], references: [id], onDelete: Cascade)
+
+  @@index([serviceJobId])
 }
