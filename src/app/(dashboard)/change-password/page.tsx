@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/lib/auth/hooks';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,7 +28,7 @@ type ChangePasswordForm = z.infer<typeof changePasswordSchema>;
 
 export default function ChangePasswordPage() {
   const router = useRouter();
-  const { update, data: session } = useSession();
+  const { user, updateSession } = useAuth();
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -90,13 +90,13 @@ export default function ChangePasswordPage() {
           </div>
           <h1 className="text-2xl font-semibold">Change Password</h1>
           <p className="text-muted-foreground">
-            {session?.user?.mustChangePassword
+            {user?.mustChangePassword
               ? 'You must change your password before continuing'
               : 'Update your password to keep your account secure'}
           </p>
         </div>
 
-        {session?.user?.mustChangePassword && (
+        {user?.mustChangePassword && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>

@@ -234,7 +234,7 @@ async function main() {
       console.log(`   ⚠️  User ${adminEmail} already exists. Updating password...`);
       await prisma.user.update({
         where: { email: adminEmail },
-        data: { passwordHash }
+        data: { passwordHash, mustChangePassword: true }
       });
     } else {
       const adminUser = await prisma.user.create({
@@ -245,6 +245,7 @@ async function main() {
           passwordHash,
           isActive: true,
           employeeId: 'ADMIN-001',
+          mustChangePassword: true,
         }
       });
       console.log(`   ✓ Created user: ${adminEmail}`);
