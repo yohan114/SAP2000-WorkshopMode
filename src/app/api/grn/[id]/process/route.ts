@@ -80,7 +80,7 @@ export async function POST(
 
     // Process in transaction
     const result_data = await db.$transaction(async (tx) => {
-      const transactions = [];
+      const transactions: any[] = [];
       let totalGRNValue = 0;
 
       // Process each line
@@ -147,12 +147,12 @@ export async function POST(
           },
         });
 
-        transactions.push(transaction);
+        transactions.push(transaction as any);
 
         // Update PO line received quantity
         if (grn.purchaseOrder) {
           const poLine = grn.purchaseOrder.lines.find(
-            (l: { itemId: string }) => l.itemId === line.itemId
+            (l: { itemId: string | null }) => l.itemId === line.itemId
           );
           if (poLine) {
             const currentReceived = poLine.receivedQty?.toNumber() || 0;

@@ -82,7 +82,7 @@ async function generatePDFFromData(reportType: string, reportData: Record<string
   const template = getTemplate(reportType);
   const filename = template ? template.name.toLowerCase().replace(/\s+/g, '-') : reportType;
 
-  return new NextResponse(pdfBuffer, {
+  return new NextResponse(pdfBuffer as unknown as BodyInit, {
     headers: {
       'Content-Type': 'application/pdf',
       'Content-Disposition': `attachment; filename="${filename}-${new Date().toISOString().split('T')[0]}.pdf"`,
@@ -163,7 +163,7 @@ async function generatePDFFromDatabase(reportType: string, startDate: Date, endD
       return NextResponse.json({ error: `Unknown report type: ${reportType}` }, { status: 400 });
   }
 
-  return new NextResponse(pdfBuffer, {
+  return new NextResponse(pdfBuffer as unknown as BodyInit, {
     headers: {
       'Content-Type': 'application/pdf',
       'Content-Disposition': `attachment; filename="${filename}.pdf"`,
@@ -301,7 +301,7 @@ async function fetchMaterialUsageData(startDate: Date, endDate: Date) {
  * Fetch PM Compliance data from database
  */
 async function fetchPMComplianceData(startDate: Date, endDate: Date) {
-  const schedules = await db.pMSchedule.findMany({
+  const schedules = await db.pmSchedule.findMany({
     where: {
       nextExecutionAt: { gte: startDate, lte: endDate },
     },
@@ -404,7 +404,7 @@ async function fetchExternalCostsData(startDate: Date, endDate: Date) {
       isActive: true,
     },
     include: {
-      supplier: { select: { name: true } },
+      subcontractor: { select: { name: true } },
       jobCard: {
         include: {
           asset: { select: { assetNumber: true, name: true } },
@@ -412,10 +412,10 @@ async function fetchExternalCostsData(startDate: Date, endDate: Date) {
       },
     },
     orderBy: { createdAt: 'desc' },
-  });
+  }) as any[];
 
-  const totalCost = externalJobs.reduce((sum, ej) => sum + Number(ej.actualCost || ej.estimatedCost || 0), 0);
-  const completed = externalJobs.filter(ej => ej.status === 'COMPLETED').length;
+  const totalCost = externalJobs.reduce((sum: number, ej: any) => sum + Number(ej.actualCost || ej.estimatedCost || 0), 0);
+  const completed = externalJobs.filter((ej: any) => ej.status === 'COMPLETED').length;
 
   return {
     title: 'External Costs Report',
@@ -430,12 +430,12 @@ async function fetchExternalCostsData(startDate: Date, endDate: Date) {
       'In Progress': externalJobs.length - completed,
       'Total Cost': `LKR ${totalCost.toLocaleString()}`,
     },
-    data: externalJobs.map((ej, idx) => ({
+    data: externalJobs.map((ej: any, idx: number) => ({
       no: idx + 1,
       jobNumber: ej.jobNumber,
       jobCardNumber: ej.jobCard?.jobCardNumber || '-',
       asset: ej.jobCard?.asset ? `${ej.jobCard.asset.assetNumber}` : '-',
-      supplier: ej.supplier?.name || '-',
+      supplier: ej.subcontractor?.name || '-',
       status: ej.status,
       estimatedCost: `LKR ${Number(ej.estimatedCost || 0).toLocaleString()}`,
       actualCost: `LKR ${Number(ej.actualCost || 0).toLocaleString()}`,
@@ -482,7 +482,7 @@ async function fetchFleetAvailabilityData() {
       no: idx + 1,
       assetNumber: a.assetNumber,
       name: a.name,
-      category: a.category || '-',
+      category: (a as any).categoryId || '-',
       status: a.status,
       jobCards: a._count.jobCards,
     })),

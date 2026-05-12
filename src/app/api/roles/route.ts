@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     
     // Build where clause
     const where: {
-      OR?: Array<{ code: { contains: string }; name: { contains: string } }>;
+      OR?: Array<Record<string, unknown>>;
       isActive?: boolean;
     } = {};
     
@@ -150,7 +150,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
+        { error: 'Validation failed', details: error.issues },
         { status: 400 }
       );
     }

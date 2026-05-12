@@ -186,7 +186,7 @@ export async function POST(
       await mkdir(uploadDir, { recursive: true });
     }
 
-    const uploadedPhotos = [];
+    const uploadedPhotos: any[] = [];
 
     for (const file of files) {
       // Validate file type
@@ -230,7 +230,7 @@ export async function POST(
         }
       });
 
-      uploadedPhotos.push(photo);
+      uploadedPhotos.push(photo as any);
     }
 
     return apiSuccess({

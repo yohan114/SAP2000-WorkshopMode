@@ -31,9 +31,9 @@ export async function GET(
       where: { id },
       include: {
         _count: {
-          select: { photos: true },
+          select: { jcPhotos: true },
         },
-        photos: {
+        jcPhotos: {
           take: 10,
           orderBy: { uploadedAt: 'desc' },
           select: {
@@ -44,24 +44,10 @@ export async function GET(
             mimeType: true,
             capturedAt: true,
             uploadedAt: true,
-            task: {
-              select: {
-                id: true,
-                taskNumber: true,
-                description: true,
-                jobCard: {
-                  select: {
-                    id: true,
-                    jobCardNumber: true,
-                    status: true,
-                  },
-                },
-              },
-            },
           },
         },
       },
-    });
+    }) as any;
 
     if (!category) {
       return apiNotFound('Photo category');
@@ -77,8 +63,8 @@ export async function GET(
       maxPhotos: category.maxPhotos,
       isRequired: category.isRequired,
       isActive: category.isActive,
-      photoCount: category._count.photos,
-      recentPhotos: category.photos.map(photo => ({
+      photoCount: category._count.jcPhotos,
+      recentPhotos: category.jcPhotos.map(photo => ({
         id: photo.id,
         fileName: photo.fileName,
         filePath: photo.filePath,
@@ -86,7 +72,6 @@ export async function GET(
         mimeType: photo.mimeType,
         capturedAt: photo.capturedAt,
         uploadedAt: photo.uploadedAt,
-        task: photo.task,
       })),
       createdAt: category.createdAt,
       updatedAt: category.updatedAt,
@@ -157,7 +142,7 @@ export async function PUT(
       data: updateData,
       include: {
         _count: {
-          select: { photos: true },
+          select: { jcPhotos: true },
         },
       },
     });
@@ -172,7 +157,7 @@ export async function PUT(
       maxPhotos: category.maxPhotos,
       isRequired: category.isRequired,
       isActive: category.isActive,
-      photoCount: category._count.photos,
+      photoCount: category._count.jcPhotos,
       createdAt: category.createdAt,
       updatedAt: category.updatedAt,
     };
@@ -196,7 +181,7 @@ export async function DELETE(
       where: { id },
       include: {
         _count: {
-          select: { photos: true },
+          select: { jcPhotos: true },
         },
       },
     });
@@ -206,11 +191,11 @@ export async function DELETE(
     }
 
     // Check for related photos
-    if (existing._count.photos > 0) {
+    if (existing._count.jcPhotos > 0) {
       return apiError(
         'Cannot delete photo category with related photos',
         400,
-        `This category has ${existing._count.photos} photo(s) associated with it. Please reassign or remove the photos first.`
+        `This category has ${existing._count.jcPhotos} photo(s) associated with it. Please reassign or remove the photos first.`
       );
     }
 

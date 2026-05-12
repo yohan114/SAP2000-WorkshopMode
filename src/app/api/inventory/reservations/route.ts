@@ -73,7 +73,7 @@ export async function GET(request: Request) {
         store: r.store,
         item: r.item,
         reservedQty: r.reservedQty.toNumber(),
-        wacAtReservation: r.wacAtReservation.toNumber(),
+        wacAtReservation: r.wacAtReservation?.toNumber() ?? null,
         status: r.status,
         expiresAt: r.expiresAt,
         releasedAt: r.releasedAt,

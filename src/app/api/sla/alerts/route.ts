@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
     const alerts = await getSlaAlerts();
 
-    let result: unknown[] = [];
+    let result: any[] = [];
 
     if (!type || type === 'all') {
       result = [

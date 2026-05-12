@@ -114,7 +114,7 @@ async function displayCurrentLpaStatus() {
   console.log('├──────────────────────────┼────────────────┼────────────────┼────────────────┼─────────────┤');
 
   for (const config of allConfigs) {
-    const usagePercent = config.monthlyCap > 0 
+    const usagePercent = Number(config.monthlyCap) > 0 
       ? ((Number(config.currentMonthSpend) / Number(config.monthlyCap)) * 100).toFixed(1)
       : '0.0';
     const workshopName = config.workshopName.padEnd(24).slice(0, 24);

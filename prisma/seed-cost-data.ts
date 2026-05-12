@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Seed Script for Cost Analysis Test Data
  * 

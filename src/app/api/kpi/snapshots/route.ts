@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
     const configs = await db.kpiThresholdConfig.findMany({
       where: { isActive: true },
     });
-    const configMap = new Map(configs.map(c => [c.kpiCode, c]));
+    const configMap = new Map((configs as any[]).map(c => [c.kpiCode, c]));
 
     // Add computed flags to snapshots
     const enrichedSnapshots = snapshots.map(snapshot => {
@@ -150,7 +150,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation error', details: error.errors },
+        { error: 'Validation error', details: error.issues },
         { status: 400 }
       );
     }

@@ -71,10 +71,6 @@ export async function GET(
         skip,
         take: limit,
         orderBy,
-        include: {
-          // Note: We need to get the user who made the change
-          // Since LpaChangeHistory doesn't have a relation to User, we'll fetch separately
-        },
       }),
     ]);
 
@@ -85,7 +81,7 @@ export async function GET(
       select: { id: true, name: true, email: true },
     });
 
-    const userMap = new Map(users.map(u => [u.id, u]));
+    const userMap = new Map((users as any[]).map(u => [u.id, u]));
 
     // Enrich history with user details
     const enrichedHistory = history.map(h => {

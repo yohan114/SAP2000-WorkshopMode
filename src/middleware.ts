@@ -83,12 +83,12 @@ export async function middleware(request: NextRequest) {
 
   // Force password change if required
   const mustChangePassword = token.mustChangePassword === true;
-  const changePasswordPaths = ['/dashboard/change-password', '/account/change-password'];
+  const changePasswordPaths = ['/change-password', '/dashboard/change-password', '/account/change-password'];
 
   if (mustChangePassword && !changePasswordPaths.some(path => pathname.startsWith(path))) {
     // Allow API routes that might need to check user status
     if (!pathname.startsWith('/api/')) {
-      return NextResponse.redirect(new URL('/dashboard/change-password', request.url));
+      return NextResponse.redirect(new URL('/change-password', request.url));
     }
   }
 

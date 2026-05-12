@@ -241,6 +241,7 @@ async function getApprovalSummary(userId: string) {
     },
     select: {
       id: true,
+      status: true,
       priority: true,
       createdAt: true,
       actualStart: true,

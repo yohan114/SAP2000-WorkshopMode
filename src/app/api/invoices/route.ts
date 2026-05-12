@@ -244,7 +244,7 @@ export async function POST(request: Request) {
       });
 
       // Perform matching
-      let matchResult = MatchStatus.NO_MATCH;
+      let matchResult: string = MatchStatus.NO_MATCH;
       let qtyVariance = 0;
       let priceVariance = 0;
 

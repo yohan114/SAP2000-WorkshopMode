@@ -288,10 +288,10 @@ export async function GET(request: NextRequest) {
     if (fromDate || toDate) {
       where.scheduledDate = {};
       if (fromDate) {
-        where.scheduledDate.gte = new Date(fromDate);
+        (where.scheduledDate as Record<string, unknown>).gte = new Date(fromDate);
       }
       if (toDate) {
-        where.scheduledDate.lte = new Date(toDate);
+        (where.scheduledDate as Record<string, unknown>).lte = new Date(toDate);
       }
     }
 
@@ -517,7 +517,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
+        { error: 'Validation failed', details: error.issues },
         { status: 400 }
       );
     }

@@ -17,6 +17,7 @@ declare module 'next-auth' {
       department?: string | null;
       roles: Array<{ code: string; name: string; level: number }>;
       privileges: string[];
+      mustChangePassword?: boolean;
     };
   }
 
@@ -28,6 +29,7 @@ declare module 'next-auth' {
     department?: string | null;
     roles: Array<{ code: string; name: string; level: number }>;
     privileges: string[];
+    mustChangePassword?: boolean;
   }
 }
 
@@ -40,5 +42,6 @@ declare module 'next-auth/jwt' {
     department?: string | null;
     roles: Array<{ code: string; name: string; level: number }>;
     privileges: string[];
+    mustChangePassword?: boolean;
   }
 }

@@ -143,7 +143,7 @@ export async function GET(request: Request) {
       };
     });
 
-    return apiPaginated({ data, summary }, total, page, limit);
+    return apiPaginated({ data, summary } as any, total, page, limit);
   } catch (error) {
     console.error('Get abnormal detections error:', error);
     return apiError('Failed to fetch abnormal detections', 500);
@@ -240,7 +240,7 @@ async function handleResolve(body: unknown) {
 async function handleCreate(body: unknown) {
   const createSchema = z.object({
     detectionType: z.enum(['FUEL_CONSUMPTION', 'FUEL_THEFT', 'LEAKAGE', 'OTHER'], {
-      errorMap: () => ({ message: 'Invalid detection type' })
+      message: 'Invalid detection type'
     }),
     referenceType: z.string().min(1, 'Reference type is required'),
     referenceId: z.string().min(1, 'Reference ID is required'),

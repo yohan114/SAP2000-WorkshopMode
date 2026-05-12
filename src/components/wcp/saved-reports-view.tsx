@@ -819,7 +819,7 @@ export function SavedReportsView() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Eye className="h-5 w-5" />
-              Report Preview: {previewData?.reportName}
+              Report Preview: {previewData?.reportName as React.ReactNode}
             </DialogTitle>
             <DialogDescription>
               Executed at {previewData?.executedAt ? new Date(previewData.executedAt as string).toLocaleString() : ''}

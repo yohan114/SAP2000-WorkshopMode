@@ -105,7 +105,7 @@ async function processGRNPosting(grn: { id: string; grnNumber: string; storeId: 
   }
 
   const result = await db.$transaction(async (tx) => {
-    const transactions = [];
+    const transactions: any[] = [];
     
     // Process each line
     for (const line of grn.lines) {
@@ -174,7 +174,7 @@ async function processGRNPosting(grn: { id: string; grnNumber: string; storeId: 
         },
       });
 
-      transactions.push(transaction);
+      transactions.push(transaction as any);
 
       // Update PO line received quantity
       if (grn.poId && poLines.length > 0) {

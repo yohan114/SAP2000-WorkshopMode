@@ -85,10 +85,10 @@ export async function GET(request: NextRequest) {
 
         const historicalValues: HistoricalValue[] = snapshots.map((s) => ({
           date: s.snapshotDate,
-          value: s.value,
+          value: Number(s.value),
         }));
 
-        const sparklineData = snapshots.map((s) => s.value);
+        const sparklineData = snapshots.map((s) => Number(s.value));
 
         let prediction: KPIPrediction | undefined;
 

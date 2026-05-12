@@ -438,7 +438,7 @@ async function seedDemoMaterialRequests() {
           status: mr.status,
           approvedAt: mr.approvedAt,
           fulfilledAt: mr.fulfilledAt,
-          lines: { create: validLines }
+          lines: { create: validLines as any }
         }
       });
       count++;
@@ -539,7 +539,7 @@ async function seedDemoMaterialIssues() {
           jobCardId: mi.jobCardId,
           status: mi.status,
           issuedAt: mi.issuedAt,
-          lines: mi.lines
+          lines: mi.lines as any
         }
       });
       count++;
@@ -676,7 +676,7 @@ async function seedDemoExternalJobs() {
     
     const existing = await db.externalJob.findUnique({ where: { jobNumber: ej.jobNumber } });
     if (!existing) {
-      await db.externalJob.create({ data: ej });
+      await db.externalJob.create({ data: ej as any });
       count++;
     }
   }
@@ -714,7 +714,7 @@ async function seedDemoPmSchedules() {
     });
     
     if (!existing) {
-      await db.pmSchedule.create({ data: pm });
+      await db.pmSchedule.create({ data: pm as any });
       count++;
     }
   }
@@ -879,7 +879,7 @@ async function seedDemoProcurementFlow() {
             create: [
               { itemId: items.find(i => i.itemCode === 'FLT-001')?.id, receivedQty: 10, orderedQty: 10, acceptedQty: 10, rejectedQty: 0, unitCost: 24, totalCost: 240 },
               { itemId: items.find(i => i.itemCode === 'OIL-001')?.id, receivedQty: 25, orderedQty: 25, acceptedQty: 25, rejectedQty: 0, unitCost: 7.2, totalCost: 180 },
-            ].filter(l => l.itemId)
+            ].filter(l => l.itemId) as any
           }
         }
       });

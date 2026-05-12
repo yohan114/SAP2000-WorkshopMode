@@ -444,6 +444,234 @@ export const monthlyClosedJobsTemplate: ReportTemplate = {
 };
 
 // ============================================
+// Total Outside Cost Template
+// ============================================
+
+export const totalOutsideCostTemplate: ReportTemplate = {
+  id: 'total-outside-cost',
+  name: 'Total Outside Cost Report',
+  reportType: 'TOTAL_OUTSIDE_COST',
+  header: {
+    logo: '/images/logo.png',
+    company: 'WCP - Workshop Control Platform',
+    address: 'Professional Maintenance Management',
+  },
+  styles: {
+    primaryColor: '239, 68, 68', // Red
+    fontSize: 9,
+    fontFamily: 'helvetica',
+  },
+  sections: [
+    {
+      type: 'summary',
+      title: 'Cost Summary',
+    },
+    {
+      type: 'spacer',
+      height: 10,
+    },
+    {
+      type: 'table',
+      title: 'Outside Costs by Subcontractor',
+    },
+  ],
+  footer: {
+    pageNumbers: true,
+    generatedAt: true,
+  },
+};
+
+// ============================================
+// Monthly Report Template
+// ============================================
+
+export const monthlyReportTemplate: ReportTemplate = {
+  id: 'monthly-report',
+  name: 'Monthly Report',
+  reportType: 'MONTHLY_REPORT',
+  header: {
+    logo: '/images/logo.png',
+    company: 'WCP - Workshop Control Platform',
+    address: 'Professional Maintenance Management',
+  },
+  styles: {
+    primaryColor: '71, 85, 105', // Slate
+    fontSize: 9,
+    fontFamily: 'helvetica',
+  },
+  sections: [
+    {
+      type: 'summary',
+      title: 'Monthly KPIs',
+    },
+    {
+      type: 'spacer',
+      height: 10,
+    },
+    {
+      type: 'table',
+      title: 'Monthly Metrics',
+    },
+  ],
+  footer: {
+    pageNumbers: true,
+    generatedAt: true,
+  },
+};
+
+// ============================================
+// Monthly Local Purchasing Template
+// ============================================
+
+export const monthlyLocalPurchasingTemplate: ReportTemplate = {
+  id: 'monthly-local-purchasing',
+  name: 'Monthly Local Purchasing Report',
+  reportType: 'MONTHLY_LOCAL_PURCHASING',
+  header: {
+    logo: '/images/logo.png',
+    company: 'WCP - Workshop Control Platform',
+    address: 'Professional Maintenance Management',
+  },
+  styles: {
+    primaryColor: '22, 163, 74', // Green
+    fontSize: 9,
+    fontFamily: 'helvetica',
+  },
+  sections: [
+    {
+      type: 'summary',
+      title: 'Local Purchasing Summary',
+    },
+    {
+      type: 'spacer',
+      height: 10,
+    },
+    {
+      type: 'table',
+      title: 'Purchase Orders',
+    },
+  ],
+  footer: {
+    pageNumbers: true,
+    generatedAt: true,
+  },
+};
+
+// ============================================
+// Monthly Head Office Purchasing Template
+// ============================================
+
+export const monthlyHoPurchasingTemplate: ReportTemplate = {
+  id: 'monthly-ho-purchasing',
+  name: 'Monthly Head Office Purchasing Report',
+  reportType: 'MONTHLY_HO_PURCHASING',
+  header: {
+    logo: '/images/logo.png',
+    company: 'WCP - Workshop Control Platform',
+    address: 'Professional Maintenance Management',
+  },
+  styles: {
+    primaryColor: '124, 58, 237', // Violet
+    fontSize: 9,
+    fontFamily: 'helvetica',
+  },
+  sections: [
+    {
+      type: 'summary',
+      title: 'Head Office Purchasing Summary',
+    },
+    {
+      type: 'spacer',
+      height: 10,
+    },
+    {
+      type: 'table',
+      title: 'Purchase Orders',
+    },
+  ],
+  footer: {
+    pageNumbers: true,
+    generatedAt: true,
+  },
+};
+
+// ============================================
+// Price Variation Template
+// ============================================
+
+export const priceVariationTemplate: ReportTemplate = {
+  id: 'price-variation',
+  name: 'Same Item Price Variation Report',
+  reportType: 'PRICE_VARIATION',
+  header: {
+    logo: '/images/logo.png',
+    company: 'WCP - Workshop Control Platform',
+    address: 'Professional Maintenance Management',
+  },
+  styles: {
+    primaryColor: '202, 138, 4', // Yellow
+    fontSize: 9,
+    fontFamily: 'helvetica',
+  },
+  sections: [
+    {
+      type: 'summary',
+      title: 'Variation Summary',
+    },
+    {
+      type: 'spacer',
+      height: 10,
+    },
+    {
+      type: 'table',
+      title: 'Price Variations',
+    },
+  ],
+  footer: {
+    pageNumbers: true,
+    generatedAt: true,
+  },
+};
+
+// ============================================
+// Wrong Item Return Delay Template
+// ============================================
+
+export const wrongItemReturnDelayTemplate: ReportTemplate = {
+  id: 'wrong-item-return-delay',
+  name: 'Wrong Item Return Delay Time Report',
+  reportType: 'WRONG_ITEM_RETURN_DELAY',
+  header: {
+    logo: '/images/logo.png',
+    company: 'WCP - Workshop Control Platform',
+    address: 'Professional Maintenance Management',
+  },
+  styles: {
+    primaryColor: '107, 114, 128', // Gray
+    fontSize: 9,
+    fontFamily: 'helvetica',
+  },
+  sections: [
+    {
+      type: 'summary',
+      title: 'Delay Summary',
+    },
+    {
+      type: 'spacer',
+      height: 10,
+    },
+    {
+      type: 'table',
+      title: 'Wrong Item Returns',
+    },
+  ],
+  footer: {
+    pageNumbers: true,
+    generatedAt: true,
+  },
+};
+
+// ============================================
 // Template Registry
 // ============================================
 
@@ -460,6 +688,12 @@ export const reportTemplates: Record<string, ReportTemplate> = {
   'stock-valuation': stockValuationTemplate,
   'procurement-spend': procurementSpendTemplate,
   'monthly-closed-jobs': monthlyClosedJobsTemplate,
+  'total-outside-cost': totalOutsideCostTemplate,
+  'monthly-report': monthlyReportTemplate,
+  'monthly-local-purchasing': monthlyLocalPurchasingTemplate,
+  'monthly-ho-purchasing': monthlyHoPurchasingTemplate,
+  'price-variation': priceVariationTemplate,
+  'wrong-item-return-delay': wrongItemReturnDelayTemplate,
 };
 
 /**

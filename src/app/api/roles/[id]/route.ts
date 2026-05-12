@@ -47,7 +47,7 @@ export async function GET(
     }
 
     // Group privileges by category
-    const privilegesByCategory = role.privileges.reduce<Record<string, typeof role.privileges>>((acc, p) => {
+    const privilegesByCategory = role.privileges.reduce((acc: Record<string, any[]>, p: any) => {
       const category = p.privilege.category;
       if (!acc[category]) {
         acc[category] = [];
@@ -175,7 +175,7 @@ export async function PUT(
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
+        { error: 'Validation failed', details: error.issues },
         { status: 400 }
       );
     }

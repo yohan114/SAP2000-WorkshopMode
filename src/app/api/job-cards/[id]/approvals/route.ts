@@ -267,7 +267,7 @@ export async function POST(
 
     switch (decision) {
       case 'APPROVE': {
-        const checkResult = await canApprove(jobCard, approverId);
+        const checkResult = await canApprove(jobCard as any, approverId);
         canProceed = checkResult.canProceed;
         blockReason = checkResult.reason || '';
         break;
@@ -276,7 +276,7 @@ export async function POST(
         if (!reason || reason.length < 10) {
           return apiError('Rejection reason must be at least 10 characters', 400);
         }
-        const checkResult = await canReject(jobCard, approverId, undefined, reason);
+        const checkResult = await canReject(jobCard as any, approverId, undefined, reason);
         canProceed = checkResult.canProceed;
         blockReason = checkResult.reason || '';
         break;
@@ -285,7 +285,7 @@ export async function POST(
         if (!reason || reason.trim().length === 0) {
           return apiError('Return reason is required', 400);
         }
-        const checkResult = await canReturn(jobCard, approverId, reason);
+        const checkResult = await canReturn(jobCard as any, approverId, reason);
         canProceed = checkResult.canProceed;
         blockReason = checkResult.reason || '';
         break;
@@ -341,13 +341,13 @@ export async function POST(
     });
 
     // Trigger webhook
-    const eventMap: Record<string, 'JOB_CARD_APPROVED' | 'JOB_CARD_REJECTED'> = {
+    const eventMap: Record<string, string> = {
       'APPROVE': 'JOB_CARD_APPROVED',
       'REJECT': 'JOB_CARD_REJECTED',
       'RETURN': 'JOB_CARD_RETURNED',
     };
 
-    await triggerWebhooks(eventMap[decision] || 'JOB_CARD_APPROVED', {
+    await triggerWebhooks(eventMap[decision] as any || 'JOB_CARD_APPROVED', {
       id: jobCard.id,
       jobCardNumber: jobCard.jobCardNumber,
       decision,

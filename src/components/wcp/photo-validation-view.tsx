@@ -56,6 +56,7 @@ interface PhotoValidation {
     latitude?: number;
     longitude?: number;
     hasWarnings: boolean;
+    warnings?: ExifWarning[];
   };
 }
 
@@ -81,6 +82,7 @@ interface PhotoDetail extends PhotoValidation {
     device?: string;
     latitude?: number;
     longitude?: number;
+    hasWarnings: boolean;
     warnings: ExifWarning[];
   };
 }

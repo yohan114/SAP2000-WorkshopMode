@@ -35,10 +35,10 @@ const guardCheckFunctions: Record<TransitionType, (
   userPrivileges?: string[],
   reason?: string
 ) => Promise<GuardCheckResult>> = {
-  'SUBMIT': canSubmit,
+  'SUBMIT': canSubmit as any,
   'APPROVE': canApprove as (jobCard: JobCardForStateMachine, userId: string, userPrivileges?: string[]) => Promise<GuardCheckResult>,
   'REJECT': canReject as (jobCard: JobCardForStateMachine, userId: string, userPrivileges?: string[], reason?: string) => Promise<GuardCheckResult>,
-  'RETURN': canReturn as (jobCard: JobCardForStateMachine, userId: string, reason?: string) => Promise<GuardCheckResult>,
+  'RETURN': canReturn as any,
   'START': canStartWork,
   'HOLD': canHold as (jobCard: JobCardForStateMachine, userId: string, userPrivileges?: string[], reason?: string) => Promise<GuardCheckResult>,
   'RESUME': canResume as (jobCard: JobCardForStateMachine, userId: string, userPrivileges?: string[]) => Promise<GuardCheckResult>,
@@ -186,7 +186,7 @@ export async function GET(
         qrCodes: jobCard.asset.qrCodes?.map(q => ({ id: q.id, qrCode: q.qrCode })) || [],
       } : null,
       tasks: jobCard.tasks,
-      technicianAssignments: jobCard.technicianAssignments,
+      technicianAssignments: jobCard.technicianAssignments as any,
       materialRequests: jobCard.materialRequests,
       toolLoans: jobCard.toolLoans,
       stateTransitions: jobCard.stateTransitions,

@@ -42,11 +42,11 @@ export async function GET(request: NextRequest) {
 
     const privileges = await db.privilegeDefinition.findMany({
       where,
-      include: includeUsage ? {
+      include: {
         _count: {
           select: { rolePrivileges: true },
         },
-      } : false,
+      },
       orderBy: [
         { category: 'asc' },
         { code: 'asc' },
@@ -74,11 +74,11 @@ export async function GET(request: NextRequest) {
       isActive: priv.isActive,
       createdAt: priv.createdAt,
       updatedAt: priv.updatedAt,
-      roleCount: includeUsage ? (priv._count as { rolePrivileges: number })?.rolePrivileges : undefined,
+      roleCount: includeUsage ? (priv as any)._count?.rolePrivileges : undefined,
     }));
 
     // Group by category
-    const byCategory = data.reduce<Record<string, typeof data>>((acc, p) => {
+    const byCategory = data.reduce((acc: Record<string, typeof data>, p) => {
       const cat = p.category;
       if (!acc[cat]) {
         acc[cat] = [];
@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
+        { error: 'Validation failed', details: error.issues },
         { status: 400 }
       );
     }

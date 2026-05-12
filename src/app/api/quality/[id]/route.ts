@@ -61,7 +61,7 @@ export async function GET(
     const pendingItems = inspection.checklistItems.filter(i => i.status === 'PENDING').length;
 
     // Get entity details if available
-    let entityDetails = null;
+    let entityDetails: any = null;
     if (inspection.entityId && inspection.entityType) {
       if (inspection.entityType === 'JOB_CARD') {
         entityDetails = await db.jobCard.findUnique({
@@ -209,7 +209,7 @@ export async function PATCH(
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
+        { error: 'Validation failed', details: error.issues },
         { status: 400 }
       );
     }

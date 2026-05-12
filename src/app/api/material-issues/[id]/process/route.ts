@@ -76,7 +76,7 @@ export async function POST(
 
     // Process the issue in a transaction
     const results = await db.$transaction(async (tx) => {
-      const transactions = [];
+      const transactions: any[] = [];
 
       // Process each line
       for (const { line, stock } of stockChecks) {
@@ -142,7 +142,7 @@ export async function POST(
           },
         });
 
-        transactions.push(transaction);
+        transactions.push(transaction as any);
 
         // Update MR line if linked to MR
         if (mi.mrId && mi.materialRequest) {
@@ -190,7 +190,7 @@ export async function POST(
           (l: { status: string }) => l.status === 'ISSUED'
         );
         const someIssued = mrLines.some(
-          (l: { issuedQty: { toNumber: () => number } }) => (l.issuedQty?.toNumber() || 0) > 0
+          (l: { issuedQty: { toNumber: () => number } | null }) => (l.issuedQty?.toNumber() || 0) > 0
         );
 
         let newMRStatus = mi.materialRequest.status;

@@ -1195,7 +1195,7 @@ export function checkSlaStatus(jobCard: {
   actualStart: Date | null;
   actualEnd: Date | null;
 }): SlaStatus {
-  const slaTarget = calculateSlaTargets(jobCard.priority);
+  const slaTarget = calculateSlaTargets(jobCard.priority as JobCardPriority);
   
   if (!slaTarget) {
     return 'ON_TRACK';
@@ -1260,7 +1260,7 @@ export function getEscalationLevel(jobCard: {
   createdAt: Date;
   actualStart: Date | null;
 }): EscalationLevel {
-  const slaTarget = calculateSlaTargets(jobCard.priority);
+  const slaTarget = calculateSlaTargets(jobCard.priority as JobCardPriority);
   
   if (!slaTarget || ['CLOSED', 'CANCELLED'].includes(jobCard.status)) {
     return 'NONE';
@@ -1299,7 +1299,7 @@ export function getSlaTimeRemaining(jobCard: {
   firstResponseMinutes: number | null;
   completionMinutes: number | null;
 } {
-  const slaTarget = calculateSlaTargets(jobCard.priority);
+  const slaTarget = calculateSlaTargets(jobCard.priority as JobCardPriority);
   
   if (!slaTarget || ['COMPLETED', 'CLOSED', 'CANCELLED'].includes(jobCard.status)) {
     return {

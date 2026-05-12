@@ -85,7 +85,7 @@ export async function POST(
       await db.mrLine.updateMany({
         where: { mrId: id },
         data: {
-          approvedQty: db.mrLine.fields.requestedQty,
+          approvedQty: db.mrLine.fields.requestedQty as any,
           status: 'APPROVED',
         },
       });

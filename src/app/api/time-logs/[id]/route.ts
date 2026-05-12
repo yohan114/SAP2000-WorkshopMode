@@ -125,8 +125,8 @@ export async function PUT(
     }
 
     // Calculate total minutes and cost if times are provided
-    let totalMinutes = existingLog.totalMinutes;
-    let totalCost = existingLog.totalCost;
+    let totalMinutes: any = existingLog.totalMinutes;
+    let totalCost: any = existingLog.totalCost;
 
     const startTime = data.startTime ? new Date(data.startTime) : existingLog.startTime;
     const endTime = data.endTime !== undefined ? (data.endTime ? new Date(data.endTime) : null) : existingLog.endTime;
@@ -156,7 +156,7 @@ export async function PUT(
         startTime: data.startTime ? new Date(data.startTime) : undefined,
         endTime: data.endTime === null ? null : (data.endTime ? new Date(data.endTime) : undefined),
         breakMinutes: data.breakMinutes,
-        hourlyRate: data.hourlyRate,
+        hourlyRate: data.hourlyRate as any,
         totalMinutes,
         totalCost,
         notes: data.notes,

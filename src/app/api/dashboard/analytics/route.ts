@@ -343,12 +343,12 @@ export async function GET(request: Request) {
     });
 
     // Asset utilization metrics
-    const utilizationByStatus = assetUtilization.reduce((acc, item) => {
+    const utilizationByStatus = (assetUtilization as any[]).reduce((acc: Record<string, number>, item: any) => {
       acc[item.status] = Number(item.count);
       return acc;
     }, {} as Record<string, number>);
 
-    const totalAssets = Object.values(utilizationByStatus).reduce((sum, count) => sum + count, 0);
+    const totalAssets: number = Object.values(utilizationByStatus).reduce((sum: number, count: number) => sum + count, 0);
     const operationalCount = utilizationByStatus['OPERATIONAL'] || 0;
     const underRepairCount = utilizationByStatus['UNDER_REPAIR'] || 0;
     const utilizationRate = totalAssets > 0 
